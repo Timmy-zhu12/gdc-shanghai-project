@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Local runtime configuration generated/edited by the UI.
+config.json
+
+# Large offline model artifacts should be downloaded separately.
+models/*
+!models/README.md
+!models/.gitkeep
+
+# Generated reports and local test outputs.
+exports/*
+!exports/.gitkeep
+
+# Local OS/editor noise.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
