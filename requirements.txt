@@ -1,3 +1,9 @@
 numpy
 Pillow
+pillow-heif
 pydicom
+imageio
+imageio-ffmpeg
+pylibjpeg
+pylibjpeg-libjpeg
+pylibjpeg-openjpeg

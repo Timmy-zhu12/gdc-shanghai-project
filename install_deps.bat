@@ -7,6 +7,5 @@ if %errorlevel%==0 (
 ) else (
   python -m venv .venv
 )
-".venv\Scripts\python.exe" -m pip install --upgrade pip
-".venv\Scripts\python.exe" -m pip install -r requirements.txt
+".venv\Scripts\python.exe" -m pip install -r requirements.txt --disable-pip-version-check
 endlocal

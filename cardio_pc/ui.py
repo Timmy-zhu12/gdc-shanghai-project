@@ -9,13 +9,14 @@ from PIL import Image, ImageTk
 
 from .diagnosis import ModelConfig, load_config, run_diagnosis, save_config
 from .features import StudyAnalysis, analyze_loaded_images
+from .guidance import build_primary_care_guidance
 from .imaging import SUPPORTED_EXTENSIONS, LoadedImage, load_files
 
 
 class CardioConsultPCApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("CardioConsult PC - Gemma4 4B Edge")
+        self.title("CardioConsult PC Cine - Gemma4 4B Edge")
         self.geometry("1180x760")
         self.minsize(960, 640)
 
@@ -43,7 +44,7 @@ class CardioConsultPCApp(tk.Tk):
 
         button_row = ttk.Frame(left)
         button_row.pack(fill=tk.X, pady=(8, 8))
-        ttk.Button(button_row, text="添加 PNG/DICOM", command=self.add_files).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Button(button_row, text="添加图像/动图/视频/DICOM", command=self.add_files).pack(side=tk.LEFT, padx=(0, 6))
         ttk.Button(button_row, text="清空", command=self.clear_files).pack(side=tk.LEFT)
 
         self.file_list = tk.Listbox(left, height=12)
@@ -81,8 +82,13 @@ class CardioConsultPCApp(tk.Tk):
         self.progress = ttk.Progressbar(run_row, mode="indeterminate")
         self.progress.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(16, 0))
 
-        self.summary_var = tk.StringVar(value="等待输入。最大支持标准心脏超声 12 个体位；最小输入为任意一个体位的收缩态与舒张态。")
+        self.summary_var = tk.StringVar(value="等待输入。Cine 综合版支持静态图、动图、视频、多页 TIFF 和多帧 DICOM；输出格式与原 PC 版一致。")
         ttk.Label(right, textvariable=self.summary_var, wraplength=720).pack(anchor=tk.W, pady=(10, 8))
+
+        guide_box = ttk.LabelFrame(right, text="基层/初学者辅助提示", padding=8)
+        guide_box.pack(fill=tk.X, pady=(0, 8))
+        self.guidance_var = tk.StringVar(value="完成分析后显示体位完整性、补扫建议和复核提示。")
+        ttk.Label(guide_box, textvariable=self.guidance_var, wraplength=760).pack(anchor=tk.W)
 
         columns = ("file", "view", "phase", "chamber", "doppler")
         self.table = ttk.Treeview(right, columns=columns, show="headings", height=8)
@@ -105,11 +111,12 @@ class CardioConsultPCApp(tk.Tk):
     def add_files(self) -> None:
         extensions = " ".join(f"*{ext}" for ext in sorted(SUPPORTED_EXTENSIONS))
         selected = filedialog.askopenfilenames(
-            title="选择心脏超声 PNG/DICOM/DCOM 文件",
+            title="选择心脏超声图像、动图、视频或 DICOM/DCOM 文件",
             filetypes=[
-                ("Ultrasound images", extensions),
-                ("Raster images", "*.png *.jpg *.jpeg *.bmp *.tif *.tiff"),
+                ("Supported ultrasound media", extensions),
+                ("Raster / animated images", "*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.webp *.heic *.heif *.gif *.apng"),
                 ("DICOM", "*.dcm *.dicom *.dcom"),
+                ("Video", "*.mp4 *.m4v *.mov *.avi *.mkv *.webm *.wmv *.mpg *.mpeg *.ts *.mts *.m2ts *.3gp *.cine"),
                 ("All files", "*.*"),
             ],
         )
@@ -131,6 +138,7 @@ class CardioConsultPCApp(tk.Tk):
         self.output.delete("1.0", tk.END)
         self.preview.configure(text="未选择图像", image="")
         self.summary_var.set("等待输入。")
+        self.guidance_var.set("完成分析后显示体位完整性、补扫建议和复核提示。")
 
     def choose_model(self) -> None:
         selected = filedialog.askopenfilename(title="选择 Gemma4 4B GGUF", filetypes=[("GGUF", "*.gguf"), ("All files", "*.*")])
@@ -180,8 +188,19 @@ class CardioConsultPCApp(tk.Tk):
         self._refresh_table()
         self.output.delete("1.0", tk.END)
         self.output.insert(tk.END, report)
-        self.summary_var.set(f"{study.feature_summary}\n模型状态：{model_status}")
+        cine_sources = sorted({frame.loaded.source_type for frame in study.frames})
+        self.summary_var.set(f"{study.feature_summary}\n媒体类型：{', '.join(cine_sources)}；模型状态：{model_status}")
+        guidance = build_primary_care_guidance(study, self._diagnosis_label_from_report(report))
+        self.guidance_var.set(guidance.compact_text)
         self.update_preview()
+
+    @staticmethod
+    def _diagnosis_label_from_report(report: str) -> str:
+        marker = "教学参考病症判断："
+        if marker not in report:
+            return ""
+        tail = report.split(marker, 1)[1]
+        return tail.split("。", 1)[0].strip()
 
     def _show_error(self, message: str) -> None:
         self.progress.stop()
@@ -219,7 +238,8 @@ class CardioConsultPCApp(tk.Tk):
         if not self.last_report:
             messagebox.showwarning("没有报告", "请先完成一次分析。")
             return
-        default = Path("D:/cardioconsult_PC_runbook/exports/cardio_consult_pc_report.txt")
+        default = Path("D:/cardioconsult_PC_math_improved_runbook/exports/cardio_consult_pc_math_improved_report.txt")
+        default.parent.mkdir(parents=True, exist_ok=True)
         selected = filedialog.asksaveasfilename(
             title="保存疑似诊断文本",
             defaultextension=".txt",

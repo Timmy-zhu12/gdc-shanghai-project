@@ -2,6 +2,6 @@
   "llama_exe": "",
   "model_path": "D:/cardioconsult_PC_runbook/models/gemma-4-4b-it-Q4_K_M.gguf",
   "mmproj_path": "D:/cardioconsult_PC_runbook/models/gemma-4-4b-mmproj-Q4_0.gguf",
-  "max_tokens": 640,
-  "temperature": 0.15
+  "max_tokens": 720,
+  "temperature": 0.12
 }
