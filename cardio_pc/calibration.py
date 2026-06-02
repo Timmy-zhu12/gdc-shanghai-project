@@ -66,7 +66,7 @@ def estimate_low_contractility_from_bmode(study: StudyAnalysis) -> CalibrationEs
     probability = stable_sigmoid(logit)
     cv = spec.get("cross_validation", {})
     evidence = (
-        f"CAMUS B-mode 低 EF 校准概率 {probability:.2f}，阈值 {threshold:.2f}；"
+        f"CAMUS B-mode 低 EF 校准概率 {probability:.2f}，阈值 {threshold:.2f}，"
         f"校准集 case-level CV 准确率 {float(cv.get('accuracy', 0.0)):.3f}，"
         f"AUC {float(cv.get('auc', 0.0)):.3f}。"
     )

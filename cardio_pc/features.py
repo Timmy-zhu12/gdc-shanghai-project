@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
@@ -12,18 +12,18 @@ from .imaging import LoadedImage
 
 
 STANDARD_VIEWS: list[tuple[str, tuple[str, ...]]] = [
-    ("PLAX", ("plax", "parasternal_long", "long_axis", "左室长轴", "胸骨旁长轴")),
-    ("PSAX-AV", ("psax_av", "aortic_valve", "short_axis_av", "主动脉瓣短轴")),
-    ("PSAX-MV", ("psax_mv", "mitral", "二尖瓣短轴")),
-    ("PSAX-PM", ("psax_pm", "papillary", "乳头肌短轴")),
-    ("PSAX-APEX", ("psax_apex", "apex_short", "心尖短轴")),
-    ("A4C", ("a4c", "4ch", "apical_4", "four_chamber", "心尖四腔")),
-    ("A5C", ("a5c", "apical_5", "five_chamber", "心尖五腔")),
-    ("A2C", ("a2c", "2ch", "apical_2", "two_chamber", "心尖二腔")),
-    ("A3C", ("a3c", "apical_3", "three_chamber", "心尖三腔")),
-    ("SUBCOSTAL-4C", ("subcostal", "subxiphoid", "剑突下", "肋下")),
-    ("IVC", ("ivc", "下腔静脉")),
-    ("SUPRASTERNAL", ("suprasternal", "arch", "胸骨上窝", "主动脉弓")),
+    ("PLAX", ("plax", "parasternal_long", "long_axis", "parasternal long", "left_ventricle_long_axis", "左室长轴", "胸骨旁长轴")),
+    ("PSAX-AV", ("psax_av", "aortic_valve", "short_axis_av", "aortic valve short", "主动脉瓣短轴")),
+    ("PSAX-MV", ("psax_mv", "mitral_short", "mitral valve short", "二尖瓣短轴")),
+    ("PSAX-PM", ("psax_pm", "papillary", "papillary_muscle", "乳头肌短轴")),
+    ("PSAX-APEX", ("psax_apex", "apex_short", "apical_short", "心尖短轴")),
+    ("A4C", ("a4c", "4ch", "apical_4", "four_chamber", "apical four", "心尖四腔")),
+    ("A5C", ("a5c", "apical_5", "five_chamber", "apical five", "心尖五腔")),
+    ("A2C", ("a2c", "2ch", "apical_2", "two_chamber", "apical two", "心尖二腔")),
+    ("A3C", ("a3c", "3ch", "apical_3", "three_chamber", "apical long", "心尖三腔")),
+    ("SUBCOSTAL-4C", ("subcostal", "subxiphoid", "subcostal_4c", "剑突下", "肋下")),
+    ("IVC", ("ivc", "inferior_vena_cava", "下腔静脉")),
+    ("SUPRASTERNAL", ("suprasternal", "arch", "aortic_arch", "胸骨上窝", "主动脉弓")),
 ]
 
 
@@ -114,7 +114,7 @@ def analyze_loaded_images(images: list[LoadedImage]) -> StudyAnalysis:
     method_notes = (
         "改进版使用 SRAD-inspired 散斑抑制、CLAHE 局部对比度增强、"
         "ED/ES 腔室面积代理相位识别、Doppler 连通域过滤、喷流宽度代理、"
-        "方向一致性、散度与涡量代理，并加入 CAMUS B-mode 低 EF 校准。"
+        "方向一致性、散度与涡量代理，并加入 CAMUS B-mode 低 EF 校准和层级标签体系。"
     )
     summary = build_feature_summary(frames, mean_b, mean_f, contractility, contractility_fraction, quality, warning)
     return StudyAnalysis(
