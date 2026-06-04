@@ -11,7 +11,7 @@ Track alignment: Track C - Edge AI. The official description requires fully offl
 | Requirement | CardioConsult Deliverable | Status |
 |---|---|---|
 | Code repository | This repository: `https://github.com/Timmy-zhu12/gdc-shanghai-project` | Ready |
-| Demo video within 5 minutes | Script and shot list in [DEMO_VIDEO_SCRIPT.md](DEMO_VIDEO_SCRIPT.md); final public video URL should be pasted into the submission form after upload | Ready to record/upload |
+| Demo video within 5 minutes | Final public video URL should be pasted into the submission form after upload | Pending final upload |
 | Technical report | [DOCX](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx), [PDF](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf), [Markdown](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md) | Ready |
 | Online demo URL | Static demo source is in [docs/index.html](docs/index.html); if GitHub Pages is enabled from `/docs`, use `https://timmy-zhu12.github.io/gdc-shanghai-project/` | Ready in repo |
 | Training data disclosure | [DATASETS.md](DATASETS.md) and [docs/data_and_model_policy.md](docs/data_and_model_policy.md) | Ready |
@@ -30,7 +30,7 @@ This repository is the submission repository. PC V5 is the only actively maintai
 | Technical excellence | 25% | B-mode GLDM/texture proxies, SRAD/CLAHE preprocessing, Color Doppler HSV/vector proxies, cine/DICOM support, EchoNet-Dynamic EF calibration, offline Gemma4 4B via `llama-cli` or persistent `llama-server` |
 | Completeness | 20% | Runnable PC V5 repository, online demo static page, sample files, validation reports, deployment scripts, technical report, rule-smoke test |
 | Innovation | 15% | Hybrid edge-computing + Gemma4 report generation, hierarchical disease label output, offline-first medical teaching workflow |
-| Presentation quality | 10% | APA technical report, validation bundle, README deployment guides, 5-minute demo script |
+| Presentation quality | 10% | APA technical report, validation bundle, README deployment guides, and static online demo |
 
 ## Offline Demo Path
 

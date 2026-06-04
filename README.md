@@ -2,7 +2,7 @@
 
 CardioConsult PC V5 是本项目的 Windows 参考实现。项目服务于医学教学、心脏超声入门训练和基层医疗点参考场景，核心目标是在本地离线环境中导入脱敏心脏超声文件，完成边缘特征提取、动态 B-mode 校准和本地 Gemma4 4B 报告生成，并输出一段中文教学参考诊断文本。
 
-本仓库现在作为项目唯一提交入口：代码、部署说明、在线演示静态页面、技术报告、数据来源披露、验证材料和演示视频脚本都集中在这里。
+本仓库现在作为项目唯一提交入口：代码、部署说明、在线演示静态页面、技术报告、数据来源披露和验证材料都集中在这里。
 
 在线演示静态页面位于：
 
@@ -219,7 +219,6 @@ EchoNet-Dynamic 校准层 held-out 摘要：
 本仓库已集中保存提交所需材料：
 
 - [SUBMISSION.md](SUBMISSION.md)：提交检查表和评审入口。
-- [DEMO_VIDEO_SCRIPT.md](DEMO_VIDEO_SCRIPT.md)：5 分钟内演示视频脚本。
 - [DATASETS.md](DATASETS.md)：数据集来源、用途和再分发边界。
 - [submission/technical_report](submission/technical_report)：APA 技术报告 DOCX/PDF/Markdown、图表和测试结果。
 - [docs/index.html](docs/index.html)：在线演示静态页面源码。
