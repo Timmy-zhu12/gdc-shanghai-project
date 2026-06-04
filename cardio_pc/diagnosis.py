@@ -8,6 +8,7 @@ import urllib.error
 import urllib.request
 
 from .calibration import estimate_low_contractility_from_bmode
+from .agents import OfflineMultiAgentOrchestrator
 from .features import StudyAnalysis
 from .guidance import build_primary_care_guidance
 from .v4_runtime import compact_prompt_for_llama3_budget, scheduler_audit_note
@@ -49,6 +50,9 @@ class ModelConfig:
     use_server: bool = False
     server_url: str = "http://127.0.0.1:8088"
     server_timeout: int = 900
+    use_multi_agent: bool = True
+    write_agent_audit: bool = True
+    agent_audit_dir: str = field(default_factory=lambda: str((PROJECT_DIR / "exports" / "agent_audit").as_posix()))
 
     @property
     def model_ready(self) -> bool:
@@ -140,29 +144,49 @@ def classify_teaching_condition_v4(study: StudyAnalysis) -> HierarchicalDiagnosi
 
 
 def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
-    decision = classify_teaching_condition_v4(study)
+    orchestrator: OfflineMultiAgentOrchestrator | None = None
+    agent_state = None
+    if config.use_multi_agent:
+        audit_dir = Path(config.agent_audit_dir)
+        if not audit_dir.is_absolute():
+            audit_dir = PROJECT_DIR / audit_dir
+        orchestrator = OfflineMultiAgentOrchestrator(
+            audit_dir=audit_dir,
+            write_audit=bool(config.write_agent_audit),
+        )
+        agent_state = orchestrator.run_until_decision(study, classify_teaching_condition_v4)
+        decision = agent_state.decision
+    else:
+        decision = classify_teaching_condition_v4(study)
+
+    def finish(report: str, status: str) -> tuple[str, str]:
+        report = enforce_hierarchical_judgment_field(report, decision)
+        if orchestrator and agent_state:
+            report, _audit = orchestrator.finalize_report(agent_state, report, status)
+        return report, status
+
     prompt = build_gemma4_prompt(study, decision)
     server_error = ""
     if config.use_server and config.server_url:
         text, error = run_llama_server(prompt, config)
         if text.strip():
-            return enforce_hierarchical_judgment_field(text.strip(), decision), f"Gemma4 4B offline server: {config.server_url}"
+            return finish(text.strip(), f"Gemma4 4B offline server: {config.server_url}")
         server_error = error
         if not config.model_ready:
-            fallback = heuristic_diagnosis(study)
+            fallback = heuristic_diagnosis(study, decision)
             report = f"{fallback}\n\n[Gemma4 4B server 调用失败，已使用本地层级规则后备：{error}]"
-            return enforce_hierarchical_judgment_field(report, decision), config.status
+            return finish(report, config.status)
     if config.model_ready:
         text, error = run_llama_cli(prompt, config)
         status = f"Gemma4 4B offline CLI: {Path(config.model_path).name}"
         if server_error:
             status += " (server unavailable; CLI fallback used)"
         if text.strip():
-            return enforce_hierarchical_judgment_field(text.strip(), decision), status
-        fallback = heuristic_diagnosis(study)
+            return finish(text.strip(), status)
+        fallback = heuristic_diagnosis(study, decision)
         report = f"{fallback}\n\n[Gemma4 4B 调用失败，已使用本地层级规则后备：{error}]"
-        return enforce_hierarchical_judgment_field(report, decision), status
-    return enforce_hierarchical_judgment_field(heuristic_diagnosis(study), decision), config.status
+        return finish(report, status)
+    return finish(heuristic_diagnosis(study, decision), config.status)
 
 
 def load_system_prompt(required_parent_hierarchy: str, minimum_condition: str) -> str:
@@ -708,8 +732,8 @@ def feature(values, index: int, default: float = 0.0) -> float:
     return default
 
 
-def heuristic_diagnosis(study: StudyAnalysis) -> str:
-    decision = classify_teaching_condition_v4(study)
+def heuristic_diagnosis(study: StudyAnalysis, decision: HierarchicalDiagnosis | None = None) -> str:
+    decision = decision or classify_teaching_condition_v4(study)
     guidance = build_primary_care_guidance(study, decision.compact_label)
     b = study.mean_bmode
     f = study.mean_flow

@@ -7,6 +7,7 @@ CardioConsult PC V5 是当前 Windows 参考版本，也被设计为超声机器
 ## V5 相比 V4 的新增内容
 
 - EchoNet-Dynamic 动态 B-mode 校准，用于 EF / 左室收缩功能减低识别。
+- `cardio_pc/agents.py` 轻量离线多智能体编排：InputAgent、FeatureAgent、DiagnosisAgent、ReportAgent 和 SafetyAuditAgent 生成可审计 JSON 链路。
 - `cardio_pc/v5_echonet.py` 运行时层，并保留 V4 后备。
 - `tools/train_echonet_v5.py` 本地训练入口。
 - EchoBench v1 benchmark 入口和 server smoke test。

@@ -282,7 +282,7 @@ def build():
     add_callout(
         doc,
         "技术摘要",
-        "CardioConsult PC V5 面向心脏超声教学参考和基层辅助初筛场景。这里的 PC 被定义为可直接接入超声机器或超声工作站的离线分析设备：它可以通过 USB、局域网共享目录、DICOM 工作站导出目录或无线超声软件导出文件读取 PNG、DICOM/DCOM 与超声动图，并在本机输出从大方向到最小病症的结构化疑似诊断文字。V5 在原有 B-mode、Color Doppler、层级标签规则和 Gemma4 4B GGUF 本地报告生成基础上，加入 EchoNet-Dynamic 动态 B-mode 校准层，用于增强 EF 和左室收缩功能减低识别。"
+        "CardioConsult PC V5 面向心脏超声教学参考和基层辅助初筛场景。这里的 PC 被定义为可直接接入超声机器或超声工作站的离线分析设备：它可以通过 USB、局域网共享目录、DICOM 工作站导出目录或无线超声软件导出文件读取 PNG、DICOM/DCOM 与超声动图，并在本机输出从大方向到最小病症的结构化疑似诊断文字。V5 在原有 B-mode、Color Doppler、层级标签规则和 Gemma4 4B GGUF 本地报告生成基础上，加入 EchoNet-Dynamic 动态 B-mode 校准层和轻量离线多智能体编排，用于增强 EF/左室收缩功能减低识别、报告安全审计和提交演示透明度。"
     )
 
     add_section_heading(doc, "PC 设备定位：超声机器旁离线分析终端")
@@ -370,6 +370,7 @@ def build():
     add_section_heading(doc, "数据、模型与方法")
     add_para(doc, "本次主测试集来自授权本地 DICOM/报告时间映射，共 60 个病例。该数据只用于本地授权教育验证，不随代码发布，不作为公开数据集再分发。报告链接标签被用作当前 benchmark 的报告链接金标准，但不是独立多专家盲法复核金标准。")
     add_para(doc, "V5 使用 EchoNet-Dynamic 公开数据进行动态 B-mode EF 校准。实际读取 10,030 个心尖四腔 .avi 视频、FileList.csv 中的 EF/ESV/EDV/FPS/帧数/官方 split，以及 VolumeTracings.csv 中的专家左室追踪帧。EchoNet-Dynamic 原论文证明心超视频深度学习可用于逐搏心功能评估（Ouyang et al., 2020）。")
+    add_para(doc, "V5 新增轻量离线多智能体编排：InputAgent 核对输入和相位，FeatureAgent 汇总 B-mode/Doppler/动态图代理特征，DiagnosisAgent 复用层级规则、V4 校准和 V5 EchoNet 校准，ReportAgent 记录规则后备或本地 Gemma4 后端，SafetyAuditAgent 检查教学用途、非医疗器械、非临床诊断和复核/转诊提示。该层不联网、不额外多次调用 Gemma4，也不重复执行图像特征提取；当前本机 rule-only smoke test 中，开启审计 JSON 写入后的诊断阶段平均约 4.1 ms/次，单次自检审计链显示约 8.6 ms，并可把审计 JSON 写入 exports/agent_audit/。")
     add_table(
         doc,
         ["子任务", "选中模型", "选择依据"],
