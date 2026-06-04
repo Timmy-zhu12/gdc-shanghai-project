@@ -13,21 +13,21 @@
 
 - 特征表：`D:\cardioconsult_dense_validation\results\HMC-QU\features.csv` 缺失
 - 端到端表：`D:\cardioconsult_dense_validation\results\HMC-QU\end_to_end.csv` 缺失
-- 说明：Requires Kaggle credentials. This suite can call kaggle datasets download after kaggle.json is configured.
+- 说明：需要 Kaggle 凭据。配置 `kaggle.json` 后，本验证套件可调用 `kaggle datasets download` 下载。
 
 ## 第一阶段：B-Mode / GLDM 特征验证
 
 | 指标 | 结果 |
 |---|---|
 | available | `False` |
-| reason | `No feature CSV` |
+| reason | `缺少 feature CSV` |
 
 ## 回归 / EF 相关验证
 
 | 指标 | 结果 |
 |---|---|
 | available | `False` |
-| reason | `No feature CSV` |
+| reason | `缺少 feature CSV` |
 
 ## 特征显著性检验
 
@@ -38,7 +38,7 @@
 | 指标 | 结果 |
 |---|---|
 | available | `False` |
-| reason | `No end-to-end CSV` |
+| reason | `缺少 end-to-end CSV` |
 
 ## 解释
 

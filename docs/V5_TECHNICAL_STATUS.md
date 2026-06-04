@@ -1,71 +1,65 @@
-# CardioConsult PC V5 Technical Status
+# CardioConsult PC V5 技术状态
 
-Updated: 2026-06-04
+更新日期：2026-06-04
 
-CardioConsult PC V5 is the current Windows reference build. It preserves the
-PC input/output contract: PNG/JPG, DICOM/DCOM, animated images, and common video
-files in; one Chinese teaching-reference diagnostic paragraph out, including a
-broad-to-specific disease hierarchy and a minimum supported disease label.
+CardioConsult PC V5 是当前 Windows 参考版本。它保留 PC 输入输出合同：输入 PNG/JPG、DICOM/DCOM、动图和常见视频文件；输出一段中文教学参考诊断，其中包含从大方向到具体病症的层级结构和最小可支持病症标签。
 
-## What V5 adds over V4
+## V5 相比 V4 的新增内容
 
-- EchoNet-Dynamic dynamic B-mode calibration for EF / LV systolic dysfunction.
-- `cardio_pc/v5_echonet.py` runtime layer with V4 fallback.
-- `tools/train_echonet_v5.py` local training entrypoint.
-- EchoBench v1 benchmark runner and server smoke test.
-- Representative 12-frame sampling for input-limited validation.
-- APA-style technical report in Markdown and DOCX with benchmark figures.
+- EchoNet-Dynamic 动态 B-mode 校准，用于 EF / 左室收缩功能减低识别。
+- `cardio_pc/v5_echonet.py` 运行时层，并保留 V4 后备。
+- `tools/train_echonet_v5.py` 本地训练入口。
+- EchoBench v1 benchmark 入口和 server smoke test。
+- 输入受限验证用的代表性 12 帧采样。
+- 带 benchmark 图表的 APA Markdown 与 DOCX 技术报告。
 
-## Current benchmark summary
+## 当前 benchmark 摘要
 
-Full-evidence local 60-case validation:
+本地 60 例完整证据验证：
 
-| Label | F1 |
+| 标签 | F1 |
 |---|---:|
 | MR | 0.964 |
 | TR | 1.000 |
 | AR | 0.700 |
-| Low EF | 0.857 |
+| 低 EF | 0.857 |
 | RWMA | 0.500 |
-| LA enlargement | 0.696 |
+| 左房扩大 | 0.696 |
 
-Representative 12-frame validation:
+代表性 12 帧验证：
 
-| Label | F1 |
+| 标签 | F1 |
 |---|---:|
 | MR | 0.936 |
 | TR | 1.000 |
 | AR | 0.326 |
-| Low EF | 0.615 |
+| 低 EF | 0.615 |
 | RWMA | 0.333 |
-| LA enlargement | 0.286 |
+| 左房扩大 | 0.286 |
 
-Latency:
+延迟：
 
-| Scenario | Mean seconds/case | P95 |
+| 场景 | 平均秒/例 | P95 |
 |---|---:|---:|
-| Full evidence | 3.761 | 5.513 |
-| Representative 12-frame | 2.562 | 3.201 |
+| 完整证据 | 3.761 | 5.513 |
+| 代表性 12 帧 | 2.562 | 3.201 |
 
-GGUF / llama.cpp smoke:
+GGUF / llama.cpp smoke：
 
-| Metric | Value |
+| 指标 | 数值 |
 |---|---:|
-| Prompt processing | 37.76 tokens/s |
-| Generation | 6.19 tokens/s |
-| First server completion | 8.775 s |
-| Warm server completion | 0.492 s |
+| prompt 处理 | 37.76 tokens/s |
+| 文本生成 | 6.19 tokens/s |
+| server 首次 completion | 8.775 s |
+| server 热启动 completion | 0.492 s |
 
-## Report artifacts
+## 报告材料
 
 - `docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.md`
 - `docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.docx`
 - `docs/v5_benchmark/V5_EchoNet_DL_Enhancement_Report.md`
 - `docs/v5_benchmark/figures/`
 
-## Safety boundary
+## 安全边界
 
-This project is for medical education, algorithm demonstration, and grassroots
-reference only. It is not a medical device and must not replace formal
-echocardiography, physician review, emergency triage, treatment decisions, or
-medical advice.
+本项目仅用于医学教学、算法演示和基层参考，不是医疗器械，不能替代正式心脏超声、医师复核、急诊分诊、治疗决策或医嘱。

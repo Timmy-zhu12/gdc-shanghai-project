@@ -1,59 +1,59 @@
-# Gemma 4 Hackathon Track C Submission Checklist
+# Gemma4 开发者大赛提交检查表
 
-This file is the judge-facing entry point for CardioConsult.
+本文件是评审进入 CardioConsult 项目的中文总入口。
 
-Official competition page: [Gemma 4 Hackathon 2026](https://hackathon.googdg.cn/?lang=en)
+官方页面：[Gemma 4 Hackathon 2026](https://hackathon.googdg.cn/?lang=en)
 
-Track alignment: Track C - Edge AI. The official description requires fully offline deployment of E2B/E4B-class models on phones, Raspberry Pi, or embedded hardware with a real-device demo. This submission uses the Windows PC V5 repository as the single stable, reproducible offline reference implementation, with deterministic edge-feature fallback and a documented route for later mobile migration.
+本仓库采用 Windows PC V5 作为唯一稳定、可复现的离线参考实现。它支持本地规则后备、本地 GGUF 推理路径、数据来源披露、技术报告、验证结果和单文件在线规则演示。
 
-## Required Submission Items
+## 必交材料
 
-| Requirement | CardioConsult Deliverable | Status |
+| 要求 | CardioConsult 对应材料 | 状态 |
 |---|---|---|
-| Code repository | This repository: `https://github.com/Timmy-zhu12/gdc-shanghai-project` | Ready |
-| Demo video within 5 minutes | Final public video URL should be pasted into the submission form after upload | Pending final upload |
-| Technical report | [DOCX](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx), [PDF](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf), [Markdown](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md) | Ready |
-| Online demo URL | Single-file rule-matching demo source is in [docs/index.html](docs/index.html); if GitHub Pages is enabled from `/docs`, use `https://timmy-zhu12.github.io/gdc-shanghai-project/` | Ready in repo |
-| Training data disclosure | [DATASETS.md](DATASETS.md) and [docs/data_and_model_policy.md](docs/data_and_model_policy.md) | Ready |
-| Competitive differentiators | [docs/competitive_edge.md](docs/competitive_edge.md) | Ready |
-| License | [Apache License 2.0](LICENSE) with [NOTICE](NOTICE) | Ready |
+| 代码仓库 | 本仓库：`https://github.com/Timmy-zhu12/gdc-shanghai-project` | 已准备 |
+| 5 分钟内演示视频 | 视频上传后，将公开视频链接填入提交表单 | 待最终上传 |
+| 技术报告 | [DOCX](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx)、[PDF](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf)、[Markdown](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md) | 已准备 |
+| 在线演示链接 | 单文件规则匹配网页位于 [docs/index.html](docs/index.html)；若 GitHub Pages 从 `/docs` 启用，可使用 `https://timmy-zhu12.github.io/gdc-shanghai-project/` | 已在仓库内准备 |
+| 训练/验证数据来源披露 | [DATASETS.md](DATASETS.md) 和 [docs/data_and_model_policy.md](docs/data_and_model_policy.md) | 已准备 |
+| 技术亮点说明 | [docs/competitive_edge.md](docs/competitive_edge.md) | 已准备 |
+| 许可证 | [Apache License 2.0](LICENSE) 与 [NOTICE](NOTICE) | 已准备 |
 
-## Repository Scope
+## 仓库范围
 
-This repository is the submission repository. PC V5 is the only actively maintained runnable build in this submission. Older platform prototypes are not required to evaluate the current submission and are treated as future migration routes rather than current deliverables.
+本仓库就是当前提交仓库。PC V5 是本次提交中唯一积极维护、可直接运行的版本；较早的平台原型只作为后续迁移方向，不作为评审复现当前结果的必要材料。
 
-## Judging Criteria Mapping
+## 评审维度对应关系
 
-| Official Criterion | Weight | What To Inspect |
+| 评审维度 | 权重 | 建议检查内容 |
 |---|---:|---|
-| Real-world impact | 30% | Medical education and primary-care ultrasound reference workflow; safety boundary in README and UI; de-identified local workflow |
-| Technical excellence | 25% | B-mode GLDM/texture proxies, SRAD/CLAHE preprocessing, Color Doppler HSV/vector proxies, cine/DICOM support, EchoNet-Dynamic EF calibration, offline Gemma4 4B via `llama-cli` or persistent `llama-server` |
-| Completeness | 20% | Runnable PC V5 repository, online rule-matching demo, sample files, validation reports, deployment scripts, technical report, rule-smoke test |
-| Innovation | 15% | Hybrid edge-computing + Gemma4 report generation, hierarchical disease label output, offline-first medical teaching workflow |
-| Presentation quality | 10% | APA technical report, validation bundle, README deployment guides, and single-file online demo |
+| 真实影响 | 30% | 医学教学与基层心脏超声参考流程；README 和 UI 中的安全边界；脱敏本地处理流程 |
+| 技术能力 | 25% | B-mode GLDM/纹理代理、SRAD/CLAHE 预处理、Color Doppler HSV/向量代理、动图/DICOM 支持、EchoNet-Dynamic EF 校准、本地 Gemma4 4B |
+| 完整性 | 20% | 可运行 PC V5 仓库、在线规则演示、示例文件、验证报告、启动脚本、技术报告、规则自检 |
+| 创新性 | 15% | 边缘特征 + Gemma4 报告生成、层级病症标签、离线优先医学教学流程 |
+| 展示质量 | 10% | APA 技术报告、验证材料包、README 部署说明、单文件在线演示 |
 
-## Offline Demo Path
+## 离线演示路径
 
-Recommended judge demo path:
+建议评审演示顺序：
 
-1. Open the single-file rule-matching demo from `docs/index.html` or the GitHub Pages URL if enabled.
-2. Clone/open this repository and run `run_cardio_pc_v5.bat`.
-3. Demonstrate PNG/DICOM/DCOM/cine input and the same diagnosis output contract.
-4. For repeated local Gemma4 runs, start `run_cardio_pc_v4_fast_server.bat` first to reuse a warm llama.cpp server.
-5. Explain that model weights and raw datasets are excluded for license/privacy reasons, then show validation summary and the safety boundary.
+1. 打开 `docs/index.html` 或启用 GitHub Pages 后的在线演示链接。
+2. 克隆或打开本仓库，运行 `run_cardio_pc_v5.bat`。
+3. 演示 PNG、DICOM、DCOM、cine/视频输入，以及一致的诊断输出合同。
+4. 多次本地 Gemma4 演示时，可先启动 `run_cardio_pc_v4_fast_server.bat`，复用已加载的 `llama-server`。
+5. 说明模型权重和原始数据因许可证与隐私原因不随仓库分发，然后展示验证摘要和安全边界。
 
-## What Makes This Track C Submission Strong
+## 技术强项
 
-- Real offline edge path: PC V5 uses local Gemma4 4B GGUF through `llama-cli`; it also supports persistent `llama-server` reuse for faster repeated diagnoses.
-- V5 dynamic echo calibration: EchoNet-Dynamic features add EF / left-ventricular systolic dysfunction calibration while preserving the auditable valve-regurgitation rules.
-- Ultrasound-specific preprocessing: B-mode and Color Doppler are processed by different edge-feature branches before the LLM sees the structured evidence.
-- Hierarchical medical teaching output: broad disease direction, middle category, smallest disease label, severity, evidence sufficiency, and logic chain.
-- Demo robustness: deterministic fallback keeps the same input/output contract even if the large model file is not present during live judging.
-- Data transparency: every public dataset or literature source used for validation or label design is listed in `DATASETS.md`; raw datasets and patient images are not redistributed.
+- 真实离线路径：PC V5 使用本地 Gemma4 4B GGUF，可通过 `llama-cli` 或常驻 `llama-server` 调用。
+- 动态心超增强：EchoNet-Dynamic 特征增强 EF / 左室收缩功能减低识别，同时保留可审计的瓣膜反流规则。
+- 超声专用预处理：B-mode 与 Color Doppler 分支分别提取边缘、纹理、血流方向、喷流宽度、涡量等代理特征。
+- 层级医学输出：报告必须包含大方向、中方向、最小病症、分级、证据充分度和逻辑链。
+- 演示稳定性：即使现场没有大模型权重，规则后备仍能保持同样的输入输出合同。
+- 数据透明：所有公开数据集和文献来源均列于 `DATASETS.md`；原始数据、病人图像和模型权重不再分发。
 
-## Local Smoke Test Commands
+## 本地快速自检
 
-Windows PC:
+Windows PC：
 
 ```powershell
 git clone https://github.com/Timmy-zhu12/gdc-shanghai-project.git
@@ -63,13 +63,13 @@ Set-Location gdc-shanghai-project
 .\run_cardio_pc_v5.bat
 ```
 
-## Safety Boundary
+## 医学安全边界
 
-CardioConsult is a medical-education and algorithm-demonstration prototype. It is not a medical device and must not be used as a final clinical diagnosis, treatment recommendation, emergency triage instruction, or medical order. Formal diagnosis still requires complete standard echocardiographic views, DICOM scale metadata, cine clips, patient history, physical findings, and qualified clinician review.
+CardioConsult 是医学教学和算法演示原型，不是医疗器械，不能作为最终临床诊断、治疗建议、急诊分诊指令或医嘱。正式判断仍需完整标准心脏超声切面、DICOM 标尺信息、连续动态帧、病史、体征和有资质医师复核。
 
-## Final Manual Items Before Upload
+## 提交前人工检查项
 
-- Record or upload the demo video and paste the public URL into the competition form.
-- Confirm GitHub Pages is enabled from `/docs` on this repository if a public online demo URL is required.
-- Confirm this repository is public or accessible to judges.
-- Confirm no raw patient data, model weights, `config.json`, local paths with secrets, or dataset downloads are committed.
+- 录制或上传演示视频，并把公开视频链接填入提交表单。
+- 如果需要公开在线演示 URL，确认本仓库已从 `/docs` 启用 GitHub Pages。
+- 确认本仓库为公开仓库，或评审可访问。
+- 确认没有提交原始病人数据、模型权重、`config.json`、包含密钥的本地路径或数据集下载缓存。

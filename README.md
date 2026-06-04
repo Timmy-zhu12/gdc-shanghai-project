@@ -26,7 +26,7 @@ V5 在 V4 的 B-mode、Color Doppler、动图代表帧、层级病症标签和 G
 
 - `cardio_pc/v5_echonet.py`：EchoNet-Dynamic 特征与 V5 校准运行时。
 - `tools/train_echonet_v5.py`：本地 EchoNet-Dynamic 训练脚本。
-- `tools/run_echobench_v1.py`：EchoBench v1 benchmark 入口。
+- `tools/run_echobench_v1.py`：EchoBench v1 基准测试入口。
 - `docs/v5_benchmark/`：V5 技术报告、DOCX 报告、图表和生成脚本。
 - `run_cardio_pc_v5.bat`：V5 桌面 UI 启动入口。
 
@@ -172,7 +172,7 @@ config.example.json -> config.json
 .\.venv\Scripts\python.exe app.py --self-test
 ```
 
-完整自检可能调用 Gemma4。CPU-only 机器上可能需要数分钟；规则自检只验证文件读取、特征提取、层级标签和输出格式。
+完整自检可能调用 Gemma4。仅 CPU 机器上可能需要数分钟；规则自检只验证文件读取、特征提取、层级标签和输出格式。
 
 ## 技术流程
 
@@ -180,7 +180,7 @@ config.example.json -> config.json
 - Color Doppler 分支：HSV 血流向量化、连通域过滤、喷流宽度代理、方向一致性、湍流/散度/涡量代理。
 - 动图/视频分支：代表帧采样、时间差分、收缩/舒张推断、STI 风格腔室应变代理和 Lucas-Kanade 风格光流代理。
 - 标签分支：大方向、中方向、最小病症、严重程度、证据充分度和来源说明。
-- Gemma4 分支：结构化短 prompt，强制首句、最小病症和逻辑链；重复演示优先使用常驻 `llama-server`。
+- Gemma4 分支：结构化短提示词，强制首句、最小病症和逻辑链；重复演示优先使用常驻 `llama-server`。
 
 ## V5 验证摘要
 
@@ -202,7 +202,7 @@ config.example.json -> config.json
 | 主动脉瓣反流代理 | 32.6% |
 | 低 EF 代理 | 61.5% |
 
-EchoNet-Dynamic 校准层 held-out 摘要：
+EchoNet-Dynamic 校准层留出集摘要：
 
 | 指标 | 数值 |
 |---|---:|
@@ -224,7 +224,7 @@ EchoNet-Dynamic 校准层 held-out 摘要：
 - [docs/index.html](docs/index.html)：在线演示单文件规则匹配网页源码。
 - [docs/V5_TECHNICAL_STATUS.md](docs/V5_TECHNICAL_STATUS.md)：V5 技术状态摘要。
 - [validation/reports](validation/reports)：数据集验证报告。
-- [shared](shared)：诊断契约、标签 schema 和 prompt 模板。
+- [shared](shared)：诊断契约、标签架构和提示词模板。
 
 ## 许可证
 

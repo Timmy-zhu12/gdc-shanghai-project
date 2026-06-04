@@ -1,64 +1,64 @@
-# CardioConsult PC V4 Runbook
+# CardioConsult PC V4 运行手册
 
-## Location
+## 位置
 
-Project folder:
+项目文件夹：
 
 ```text
 D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/05_pc_v4
 ```
 
-Start command:
+启动命令：
 
 ```bat
 D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/05_pc_v4/run_cardio_pc_v4.bat
 ```
 
-## Input
+## 输入
 
-The UI accepts multiple files at once:
+UI 支持一次导入多个文件：
 
 - PNG/JPG/BMP/TIFF/WebP/HEIC
-- DICOM/DCOM/DICOM
+- DICOM/DCOM/DCM
 - GIF/APNG
-- MP4/MOV/AVI/MKV/WebM/WMV and related video files
+- MP4/MOV/AVI/MKV/WebM/WMV 等相关视频文件
 
-The expected cardiac ultrasound input is one to twelve standard views, or at minimum systolic and diastolic frames from one view. Multi-frame DICOM is sampled automatically.
+预期心脏超声输入为 1 到 12 个标准体位；最低输入可以是任意一个体位的收缩态和舒张态。多帧 DICOM 会自动抽样。
 
-## Output
+## 输出
 
-The report begins with:
+报告开头保持以下格式：
 
 ```text
 教学参考病症判断：<最小病症>（<大方向> > <中方向>）。
 最小病症：<最小病症>。
-逻辑链：<evidence> → <rule> → <大方向> → <中方向> → <最小病症>。
+逻辑链：<证据> → <规则> → <大方向> → <中方向> → <最小病症>。
 ```
 
-## Offline Gemma4 4B
+## 离线 Gemma4 4B
 
-V4 uses the local `llama-cli.exe` copied into this folder. The only external dependency allowed by design is the already downloaded GGUF pair in the earliest PC model folder:
+V4 使用复制到该目录内的本地 `llama-cli.exe`。按设计，唯一允许的外部依赖是最早 PC 模型目录里已经下载好的 GGUF 文件：
 
 ```text
 D:/cardioconsult_PC_runbook/models/gemma-4-4b-it-Q4_K_M.gguf
 D:/cardioconsult_PC_runbook/models/gemma-4-4b-mmproj-Q4_0.gguf
 ```
 
-The smoke test output is stored in:
+smoke test 输出保存在：
 
 ```text
 D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/00_audit/gguf_smoke_output.txt
 ```
 
-## Validation Data
+## 验证数据
 
-The newtraining DICOM archives were extracted into:
+newtraining DICOM 压缩包已解压到：
 
 ```text
 D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/02_newtraining_archived/extracted
 ```
 
-Mapping and metrics are in:
+映射文件和指标位于：
 
 ```text
 D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/03_mapping

@@ -1,6 +1,6 @@
-# Architecture
+# 架构
 
-CardioConsult uses a two-branch edge-computing pipeline, then asks an offline Gemma4 4B layer to turn structured evidence into a Chinese teaching-reference diagnosis.
+CardioConsult 使用双分支边缘计算流水线，然后调用离线 Gemma4 4B 层，把结构化证据转换为中文教学参考诊断。
 
 ```mermaid
 flowchart TD

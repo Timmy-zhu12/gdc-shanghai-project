@@ -1,20 +1,20 @@
-# V4 Hierarchical Labels
+# V4 层级标签说明
 
-The V4 output keeps the required hierarchy:
+V4 输出保持要求的层级结构：
 
 ```text
 教学参考病症判断：<最小病症>（<大方向> > <中方向>）。
 最小病症：<最小病症>。
-逻辑链：<evidence> -> <rule> -> <大方向> -> <中方向> -> <最小病症>。
+逻辑链：<证据> -> <规则> -> <大方向> -> <中方向> -> <最小病症>。
 ```
 
-For the authorized newtraining DICOM set, V4 can output combined teaching labels such as:
+对于已授权的 newtraining DICOM 数据集，V4 可以输出组合教学标签，例如：
 
 ```text
 瓣膜性心脏病 > 多瓣膜轻度反流 > 轻度三尖瓣反流伴轻度二尖瓣反流伴轻度主动脉瓣反流
 ```
 
-When structural proxies are also triggered, V4 appends cautious teaching-reference phrases such as:
+如果结构性代理特征也被触发，V4 会追加更谨慎的教学参考短语，例如：
 
 ```text
 左室收缩功能减低待排
@@ -22,4 +22,4 @@ When structural proxies are also triggered, V4 appends cautious teaching-referen
 左房增大倾向
 ```
 
-These are educational proxy labels and must be reviewed through formal echocardiography workflow.
+这些都是教育用途的代理标签，必须通过正式心脏超声流程复核。

@@ -1,28 +1,28 @@
-# Data And Model Policy
+# 数据与模型政策
 
-This repository is intentionally source-code-only.
+本仓库有意保持为“源代码 + 文档 + 验证摘要”仓库。
 
-Full dataset attribution and use boundaries are maintained in [../DATASETS.md](../DATASETS.md).
+完整数据集来源、用途和边界见 [../DATASETS.md](../DATASETS.md)。
 
-Do not commit:
+不要提交：
 
-- GGUF model weights
-- Real patient DICOM files
-- Raw medical image datasets
-- Dataset download caches
-- Local diagnosis exports
+- GGUF 模型权重
+- 真实病人 DICOM 文件
+- 原始医学图像数据集
+- 数据集下载缓存
+- 本地诊断导出结果
 - `config.json`
-- local SDK or IDE configuration files
-- Any file containing patient identifiers
+- 本地 SDK 或 IDE 配置文件
+- 任何包含病人身份信息的文件
 
-Recommended local paths:
+推荐本地路径：
 
-| Resource | Local example |
+| 资源 | 本地示例 |
 |---|---|
-| PC model weights | `models/` or external model storage |
-| Validation datasets | `D:/cardioconsult_dense_validation/datasets` |
-| Validation generated results | `D:/cardioconsult_dense_validation/results` |
+| PC 模型权重 | `models/` 或外部模型存储目录 |
+| 验证数据集 | `D:/cardioconsult_dense_validation/datasets` |
+| 验证生成结果 | `D:/cardioconsult_dense_validation/results` |
 
-All third-party datasets, SDKs, ultrasound software, app-store assets, trademarks, and model weights remain governed by their own terms.
+所有第三方数据集、SDK、超声软件、应用商店资产、商标和模型权重仍受各自条款约束。
 
-The project uses dataset-derived validation summaries and hand-authored label mappings only. It does not redistribute CAMUS, EchoNet-Dynamic, EchoNet-LVH, TMED-2, HMC-QU, EchoXFlow, MIMIC-IV-ECHO, ECHOVIEW, CACTUS, private teaching data, or any raw DICOM/PNG patient files.
+本项目只使用数据集衍生的验证摘要和人工编写的标签映射，不再分发 CAMUS、EchoNet-Dynamic、EchoNet-LVH、TMED-2、HMC-QU、EchoXFlow、MIMIC-IV-ECHO、ECHOVIEW、CACTUS、私有教学数据或任何原始 DICOM/PNG 病人文件。

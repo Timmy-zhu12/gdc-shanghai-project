@@ -1,40 +1,40 @@
-# Competitive Edge
+# 技术亮点
 
-CardioConsult is designed as an offline Gemma 4 edge-AI application with a realistic clinical-education workflow. The project is not only a model wrapper; it combines ultrasound-specific edge features, deterministic safety fallback, and Gemma 4 report generation into one reproducible Windows PC workflow.
+CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向真实的医学教学和基层心脏超声参考流程。项目不是简单模型封装，而是把超声专用边缘特征、确定性安全后备和 Gemma4 报告生成组合成一个可复现的 Windows PC 工作流。
 
-## Why It Is Different
+## 为什么它不同
 
-1. Offline-first healthcare scenario.
+1. 离线优先的医疗教育场景。
 
-   The target setting is medical education and primary-care ultrasound reference where network access, specialist availability, and privacy tolerance may all be limited. The app can run locally and does not require raw patient data to leave the device.
+   目标使用场景是医学教学和基层心脏超声参考。此类场景可能网络不稳定、缺少专科医生、且对隐私要求高。应用可以本地运行，不要求原始病人数据离开设备。
 
-2. Ultrasound-aware math before the LLM.
+2. LLM 之前先做超声数学处理。
 
-   B-mode frames are processed with robust normalization, speckle suppression, local contrast enhancement, texture/edge proxies, and chamber-area phase estimation. Color Doppler frames are processed separately with HSV vectorization, connected-component filtering, jet-width proxy, direction consistency, turbulence proxy, and vorticity proxy. Gemma 4 receives structured evidence rather than only an image caption.
+   B-mode 帧会经过鲁棒归一化、散斑抑制、局部对比增强、纹理/边缘代理和腔室面积相位估计。Color Doppler 帧会独立进行 HSV 向量化、连通域过滤、喷流宽度代理、方向一致性、湍流代理和涡量代理。Gemma4 接收的是结构化证据，而不是单纯图像描述。
 
-3. Stable input and output contract.
+3. 稳定的输入输出合同。
 
-   The PC V5 app and browser demo preserve the same user promise: import one or more de-identified PNG/JPG/DICOM/DCOM/cine files and receive one Chinese teaching-reference diagnosis paragraph with a specific smallest disease label, evidence chain, confidence, and safety boundary.
+   PC V5 应用和浏览器演示保持同一个用户承诺：导入一个或多个脱敏 PNG/JPG/DICOM/DCOM/cine 文件，输出一段中文教学参考诊断，其中包含最小病症、证据链、置信度和安全边界。
 
-4. Hierarchical disease labels.
+4. 层级病症标签。
 
-   The report starts from a broad disease direction, then narrows to middle category, smallest specific finding, severity, and evidence sufficiency. If evidence is incomplete, the system still emits a clear broad direction while explicitly stating what cannot be localized.
+   报告从大方向开始，逐级收窄到中方向、最小具体问题、严重程度和证据充分度。如果证据不完整，系统仍会输出清晰的大方向，同时说明为什么无法定位到更具体瓣膜或病症。
 
-5. Demo resilience without hiding limitations.
+5. 演示稳定且不隐藏限制。
 
-   When a Gemma 4 model file is absent, unsupported, or too large for the current device, deterministic edge rules keep the demo runnable. The UI and report disclose whether the output came from Gemma 4 inference or rule fallback.
+   当 Gemma4 模型文件缺失、不兼容或设备资源不足时，本地规则仍能保持演示可运行。UI 和报告会说明输出来自模型推理还是规则后备。
 
-6. Device strategy.
+6. 设备策略清晰。
 
-   The current Windows PC V5 reference implementation is published in `Timmy-zhu12/gdc-shanghai-project` and uses local Gemma4 4B GGUF through `llama-cli` or persistent `llama-server` reuse. V5 adds EchoNet-Dynamic dynamic B-mode calibration for EF / left-ventricular systolic dysfunction while preserving the auditable valve-regurgitation rules. Mobile and desktop ports can reuse the same shared diagnostic contract later, but they are not required for evaluating this submission.
+   当前 Windows PC V5 参考实现发布在 `Timmy-zhu12/gdc-shanghai-project`，通过 `llama-cli` 或常驻 `llama-server` 使用本地 Gemma4 4B GGUF。V5 增加 EchoNet-Dynamic 动态 B-mode 校准，用于 EF / 左室收缩功能减低识别，同时保留可审计的瓣膜反流规则。后续移动端和其他桌面端可以复用同一诊断契约，但不是评估当前提交的必要条件。
 
-7. Evidence package included.
+7. 证据包完整。
 
-   The repository includes APA-style technical reporting, dataset-source disclosure, validation reports, validation DOCX files, online demo source, deployment notes, safety policy, Apache 2.0 license, and Windows PC README instructions.
+   仓库包含 APA 技术报告、数据来源披露、验证报告、验证 DOCX 文件、在线演示源码、部署说明、安全策略、Apache 2.0 许可证和 Windows PC README。
 
-## Judge Demo Focus
+## 演示重点
 
-- Open with the online demo so reviewers see the product immediately.
-- Show the PC V5 reference app from `https://github.com/Timmy-zhu12/gdc-shanghai-project` for the fullest offline workflow, using `run_cardio_pc_v5.bat`; use `run_cardio_pc_v4_fast_server.bat` first when repeated local GGUF calls should reuse a warm llama.cpp server.
-- Show `DATASETS.md` and the validation bundle to establish credibility.
-- End with the strict safety boundary: medical teaching reference only, not a clinical diagnosis or medical device output.
+- 先打开在线演示，让评审立即看到产品形态。
+- 再展示 PC V5 参考应用：`https://github.com/Timmy-zhu12/gdc-shanghai-project`；运行 `run_cardio_pc_v5.bat`。若需要多次本地 GGUF 调用，可先运行 `run_cardio_pc_v4_fast_server.bat` 复用热启动 llama.cpp server。
+- 展示 `DATASETS.md` 和验证材料包，说明数据透明度。
+- 以严格安全边界收尾：仅用于医学教学参考，不是临床诊断或医疗器械输出。

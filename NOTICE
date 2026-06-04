@@ -1,26 +1,18 @@
 CardioConsult
 Copyright 2026 Timmy-zhu12
 
-This product includes software developed for the CardioConsult/GDC Shanghai project.
+本产品包含为 CardioConsult / GDC Shanghai 项目开发的软件。
 
-Third-party runtime notice:
-The Windows llama.cpp runtime under tools/llama_cpp is redistributed only to make
-the offline Gemma4 GGUF demo easier to run. llama.cpp is a third-party project
-maintained at https://github.com/ggml-org/llama.cpp and is governed by its own
-license. See THIRD_PARTY_NOTICES.md.
+第三方运行时说明：
+`tools/llama_cpp` 下的 Windows llama.cpp 运行时仅用于降低离线 Gemma4 GGUF 演示的运行门槛。llama.cpp 是第三方项目，维护地址为：
+https://github.com/ggml-org/llama.cpp
+它受自身许可证约束。详情见 `THIRD_PARTY_NOTICES.md`。
 
-License scope:
-The Apache License 2.0 in this repository applies to original source code, scripts,
-UI code, documentation, and project configuration authored for this repository.
+许可证范围：
+本仓库中的 Apache License 2.0 适用于本仓库原创源代码、脚本、UI 代码、文档和项目配置。
 
-Exclusions:
-The license does not grant rights to third-party model weights, GGUF files, mobile
-or desktop SDKs, operating system SDKs, ultrasound software, medical datasets
-(including CAMUS, EchoNet-Dynamic, HMC-QU, EchoXFlow, or other clinical image data),
-third-party trademarks, app store assets, or patient/teaching data supplied by users.
-Those materials remain governed by their own licenses, terms, or institutional approvals.
+排除范围：
+本许可证不授予第三方模型权重、GGUF 文件、移动端或桌面端 SDK、操作系统 SDK、超声软件、医学数据集（包括 CAMUS、EchoNet-Dynamic、HMC-QU、EchoXFlow 或其他临床图像数据）、第三方商标、应用商店资产，或用户提供的病人/教学数据的使用权。这些材料仍受各自许可证、条款或机构审批约束。
 
-Medical-use notice:
-CardioConsult is a medical education and research support prototype. It is not
-cleared or intended for independent clinical diagnosis, treatment decisions, or
-emergency use.
+医学用途说明：
+CardioConsult 是医学教育和研究辅助原型，不被批准也不应被用于独立临床诊断、治疗决策或急诊用途。

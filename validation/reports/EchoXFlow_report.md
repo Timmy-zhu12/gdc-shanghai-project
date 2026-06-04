@@ -13,21 +13,21 @@
 
 - 特征表：`D:\cardioconsult_dense_validation\results\EchoXFlow\features.csv` 缺失
 - 端到端表：`D:\cardioconsult_dense_validation\results\EchoXFlow\end_to_end.csv` 缺失
-- 说明：EchoXFlow is described as a native-geometry echocardiography dataset with Doppler streams. Public direct download was not confirmed during setup; place authorized files here when available.
+- 说明：EchoXFlow 被描述为包含 Doppler 流的原生几何心脏超声数据集。配置验证环境时尚未确认公开直接下载入口；如已取得授权文件，请放在该目录下。
 
 ## 第一阶段：B-Mode / GLDM 特征验证
 
 | 指标 | 结果 |
 |---|---|
 | available | `False` |
-| reason | `No feature CSV` |
+| reason | `缺少 feature CSV` |
 
 ## 回归 / EF 相关验证
 
 | 指标 | 结果 |
 |---|---|
 | available | `False` |
-| reason | `No feature CSV` |
+| reason | `缺少 feature CSV` |
 
 ## 特征显著性检验
 
@@ -38,7 +38,7 @@
 | 指标 | 结果 |
 |---|---|
 | available | `False` |
-| reason | `No end-to-end CSV` |
+| reason | `缺少 end-to-end CSV` |
 
 ## 解释
 

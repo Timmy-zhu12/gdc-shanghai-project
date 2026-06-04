@@ -1,36 +1,36 @@
-# Diagnostic Contract
+# 诊断输出合同
 
-All platform implementations should keep this behavior consistent.
+所有平台实现都应保持下列行为一致。
 
-## Input
+## 输入
 
-- One or more de-identified cardiac ultrasound media files.
-- Supported clinical intent: teaching and research prototype only.
-- Maximum target coverage: standard 12 echocardiography views.
-- Minimum target coverage: one view with systolic and diastolic phases.
+- 一个或多个已脱敏心脏超声媒体文件。
+- 支持的目的仅限教学和研究原型。
+- 目标最大覆盖：标准心脏超声 12 个体位。
+- 目标最小覆盖：任意一个体位的收缩态与舒张态。
 
-## Processing
+## 处理
 
-- Detect or infer view labels where possible.
-- Detect ED/ES or systole/diastole by filename first.
-- If phase names are missing, use per-view chamber-area proxy to estimate phase.
-- Extract B-mode and Color Doppler features.
-- Generate a structured evidence summary.
-- Use Gemma4 4B offline generation when available.
-- Fall back to local rules when the model is unavailable.
+- 尽可能检测或推断切面标签。
+- 优先通过文件名检测 ED/ES 或收缩/舒张。
+- 如果缺少相位名称，则用每个切面的腔室面积代理估计相位。
+- 提取 B-mode 和 Color Doppler 特征。
+- 生成结构化证据摘要。
+- 可用时使用 Gemma4 4B 离线生成。
+- 模型不可用时回退到本地规则。
 
-## Output
+## 输出
 
-The output must be one Chinese paragraph containing:
+输出必须是一段中文自然语言，并包含：
 
-- A specific teaching-reference disease label.
-- Confidence level.
-- B-mode evidence.
-- Doppler evidence.
-- Recommended follow-up views for beginners or primary-care users.
-- Safety statement that this is not a clinical diagnosis.
+- 具体教学参考病症标签。
+- 置信度。
+- B-mode 证据。
+- Doppler 证据。
+- 给初学者或基层使用者的补扫建议。
+- “这不是临床诊断”的安全声明。
 
-Examples of allowed labels:
+允许的标签示例：
 
 - 轻度二尖瓣反流
 - 中度二尖瓣反流

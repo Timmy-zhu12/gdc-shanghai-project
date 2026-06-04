@@ -1,29 +1,23 @@
-# Third-Party Notices
+# 第三方组件说明
 
-This repository contains original CardioConsult source code plus a small set of
-third-party runtime files needed for the offline Windows demo.
+本仓库包含 CardioConsult 原创源代码，以及少量用于 Windows 离线演示的第三方运行时文件。
 
-## llama.cpp Windows Runtime
+## llama.cpp Windows 运行时
 
-- Location: `tools/llama_cpp/llama-b9469-bin-win-cpu-x64/`
-- Purpose: local GGUF inference through `llama-cli.exe` and persistent
-  `llama-server.exe`
-- Upstream project: <https://github.com/ggml-org/llama.cpp>
-- License: MIT License, as published by the upstream llama.cpp repository.
-  Check the upstream repository for the authoritative current license text and
-  release notes.
+- 位置：`tools/llama_cpp/llama-b9469-bin-win-cpu-x64/`
+- 用途：通过 `llama-cli.exe` 和常驻 `llama-server.exe` 进行本地 GGUF 推理
+- 上游项目：<https://github.com/ggml-org/llama.cpp>
+- 许可证：MIT License。权威许可证文本和版本说明以 llama.cpp 上游仓库为准。
 
-The bundled runtime does not include Gemma4 weights. Model files must be
-downloaded or supplied separately according to their own model license and terms.
+仓库内运行时不包含 Gemma4 权重。模型文件必须由使用者通过授权渠道另行获取，并遵守对应模型许可证和使用条款。
 
-## Model Weights
+## 模型权重
 
-Gemma4 GGUF model files are intentionally excluded from Git:
+Gemma4 GGUF 模型文件有意排除在 Git 之外：
 
 ```text
 models/gemma-4-4b-it-Q4_K_M.gguf
 models/gemma-4-4b-mmproj-Q4_0.gguf
 ```
 
-Users must obtain model files through authorized channels and comply with the
-applicable model license, data-use rules, and local privacy requirements.
+使用者必须从授权渠道获取模型文件，并遵守适用的模型许可证、数据使用规则和本地隐私要求。

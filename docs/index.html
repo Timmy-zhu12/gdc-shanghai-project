@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CardioConsult PC V5 Rule Demo</title>
+    <title>CardioConsult PC V5 规则演示</title>
     <style>
       :root {
         color-scheme: light;
@@ -300,13 +300,13 @@
     <main class="shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Rule Matching Only</p>
-          <h1>CardioConsult PC V5 Online Demo</h1>
+          <p class="eyebrow">仅规则匹配</p>
+          <h1>CardioConsult PC V5 在线演示</h1>
         </div>
         <div class="status" id="status">静态网页已启动</div>
       </header>
 
-      <section class="grid" aria-label="CardioConsult rule matching demo">
+      <section class="grid" aria-label="CardioConsult 规则匹配演示">
         <aside class="panel controls">
           <label class="drop" for="fileInput" id="dropZone">
             <strong>选择或拖入心超文件</strong>
@@ -368,10 +368,10 @@
           </div>
 
           <div class="metrics" aria-label="file metrics">
-            <div class="metric"><span id="metricFiles">0</span><small>files</small></div>
-            <div class="metric"><span id="metricViews">0</span><small>views</small></div>
-            <div class="metric"><span id="metricDia">0</span><small>diastole</small></div>
-            <div class="metric"><span id="metricSys">0</span><small>systole</small></div>
+            <div class="metric"><span id="metricFiles">0</span><small>文件</small></div>
+            <div class="metric"><span id="metricViews">0</span><small>体位</small></div>
+            <div class="metric"><span id="metricDia">0</span><small>舒张态</small></div>
+            <div class="metric"><span id="metricSys">0</span><small>收缩态</small></div>
           </div>
 
           <p class="hint">这是线上可启动演示页，只做规则匹配。完整离线 Gemma4 4B GGUF 计算、图像特征提取和 DICOM 像素处理请运行 PC V5 应用。</p>
@@ -380,7 +380,7 @@
 
         <section class="panel output" aria-live="polite">
           <div class="diagnosis">
-            <p class="eyebrow">Teaching Reference Diagnosis</p>
+            <p class="eyebrow">教学参考诊断</p>
             <h2 id="diagnosisTitle">等待输入</h2>
             <p id="confidence">请上传文件，或点击“示例”。</p>
           </div>
@@ -392,7 +392,7 @@
 
           <div class="report-section">
             <h3>规则摘要</h3>
-            <pre id="featureText">No rule evidence yet.</pre>
+            <pre id="featureText">暂无规则证据。</pre>
           </div>
         </section>
       </section>
@@ -532,7 +532,7 @@
           els.diagnosisTitle.textContent = "等待输入";
           els.confidence.textContent = "请上传文件，或点击“示例”。";
           els.reportText.textContent = "在线 demo 已启动。当前页面不调用模型、不上传文件、不读取 DICOM 像素，只用规则项和文件名进行教学参考匹配。";
-          els.featureText.textContent = "No rule evidence yet.";
+          els.featureText.textContent = "暂无规则证据。";
         }
 
         function analyze() {
@@ -726,21 +726,21 @@
 
         function buildFeatureText(study, result) {
           return [
-            `mode=static_rule_matching_only`,
-            `rule=${result.rule}`,
-            `hierarchy=${result.hierarchy}`,
-            `files=${study.fileCount}`,
-            `total_size=${formatBytes(study.totalBytes)}`,
-            `extensions=${unique(study.extensions).join(", ") || "none"}`,
-            `has_image=${study.hasImage}`,
-            `has_dicom_or_dcom=${study.hasDicom}`,
-            `has_cine_or_video=${study.hasVideo}`,
-            `views=${study.viewNames.join(", ") || "unknown"}`,
-            `systole=${study.systole}`,
-            `diastole=${study.diastole}`,
-            `phase_estimated=${study.estimatedPhase}`,
-            `doppler_severity=${study.severity}`,
-            `signals=${JSON.stringify(study.signals, null, 2)}`
+            `模式=静态规则匹配`,
+            `规则=${result.rule}`,
+            `层级诊断=${result.hierarchy}`,
+            `文件数=${study.fileCount}`,
+            `总大小=${formatBytes(study.totalBytes)}`,
+            `扩展名=${unique(study.extensions).join(", ") || "无"}`,
+            `包含图片=${study.hasImage}`,
+            `包含DICOM或DCOM=${study.hasDicom}`,
+            `包含动图或视频=${study.hasVideo}`,
+            `体位=${study.viewNames.join(", ") || "未知"}`,
+            `收缩态=${study.systole}`,
+            `舒张态=${study.diastole}`,
+            `相位是否估计=${study.estimatedPhase}`,
+            `Doppler分级=${study.severity}`,
+            `触发信号=${JSON.stringify(study.signals, null, 2)}`
           ].join("\n");
         }
 

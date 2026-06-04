@@ -1,45 +1,47 @@
-# Dataset Sources and Use Boundaries
+# 数据集来源与使用边界
 
-CardioConsult is submitted as a source-code and prototype repository. Raw public datasets, restricted research datasets, private teaching cases, and model weights are not redistributed in this repository.
+CardioConsult 以源代码和原型仓库形式提交。本仓库不再分发公开数据集原始文件、受限研究数据集、私有教学病例或模型权重。
 
-All examples included in the repository are synthetic or generated demonstration assets unless a file explicitly says otherwise. Real patient data must be de-identified and used only under the user's institutional authorization.
+除非文件特别说明，仓库内示例均为合成或生成的演示资产。真实病人数据必须完成脱敏，并且只能在用户所在机构授权范围内使用。
 
-## Dataset Inventory
+## 数据集清单
 
-| Dataset | Source | What It Provides | CardioConsult Use | Redistribution Status |
+| 数据集 | 来源 | 主要内容 | 在本项目中的用途 | 再分发状态 |
 |---|---|---|---|---|
-| CAMUS | [CREATIS CAMUS database](https://www.creatis.insa-lyon.fr/Challenge/camus/databases.html) | 500 anonymized cardiac ultrasound exams with A2C/A4C views, ED/ES frames, segmentation labels, EF and volume metadata | B-mode validation, ED/ES phase logic, low-EF calibration, LV function label design | Not redistributed |
-| EchoNet-Dynamic | [Stanford EchoNet-Dynamic](https://echonet.github.io/dynamic/) and [AIMI dataset page](https://aimi.stanford.edu/datasets/echonet-dynamic-cardiac-ultrasound) | 10,030 A4C echocardiography videos with EF, EDV, ESV, and LV tracings | Cine/video compatibility planning, EF/volume evaluation design, dynamic-frame workflow | Not redistributed; Stanford research-use terms apply |
-| EchoNet-LVH | [Stanford EchoNet-LVH](https://echonet.github.io/lvh/) | 12,000 PLAX echocardiography videos with wall-thickness measurements | LVH label hierarchy and PLAX measurement roadmap | Not redistributed; Stanford research-use terms apply |
-| TMED-2 | [Tufts Medical Echocardiogram Dataset](https://tmed.cs.tufts.edu/tmed_v2.html) | PLAX/PSAX/A2C/A4C/other view labels and aortic stenosis severity labels | View-label hierarchy, AS severity labels, repository documentation | Not redistributed |
-| HMC-QU | [HMC-QU dataset paper](https://arxiv.org/abs/2010.02281) and [dataset summary](https://hyper.ai/en/datasets/38456/) | A4C/A2C myocardial infarction echo records and LV-wall segmentation masks | MI / regional wall-motion abnormality validation plan | Not redistributed |
-| EchoXFlow | [arXiv:2605.05447](https://arxiv.org/abs/2605.05447) | Beamspace echocardiography with modality-specific 1D/2D/3D data, Doppler streams, ECG and annotations | Color Doppler and vector-flow roadmap; not used as bundled training data | Not redistributed |
-| Mitral regurgitation color Doppler images | [Segmentation and evaluation of mitral regurgitation study](https://pmc.ncbi.nlm.nih.gov/articles/PMC11591529/) | 367 A4C color Doppler images categorized as mild, moderate and severe MR in the publication | Label-system reference for MR severity; not used as a downloaded dataset in this repo | Not redistributed |
-| MIMIC-IV-ECHO | [PhysioNet MIMIC-IV-ECHO](https://physionet.org/content/mimic-iv-echo/) | Structured echocardiographic measurements and DICOM files linked to MIMIC-IV clinical records | Future validation roadmap for broad disease hierarchy, Doppler-derived measurements, and report-to-image consistency | Not redistributed; credentialed PhysioNet access and terms apply |
-| ECHOVIEW | [PhysioNet ECHOVIEW](https://www.physionet.org/content/echoview/) | Granular view classifications for MIMIC-IV-ECHO videos | View-label expansion and FoCUS completeness roadmap | Not redistributed; credentialed PhysioNet access and terms apply |
-| CACTUS | [Academic Torrents CACTUS dataset](https://academictorrents.com/details/329c0ee4a0037a2628e2f2dba826066f764f193c) and [paper](https://arxiv.org/abs/2503.05604) | Cardiac ultrasound phantom images with view and quality grading | Beginner image-quality and view-guidance roadmap | Not redistributed |
-| Local teaching set | User-provided, de-identified teaching images under project authorization | PNG/DICOM examples such as mild mitral regurgitation and mild tricuspid regurgitation cases | Local smoke tests and rule tuning only | Not committed or redistributed |
+| CAMUS | [CREATIS CAMUS database](https://www.creatis.insa-lyon.fr/Challenge/camus/databases.html) | 500 例匿名心脏超声，含 A2C/A4C、ED/ES 帧、分割标签、EF 与容积信息 | B-mode 验证、ED/ES 相位逻辑、低 EF 校准、左室功能标签设计 | 不随仓库分发 |
+| EchoNet-Dynamic | [Stanford EchoNet-Dynamic](https://echonet.github.io/dynamic/) 与 [AIMI 数据页](https://aimi.stanford.edu/datasets/echonet-dynamic-cardiac-ultrasound) | 10,030 个 A4C 心超视频，含 EF、EDV、ESV 和左室追踪 | 动图兼容、EF/容积评估、动态帧流程与 V5 校准 | 不分发；遵守 Stanford 研究使用条款 |
+| EchoNet-LVH | [Stanford EchoNet-LVH](https://echonet.github.io/lvh/) | 12,000 个 PLAX 心超视频，含室壁厚度测量 | 左室肥厚标签层级和 PLAX 测量路线 | 不分发；遵守 Stanford 研究使用条款 |
+| TMED-2 | [Tufts Medical Echocardiogram Dataset](https://tmed.cs.tufts.edu/tmed_v2.html) | PLAX/PSAX/A2C/A4C/其他切面标签，以及主动脉瓣狭窄分级 | 切面标签、主动脉瓣狭窄分级和文档设计 | 不随仓库分发 |
+| HMC-QU | [HMC-QU 论文](https://arxiv.org/abs/2010.02281) 与 [数据集摘要](https://hyper.ai/en/datasets/38456/) | A4C/A2C 心肌梗死心超记录和左室壁分割 | 心肌梗死/区域室壁运动异常验证计划 | 不随仓库分发 |
+| EchoXFlow | [arXiv:2605.05447](https://arxiv.org/abs/2605.05447) | beamspace 心超、Doppler 流、ECG 与标注 | Color Doppler 和向量血流路线图；不作为仓库内训练数据 | 不随仓库分发 |
+| 二尖瓣反流彩色多普勒图像 | [二尖瓣反流分割与评估研究](https://pmc.ncbi.nlm.nih.gov/articles/PMC11591529/) | 367 张 A4C 彩色多普勒图，文献中分为轻/中/重度 MR | MR 分级标签体系参考；本仓库没有下载分发该数据 | 不随仓库分发 |
+| MIMIC-IV-ECHO | [PhysioNet MIMIC-IV-ECHO](https://physionet.org/content/mimic-iv-echo/) | 与 MIMIC-IV 临床记录关联的超声测量和 DICOM 文件 | 宽病症层级、Doppler 测量、报告-图像一致性后续验证 | 不分发；需 PhysioNet 认证访问 |
+| ECHOVIEW | [PhysioNet ECHOVIEW](https://www.physionet.org/content/echoview/) | MIMIC-IV-ECHO 视频细粒度切面标注 | 切面分类扩展和 FoCUS 完整性路线图 | 不分发；需 PhysioNet 认证访问 |
+| CACTUS | [Academic Torrents CACTUS](https://academictorrents.com/details/329c0ee4a0037a2628e2f2dba826066f764f193c) 与 [论文](https://arxiv.org/abs/2503.05604) | 心脏超声仿体图像、切面与质量分级 | 初学者图像质量和扫查引导路线图 | 不随仓库分发 |
+| 本地教学集 | 用户授权提供的脱敏教学图像 | PNG/DICOM，例如轻度二尖瓣反流、轻度三尖瓣反流病例 | 本地 smoke test 和规则调参 | 不提交、不再分发 |
 
-## How These Sources Affect the Product
+## 这些来源如何影响产品
 
-The project does not claim clinically validated diagnosis. Public datasets are used to shape and test the teaching prototype:
+本项目不声明临床验证诊断能力。公开数据集主要用于塑造和测试教学原型：
 
-- CAMUS and EchoNet-Dynamic inform the B-mode branch, ED/ES handling, EF-related teaching labels, and cine support.
-- TMED-2 and EchoNet-LVH inform view and disease hierarchy expansion for PLAX/PSAX/A2C/A4C workflows.
-- EchoXFlow and color Doppler literature inform the Doppler-vector roadmap and the current HSV/vector-flow proxy features.
-- MIMIC-IV-ECHO, ECHOVIEW, and CACTUS are listed for future validation and label expansion, especially view classification, image quality, and broad report-linked disease categories.
-- Local de-identified examples are used only for smoke testing and do not leave the local machine.
+- CAMUS 与 EchoNet-Dynamic 用于 B-mode 分支、ED/ES 相位、EF 相关教学标签和动图支持。
+- TMED-2 与 EchoNet-LVH 用于 PLAX/PSAX/A2C/A4C 工作流中的切面和病症层级扩展。
+- EchoXFlow 与彩色多普勒文献用于 Doppler 向量路线图，以及当前 HSV/血流向量代理特征。
+- MIMIC-IV-ECHO、ECHOVIEW 和 CACTUS 列为后续验证与标签扩展方向，尤其是切面分类、图像质量和报告关联疾病类别。
+- 本地脱敏样例只用于本机 smoke test，不离开本地机器。
 
-## Data and Compliance Rules
+## 数据与合规规则
 
-- Do not commit raw DICOM, raw dataset downloads, local patient images, generated diagnosis reports, or model weights.
-- Do not share Stanford EchoNet download links or files; every user must register and comply with the dataset terms.
-- Do not redistribute PhysioNet credentialed datasets such as MIMIC-IV-ECHO or ECHOVIEW.
-- Do not attempt re-identification.
-- Keep all clinical use claims framed as medical education, algorithm demonstration, and primary-care reference support only.
-- Any use beyond teaching/prototype evaluation requires IRB/ethics review, medical-device compliance review, and clinician validation.
+- 不提交原始 DICOM、原始数据集下载、病人图像、生成诊断报告或模型权重。
+- 不共享 Stanford EchoNet 下载链接或文件；每个使用者需自行注册并遵守数据集条款。
+- 不再分发 MIMIC-IV-ECHO、ECHOVIEW 等 PhysioNet 认证数据集。
+- 不尝试重新识别病人。
+- 所有临床相关表述均限定为医学教学、算法演示和基层参考支持。
+- 超出教学/原型评估的使用，必须重新经过伦理审查、医疗器械合规审查和临床医师验证。
 
-## APA-Style Source List
+## APA 引用来源
+
+以下条目保留 APA 原文题名、期刊名、DOI 与 URL，便于评审核验来源；中文说明已在上文给出。
 
 Leclerc, S., Smistad, E., Pedrosa, J., Ostvik, A., Cervenansky, F., Espinosa, F., Espeland, T., Berg, E. A. R., Jodoin, P.-M., Grenier, T., Lartizien, C., D'Hooge, J., Lovstakken, L., & Bernard, O. (2019). Deep learning for segmentation using an open large-scale dataset in 2D echocardiography. *IEEE Transactions on Medical Imaging*. https://www.creatis.insa-lyon.fr/Challenge/camus/databases.html
 

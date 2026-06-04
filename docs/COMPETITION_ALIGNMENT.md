@@ -1,40 +1,39 @@
-# Competition Alignment
+# 参赛要求对应说明
 
-Official page checked: [Gemma 4 Hackathon 2026](https://hackathon.googdg.cn/?lang=en)
+已核对官方页面：[Gemma 4 Hackathon 2026](https://hackathon.googdg.cn/?lang=en)
 
-## Parsed Requirements
+## 已解析的提交要求
 
-The official Track C description emphasizes Edge AI: fully offline deployment of E2B/E4B-class models on phones, Raspberry Pi, or embedded hardware, with a real-device demo. The final submission requires:
+官方对边缘 AI 方向的要求强调：E2B/E4B 级模型需要能够在手机、树莓派或嵌入式硬件上完全离线部署，并提供真实设备演示。最终提交材料包括：
 
-- code repository
-- demo video within 5 minutes
-- technical report
-- online demo URL
-- disclosure of training data sources
+- 代码仓库
+- 5 分钟内演示视频
+- 技术报告
+- 在线演示链接
+- 训练数据来源披露
 
-The judging criteria are:
+评审维度为：
 
-| Criterion | Weight |
+| 维度 | 权重 |
 |---|---:|
-| Real-world impact | 30% |
-| Technical excellence | 25% |
-| Completeness | 20% |
-| Innovation | 15% |
-| Presentation quality | 10% |
+| 真实世界影响 | 30% |
+| 技术能力 | 25% |
+| 完整性 | 20% |
+| 创新性 | 15% |
+| 展示质量 | 10% |
 
-## Changes Applied To This PC Repository
+## 已应用到 PC 仓库的改动
 
-| Requirement pressure | Repository change |
+| 要求压力 | 仓库改动 |
 |---|---|
-| Runnable code repository | V5 code synchronized into this PC repo; legacy launchers remain for compatibility |
-| Offline edge model | Added portable `config.example.json`, bundled llama.cpp runtime, and persistent `llama-server` launcher |
-| Completeness | Added rule-only smoke test via `app.py --self-test-rule-only` |
-| Presentation quality | Rewrote README with deployment steps, model placement, validation snapshot, and safety boundary |
-| Data/model compliance | Kept `.gguf` weights out of Git and documented `models/` placement |
-| Demo robustness | Added fallback chain: server -> CLI -> local auditable rule engine |
+| 可运行代码仓库 | V5 代码已同步到本 PC 仓库；旧启动脚本仅保留兼容性 |
+| 离线边缘模型 | 新增可移植 `config.example.json`、内置 llama.cpp 运行时和常驻 `llama-server` 启动器 |
+| 完整性 | 新增 `app.py --self-test-rule-only` 规则自检 |
+| 展示质量 | README 补充部署步骤、模型放置、验证摘要和安全边界 |
+| 数据/模型合规 | `.gguf` 权重不进 Git，并明确 `models/` 放置方式 |
+| 演示稳定性 | 后备链路为：server -> CLI -> 本地可审计规则引擎 |
 
-## Remaining Manual Submission Items
+## 提交前仍需人工完成
 
-- Record or upload the final 5-minute demo video and put that link in the competition form.
-- Keep this PC repository as the public submission entry point:
-  <https://github.com/Timmy-zhu12/gdc-shanghai-project>
+- 录制或上传最终 5 分钟内演示视频，并将链接填入提交表单。
+- 保持本 PC 仓库作为公开提交入口：<https://github.com/Timmy-zhu12/gdc-shanghai-project>

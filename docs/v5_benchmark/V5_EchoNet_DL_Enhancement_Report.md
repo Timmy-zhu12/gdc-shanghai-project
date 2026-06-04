@@ -1,100 +1,99 @@
-# CardioConsult PC V5 EchoNet-Dynamic Enhancement Report
+# CardioConsult PC V5 EchoNet-Dynamic 增强报告
 
-Generated: 2026-06-04
+生成日期：2026-06-04
 
-## Goal
+## 目标
 
-V5 adds local training and a lightweight dynamic echocardiography calibration layer while preserving the V4 input/output behavior. The goal is to improve coverage for cardiac problems detectable by echocardiography without moving away from local, low-cost, edge-computable design.
+V5 在保持 V4 输入输出行为不变的基础上，新增本地训练流程和轻量级动态心脏超声校准层。目标是在不背离本地、低成本、边缘可计算设计的前提下，扩大系统对心脏超声可见问题的覆盖范围。
 
-## What Changed
+## 改动内容
 
-- Created isolated V5 development folder and then synchronized the runnable PC
-  reference implementation into this repository.
-- Copied V4 PC app behavior without modifying historical V4 snapshots.
-- Added `cardio_pc/v5_echonet.py`.
-- Added `tools/train_echonet_v5.py`.
-- Added V5 launch and training BAT scripts.
-- Added a trained model artifact: `models/echonet_v5_lowef_mlp.joblib`.
-- Added V5 runtime fallback: if the trained model is unavailable, V5 behaves like V4.
+- 创建隔离的 V5 开发目录，并将可运行 PC 参考实现同步到本仓库。
+- 复用 V4 PC 应用行为，不修改历史 V4 快照。
+- 新增 `cardio_pc/v5_echonet.py`。
+- 新增 `tools/train_echonet_v5.py`。
+- 新增 V5 启动和训练 BAT 脚本。
+- 新增训练后模型文件：`models/echonet_v5_lowef_mlp.joblib`。
+- 新增 V5 运行时后备：如果训练模型不可用，V5 会退回 V4 行为。
 
-## Dataset Use
+## 数据集使用
 
-The new dataset used here is EchoNet-Dynamic:
+新增使用的数据集是 EchoNet-Dynamic：
 
-- `FileList.csv`: 10,030 videos with EF, ESV, EDV, FPS, frame count, and TRAIN/VAL/TEST split.
-- `VolumeTracings.csv`: expert LV tracing frames.
-- `Videos`: 10,030 A4C `.avi` echocardiography videos.
+- `FileList.csv`：10,030 个视频，含 EF、ESV、EDV、FPS、帧数和 TRAIN/VAL/TEST 划分。
+- `VolumeTracings.csv`：专家左室追踪帧。
+- `Videos`：10,030 个 A4C `.avi` 心脏超声视频。
 
-EchoNet-Dynamic is used only for dynamic B-mode EF / LV systolic function calibration. It is not used to train valve regurgitation labels.
+EchoNet-Dynamic 只用于动态 B-mode EF / 左室收缩功能校准，不用于训练瓣膜反流标签。
 
-## Model Design
+## 模型设计
 
-The V5 feature vector contains:
+V5 特征向量包含：
 
-- B-mode mean and standard deviation features.
-- chamber-area and temporal-difference features.
-- LV-focused dark-cavity area, centroid, width, and height features.
-- low-dimensional thumbnails from minimum-area, maximum-area, and mean frames.
+- B-mode 均值和标准差特征。
+- 腔室面积与时间差分特征。
+- 面向左室的暗腔面积、质心、宽度和高度特征。
+- 最小面积帧、最大面积帧和平均帧的低维缩略图特征。
 
-Candidate models:
+候选模型：
 
-- Ridge regression for EF baseline.
-- HistGradientBoostingRegressor for EF.
-- MLPRegressor as lightweight neural model for EF.
-- LogisticRegression for low-EF classification.
-- HistGradientBoostingClassifier for low-EF classification.
-- RandomForestClassifier for low-EF classification.
-- MLPClassifier as lightweight neural model for low EF.
+- EF 基线 Ridge 回归。
+- EF 用 HistGradientBoostingRegressor。
+- EF 用轻量神经模型 MLPRegressor。
+- 低 EF 分类用 LogisticRegression。
+- 低 EF 分类用 HistGradientBoostingClassifier。
+- 低 EF 分类用 RandomForestClassifier。
+- 低 EF 分类用轻量神经模型 MLPClassifier。
 
-Final selected models:
+最终选择：
 
-- EF: HistGradientBoostingRegressor.
-- Low EF: LogisticRegression.
+- EF：HistGradientBoostingRegressor。
+- 低 EF：LogisticRegression。
 
-The MLP candidates were trained and evaluated, but final selection follows validation metrics rather than forcing a neural model when it is weaker.
+MLP 候选模型已经训练和评估，但最终选择依据验证集指标，而不是强行使用神经网络。
 
-## Training Runs
+## 训练运行
 
 ### Smoke Run
 
-- train: 120
-- validation: 40
-- test: 40
-- result: chain verified, but too small for stable conclusions.
+- train：120
+- validation：40
+- test：40
+- 结果：训练链路已验证，但样本过少，不能得出稳定结论。
 
 ### Balanced Run
 
-- train: 600
-- validation: 160
-- test: 160
-- EF test MAE: 7.82
-- EF test correlation: 0.541
-- Low-EF F1: 0.413
-- Low-EF AUC: 0.697
+- train：600
+- validation：160
+- test：160
+- EF test MAE：7.82
+- EF test correlation：0.541
+- 低 EF F1：0.413
+- 低 EF AUC：0.697
 
 ### Large Run
 
-- train: 1200
-- validation: 300
-- test: 300
-- max frames/video: 16
+- train：1200
+- validation：300
+- test：300
+- 每个视频最多帧数：16
 
-Final large-run metrics:
+最终 large-run 指标：
 
-| Metric | Value |
-| --- | ---: |
+| 指标 | 数值 |
+|---|---:|
 | EF MAE | 7.271 |
 | EF RMSE | 9.603 |
-| EF correlation | 0.647 |
-| Low-EF accuracy | 0.770 |
-| Low-EF precision | 0.479 |
-| Low-EF recall | 0.515 |
-| Low-EF F1 | 0.496 |
-| Low-EF AUC | 0.764 |
+| EF 相关系数 | 0.647 |
+| 低 EF 准确率 | 0.770 |
+| 低 EF 精确率 | 0.479 |
+| 低 EF 召回率 | 0.515 |
+| 低 EF F1 | 0.496 |
+| 低 EF AUC | 0.764 |
 
-## Local 60-Case Regression
+## 本地 60 例回归验证
 
-After enabling the V5 model, the local 60-case report-linked validation was rerun.
+启用 V5 模型后，重新运行了本地 60 例报告链接验证。
 
 ```json
 {
@@ -107,41 +106,41 @@ After enabling the V5 model, the local 60-case report-linked validation was reru
 }
 ```
 
-Key local metrics:
+关键本地指标：
 
-| Label | F1 |
-| --- | ---: |
-| Valve any | 1.000 |
+| 标签 | F1 |
+|---|---:|
+| 任意瓣膜异常 | 1.000 |
 | MR | 0.964 |
 | TR | 1.000 |
 | AR | 0.700 |
-| Low EF | 0.857 |
+| 低 EF | 0.857 |
 | RWMA | 0.500 |
-| LA enlargement | 0.696 |
+| 左房扩大 | 0.696 |
 
-The V5 dynamic calibration did not degrade the existing local valve-regurgitation results.
+V5 动态校准没有破坏既有本地瓣膜反流结果。
 
-## Trade-Off
+## 取舍
 
-V5 does not train a large end-to-end CNN/Transformer because the local machine does not currently have PyTorch/TensorFlow/OpenCV installed and the project must remain runnable on low-cost local hardware. Instead, V5 uses a hybrid design:
+V5 没有训练大型端到端 CNN/Transformer，因为当前目标机器不一定具备 PyTorch/TensorFlow/OpenCV 等完整深度学习环境，而且项目必须保持能在低成本本地硬件上运行。因此 V5 采用混合设计：
 
-- lightweight deep candidates are evaluated;
-- validation selects the strongest candidate;
-- the runtime model is small enough to load quickly;
-- existing auditable rules remain active.
+- 评估轻量深度学习候选模型；
+- 由验证指标选择最强候选；
+- 运行时模型足够小，加载速度快；
+- 既有可审计规则继续生效。
 
-This trades off theoretical maximum accuracy for local deployability, reproducibility, and low operating cost.
+这一取舍牺牲了理论最高精度，换取本地可部署性、可复现性和低运行成本。
 
-## Current Limitation
+## 当前限制
 
-The low-EF classifier is useful but not yet a clinical-grade EF estimator. It improves dynamic B-mode coverage and adds EchoNet-based evidence, but severe EF grading can still be conservative. The next improvement should be a true lightweight segmentation model or ONNX/TFLite model trained from EchoNet tracings, if the target device budget allows it.
+低 EF 分类器有教学参考价值，但还不是临床级 EF 估计器。它增强了动态 B-mode 覆盖，并加入 EchoNet 证据，但对严重 EF 分级仍可能偏保守。下一步若目标设备预算允许，应训练真正轻量的分割模型，或基于 EchoNet 追踪标注训练 ONNX/TFLite 模型。
 
-## Recommended Use
+## 推荐使用方式
 
-Use V5 as the current PC experimental build for:
+V5 推荐作为当前 PC 实验版本，用于：
 
-- dynamic B-mode/cine input,
-- EF/left ventricular systolic dysfunction teaching labels,
-- regression testing before mobile migration.
+- 动态 B-mode / cine 输入；
+- EF / 左室收缩功能减低教学标签；
+- 移动端迁移前的回归测试。
 
-Use V4 as the stable fallback if only valve-regurgitation behavior is being demonstrated.
+如果只展示瓣膜反流行为，可继续把 V4 作为稳定后备。

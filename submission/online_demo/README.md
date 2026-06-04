@@ -1,10 +1,10 @@
-# Online Demo
+# 在线演示
 
-The online demo source is stored in `docs/` so GitHub Pages can serve it directly from the same PC submission repository.
+在线演示源码保存在 `docs/`，因此 GitHub Pages 可以直接从同一个 PC 提交仓库提供服务。
 
-- Local file: `docs/index.html`
-- Expected GitHub Pages URL after enabling Pages from `/docs`: `https://timmy-zhu12.github.io/gdc-shanghai-project/`
-- Demo scope: single-file browser rule matching with the same diagnosis-output contract
-- Full offline Gemma4 4B inference: run the Windows PC V5 app with a local GGUF file in `models/`
+- 本地文件：`docs/index.html`
+- 启用 `/docs` 作为 Pages 来源后，预期公开地址：`https://timmy-zhu12.github.io/gdc-shanghai-project/`
+- 演示范围：单文件浏览器规则匹配，并保持同样的诊断输出合同
+- 完整离线 Gemma4 4B 推理：需要在 Windows PC V5 应用中放置本地 GGUF 文件并运行
 
-The browser demo does not upload patient files to a server. Raw datasets, patient DICOM files, and model weights are intentionally not included in this repository.
+浏览器演示不会把病人文件上传到服务器。原始数据集、病人 DICOM 文件和模型权重均不包含在本仓库中。

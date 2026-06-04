@@ -1,3 +1,7 @@
+# APA 引用清单说明
+
+本文件列出技术报告使用的核心参考来源。为保证 APA 格式和 DOI/URL 可核验性，作者名、论文题名、期刊名和链接保留原始英文书目信息；各来源在 `DATASETS.md` 和技术报告正文中已有中文用途说明。
+
 - Bland, J. M., & Altman, D. G. (1986). Statistical methods for assessing agreement between two methods of clinical measurement. The Lancet, 327(8476), 307-310. https://doi.org/10.1016/S0140-6736(86)90837-8
 - Cohen, J. (1960). A coefficient of agreement for nominal scales. Educational and Psychological Measurement, 20(1), 37-46. https://doi.org/10.1177/001316446002000104
 - DICOM Standards Committee. (2026). DICOM PS3.10: Media storage and file format for media interchange. National Electrical Manufacturers Association. https://dicom.nema.org/medical/dicom/current/output/html/part10.html

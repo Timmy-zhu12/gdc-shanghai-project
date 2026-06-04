@@ -1,4 +1,4 @@
-name: smoke
+name: 规则自检
 
 on:
   push:
@@ -12,9 +12,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install dependencies
+      - name: 安装依赖
         run: python -m pip install --disable-pip-version-check -r requirements.txt
-      - name: Compile Python files
+      - name: 编译 Python 文件
         run: python -c "import pathlib, py_compile; files=[pathlib.Path('app.py'), *pathlib.Path('cardio_pc').glob('*.py')]; [py_compile.compile(str(p), doraise=True) for p in files]"
-      - name: Run rule-only self-test
+      - name: 运行规则自检
         run: python app.py --self-test-rule-only

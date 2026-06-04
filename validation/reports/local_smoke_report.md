@@ -13,7 +13,7 @@
 
 - 特征表：`D:\cardioconsult_dense_validation\results\local_smoke\features.csv` 存在
 - 端到端表：`D:\cardioconsult_dense_validation\results\local_smoke\end_to_end.csv` 存在
-- 说明：Synthetic smoke-test dataset generated from the local CardioConsult self-test image generator.
+- 说明：由本地 CardioConsult 自检图像生成器创建的合成 smoke-test 数据集。
 
 ## 第一阶段：B-Mode / GLDM 特征验证
 

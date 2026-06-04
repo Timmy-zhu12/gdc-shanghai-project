@@ -1,44 +1,36 @@
-# Offline Model Files
+# 离线模型文件
 
-Place the local Gemma4 4B GGUF model in this folder:
+请把本地 Gemma4 4B GGUF 模型放在本目录：
 
 ```text
 models/gemma-4-4b-it-Q4_K_M.gguf
 ```
 
-Optional multimodal projection file, if your local runner requires it:
+如果本地运行器需要多模态投影文件，可选放置：
 
 ```text
 models/gemma-4-4b-mmproj-Q4_0.gguf
 ```
 
-Model binaries are intentionally not committed to Git because they are large
-third-party artifacts governed by their own model license and distribution
-terms. After placing the files here, copy `config.example.json` to
-`config.json` or start the app once and let the launcher create it.
+模型二进制文件不会提交到 Git。它们体积很大，并且属于受各自模型许可证和分发条款约束的第三方资产。放置文件后，可将 `config.example.json` 复制为 `config.json`，或首次启动应用时让启动器自动创建。
 
-## V5 EchoNet calibration artifact
+## V5 EchoNet 校准文件
 
-PC V5 can optionally load a small EchoNet-Dynamic calibration artifact for EF /
-left-ventricular systolic dysfunction teaching labels:
+PC V5 可以选择加载一个小型 EchoNet-Dynamic 校准文件，用于 EF / 左室收缩功能减低教学标签：
 
 ```text
 models/echonet_v5_lowef_mlp.joblib
 ```
 
-This file is not committed by default because it is a trained artifact derived
-from third-party research data. To recreate it locally, obtain EchoNet-Dynamic
-under its own access terms, then run:
+该文件默认不提交，因为它是基于第三方研究数据训练得到的产物。若需本地重建，请先按 EchoNet-Dynamic 自身访问条款获取数据，然后运行：
 
 ```bat
 train_echonet_v5_balanced.bat
 ```
 
-If the artifact is absent, the application still runs and falls back to the V4
-rule/calibration behavior.
+如果缺少该文件，应用仍可运行，并会回退到 V4 规则/校准行为。
 
-For the original development machine only, the V4 launcher also accepts the
-legacy local cache path:
+仅对原开发机器，V4 启动器也接受旧本地缓存路径：
 
 ```text
 D:/cardioconsult_PC_runbook/models/gemma-4-4b-it-Q4_K_M.gguf

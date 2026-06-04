@@ -13,21 +13,21 @@
 
 - 特征表：`D:\cardioconsult_dense_validation\results\MR_Ultrasound_Images\features.csv` 缺失
 - 端到端表：`D:\cardioconsult_dense_validation\results\MR_Ultrasound_Images\end_to_end.csv` 缺失
-- 说明：The referenced mitral-regurgitation color Doppler image set is described in literature, but no open standardized bulk download was confirmed. Place authorized MR color Doppler images and labels here.
+- 说明：文献中描述了二尖瓣反流彩色多普勒图像集，但尚未确认存在标准化公开批量下载包。请将已授权的 MR 彩色多普勒图像和标签放在该目录下。
 
 ## 第一阶段：B-Mode / GLDM 特征验证
 
 | 指标 | 结果 |
 |---|---|
 | available | `False` |
-| reason | `No feature CSV` |
+| reason | `缺少 feature CSV` |
 
 ## 回归 / EF 相关验证
 
 | 指标 | 结果 |
 |---|---|
 | available | `False` |
-| reason | `No feature CSV` |
+| reason | `缺少 feature CSV` |
 
 ## 特征显著性检验
 
@@ -38,7 +38,7 @@
 | 指标 | 结果 |
 |---|---|
 | available | `False` |
-| reason | `No end-to-end CSV` |
+| reason | `缺少 end-to-end CSV` |
 
 ## 解释
 

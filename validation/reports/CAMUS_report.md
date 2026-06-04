@@ -13,7 +13,7 @@
 
 - 特征表：`D:\cardioconsult_dense_validation\results\CAMUS\features.csv` 存在
 - 端到端表：`D:\cardioconsult_dense_validation\results\CAMUS\end_to_end.csv` 存在
-- 说明：CAMUS contains 2D echocardiographic sequences from 500 patients in NIfTI format. zea can download it with python -m zea.data.convert camus <src> <dst> --download, but this validation suite also accepts manually extracted CAMUS folders.
+- 说明：CAMUS 包含 500 名患者的 2D 心脏超声序列，格式为 NIfTI。可用 `python -m zea.data.convert camus <src> <dst> --download` 下载，也可手动解压后由本验证套件读取。
 
 ## 第一阶段：B-Mode / GLDM 特征验证
 

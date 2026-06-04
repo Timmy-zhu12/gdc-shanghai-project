@@ -1,9 +1,9 @@
-# V4 Workspace Notice
+# V4 工作区说明
 
-This folder is no longer a V2 workspace. It is the isolated PC V4 competition backup created under:
+本文件夹不再是 V2 工作区，而是独立的 PC V4 比赛备用版本，创建位置为：
 
 ```text
 D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/05_pc_v4
 ```
 
-Historical V2 text is kept only as lineage context in older folders. Use `run_cardio_pc_v4.bat` for this build.
+历史 V2 文本仅作为旧版本来源线索保留在更早目录中。当前构建请使用 `run_cardio_pc_v4.bat`。
