@@ -156,7 +156,7 @@
     "scope": "本地常驻 Gemma4 4B GGUF 服务",
     "availability": "可用",
     "n": "2 /completion requests + EchoBench case 1",
-    "metrics": "completion_elapsed=1.037s/0.402s; project_diagnosis=37.701s; prompt_leakage=False",
+    "metrics": "completion_elapsed=1.327s/0.522s; project_diagnosis=69.168s; prompt_leakage=False",
     "interpretation": "常驻服务可复用热启动；项目诊断链路已启用报告保护层，输出无提示词泄漏并保留安全边界。"
   }
 ]

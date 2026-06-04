@@ -31,6 +31,7 @@ V5 在 V4 的 B-mode、Color Doppler、动图代表帧、层级病症标签和 G
 - `tools/train_echonet_v5.py`：本地 EchoNet-Dynamic 训练脚本。
 - `tools/run_echobench_v1.py`：EchoBench v1 基准测试入口。
 - `docs/v5_benchmark/`：V5 技术报告、DOCX 报告、图表和生成脚本。
+- `docs/gemma4_runtime_contract.md`：Gemma4、规则层、报告保护和多智能体审计的运行契约。
 - `run_cardio_pc_v5.bat`：V5 桌面 UI 启动入口。
 
 V5 技术报告：
@@ -54,6 +55,14 @@ V5 技术报告：
 | 动态心超增强 | EchoNet-Dynamic 校准层用于 EF / 左室收缩功能减低教学识别 |
 | 演示稳定性 | GGUF 不存在或模型调用失败时，自动切换到可审计的本地规则后备 |
 | 数据透明 | 本仓库提供数据集来源、验证报告、许可证和模型/数据不随仓库分发的说明 |
+
+## Gemma4 与规则层分工
+
+PC V5 的设计不是把原始图像直接丢给大模型。应用会先在本机完成 B-mode、Color Doppler、动图代表帧、相位估计和层级标签候选提取，再把结构化证据交给离线 Gemma4 4B GGUF 生成中文教学报告。
+
+规则层负责医学安全边界和确定性兜底：当模型文件不存在、模型调用失败、输出缺少 `教学参考病症判断：` / `最小病症：` / `逻辑链：`，或报告未包含必要安全声明时，报告保护会先尝试补齐必需字段；若文本明显截断、带提示词痕迹或仍不可用，才改写为本地教学模板。启用多智能体审计时，`ReportAgent` 会记录 `model_text_received`、`report_guard_repaired`、`report_guard_rewritten` 和 `report_source`，从而区分 `gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 和 `rule_template` 四种路径。
+
+详细说明见 [docs/gemma4_runtime_contract.md](docs/gemma4_runtime_contract.md)。
 
 ## 支持输入与输出
 
@@ -115,12 +124,12 @@ http://127.0.0.1:8088
 
 | 项目 | 结果 |
 |---|---:|
-| `/completion` 第一次短请求 | 1.037 s |
-| `/completion` 第二次短请求 | 0.402 s |
-| EchoBench 第 1 例服务诊断 | 37.701 s |
-| 必需字段/安全边界/提示词泄漏检查 | 通过 |
+| `/completion` 第一次短请求 | 1.327 s |
+| `/completion` 第二次短请求 | 0.522 s |
+| EchoBench 第 1 例 12 文件服务诊断 | 69.168 s |
+| 必需字段/安全边界/多智能体审计检查 | 通过，`report_source=gemma4_repaired` |
 
-正式服务演示建议 `max_tokens >= 240`。`max_tokens=96` 的极短测试可能截断模型输出，不适合作为最终演示参数。
+正式服务演示建议先启动常驻 `llama-server`，再运行 PC V5 UI。当前 CPU 环境下完整 Gemma4 服务诊断可能需要 1 分钟以上；现场展示可先用规则自检和在线 demo 证明输入输出合同，再展示本地服务 JSON 证据。
 
 ## 离线模型配置
 

@@ -61,13 +61,13 @@ Get-CimInstance Win32_Process |
 结果文件：
 
 ```text
-validation_speedopt/server_smoke_general_20260604.json
+validation_speedopt/server_smoke_general_current_20260604.json
 ```
 
 | 请求 | 端到端耗时 | prompt tok/s | predicted tok/s | 输出 |
 |---|---:|---:|---:|---|
-| 第一次 | 1.037 s | 6.889 | 11.869 | OK |
-| 第二次 | 0.402 s | 24.247 | 12.949 | OK |
+| 第一次 | 1.327 s | 6.222 | 6.214 | OK |
+| 第二次 | 0.522 s | 16.441 | 11.020 | OK |
 
 解释：服务端口可连接，`/completion` 接口可用，第二次短请求能在同一常驻模型进程中完成。
 
@@ -76,14 +76,15 @@ validation_speedopt/server_smoke_general_20260604.json
 结果文件：
 
 ```text
-validation_speedopt/server_pipeline_case1_240tok_20260604.json
+validation_speedopt/server_pipeline_case1_current_20260604.json
 ```
 
-| 阶段 | 耗时 |
+| 项目 | 结果 |
 |---|---:|
-| 文件加载 | 0.902 s |
-| 特征提取 | 0.011 s |
-| Gemma4 服务诊断 | 37.701 s |
+| 输入文件上限 | 12 |
+| 案例 ID | 8632 |
+| 项目链路总耗时 | 69.168 s |
+| Gemma4 报告来源 | `gemma4_repaired` |
 
 输出字段检查：
 
@@ -96,7 +97,7 @@ validation_speedopt/server_pipeline_case1_240tok_20260604.json
 服务诊断状态：
 
 ```text
-Gemma4 4B offline server: http://127.0.0.1:8088 (report guard used local teaching template)
+Gemma4 4B offline server: http://127.0.0.1:8088 (Gemma4 output received; report guard repaired required fields)
 ```
 
 报告保护检查：
@@ -106,16 +107,25 @@ Gemma4 4B offline server: http://127.0.0.1:8088 (report guard used local teachin
 | `has_prompt_leakage` | false |
 | `has_safety_boundary` | true |
 | `has_required_fields` | true |
+| `report_source` | `gemma4_repaired` |
 
 多智能体审计链已生成：
 
 ```text
-validation_speedopt/agent_audit_server_pipeline_case1_20260604.json
+validation_speedopt/agent_audit_server_pipeline_case1_current_20260604.json
 ```
+
+当前代码会在 `ReportAgent` 中记录以下字段：
+
+| 字段 | 说明 |
+|---|---|
+| `model_text_received` | 是否实际收到 Gemma4 文本 |
+| `report_guard_rewritten` | 报告保护是否改写了模型文本 |
+| `report_source` | `gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 或 `rule_template` |
 
 ## 注意事项
 
 - `max_tokens=96` 的极短测试会导致模型输出截断，虽然能看到字段开头，但不适合作为正式演示参数。
-- 本次项目级服务 smoke 使用 `max_tokens=240` 后，三个必需字段均完整出现，且报告保护层会在服务输出过短、带提示词痕迹或带 AI 口吻时回退为本地自然教学模板。
+- 本次项目级服务 smoke 使用 `max_tokens<=240` 后，三个必需字段均完整出现。报告保护层没有整段替换，而是修复了模型省略的必需字段前缀和安全边界，审计记录为 `gemma4_repaired`。
 - 对正式演示，建议使用常驻服务模式，先启动 `llama-server`，再运行 PC V5 UI，以避免每次重新加载 GGUF。
 - 本测试仍是医学教学与算法演示验证，不构成临床验证或医疗器械性能声明。

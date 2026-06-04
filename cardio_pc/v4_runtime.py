@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 
-def llama3_style_token_estimate(text: str) -> int:
+def gemma4_prompt_token_estimate(text: str) -> int:
     """Small offline estimator used only for prompt budgeting, not model tokenization."""
     if not text:
         return 0
@@ -13,9 +13,9 @@ def llama3_style_token_estimate(text: str) -> int:
     return int(cjk * 1.15 + latin_chunks * 1.35 + punctuation * 0.35)
 
 
-def compact_prompt_for_llama3_budget(prompt: str, max_estimated_tokens: int = 1800) -> str:
+def compact_prompt_for_gemma4_budget(prompt: str, max_estimated_tokens: int = 1800) -> str:
     """Keep required output fields and compact long repeated evidence blocks."""
-    if llama3_style_token_estimate(prompt) <= max_estimated_tokens:
+    if gemma4_prompt_token_estimate(prompt) <= max_estimated_tokens:
         return prompt
 
     blocks = split_markdown_blocks(prompt)
@@ -29,7 +29,7 @@ def compact_prompt_for_llama3_budget(prompt: str, max_estimated_tokens: int = 18
             kept.append((header + "\n" + body).strip())
 
     candidate = "\n\n".join(kept)
-    if llama3_style_token_estimate(candidate) > max_estimated_tokens:
+    if gemma4_prompt_token_estimate(candidate) > max_estimated_tokens:
         candidate = "\n\n".join(
             block for block in kept if not block.startswith("### System")
         )
@@ -114,6 +114,6 @@ def extract_named_section(text: str, title: str, next_titles: list[str]) -> str:
 
 
 def scheduler_audit_note(prompt_before: str, prompt_after: str) -> str:
-    before = llama3_style_token_estimate(prompt_before)
-    after = llama3_style_token_estimate(prompt_after)
-    return f"V4调度器: Llama-3风格离线token估计 {before}->{after}; 已保留三句强制输出和关键证据。"
+    before = gemma4_prompt_token_estimate(prompt_before)
+    after = gemma4_prompt_token_estimate(prompt_after)
+    return f"V4调度器: Gemma4离线prompt预算估计 {before}->{after}; 已保留三句强制输出和关键证据。"

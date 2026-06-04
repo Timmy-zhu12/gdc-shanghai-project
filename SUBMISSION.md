@@ -16,6 +16,7 @@
 | 在线演示链接 | 单文件规则匹配网页已发布：`https://timmy-zhu12.github.io/gdc-shanghai-project/`；源码位于 [docs/index.html](docs/index.html) | 已上线 |
 | 训练/验证数据来源披露 | [DATASETS.md](DATASETS.md) 和 [docs/data_and_model_policy.md](docs/data_and_model_policy.md) | 已准备 |
 | 技术亮点说明 | [docs/competitive_edge.md](docs/competitive_edge.md) | 已准备 |
+| Gemma4 运行契约 | [docs/gemma4_runtime_contract.md](docs/gemma4_runtime_contract.md)，说明模型输入、规则层兜底、报告保护和审计字段 | 已准备 |
 | 本地服务验证 | [docs/service_validation.md](docs/service_validation.md)，包含 `llama-server` 端口、`/completion` smoke、项目诊断链路和多智能体审计检查 | 已通过 |
 | 许可证 | [Apache License 2.0](LICENSE) 与 [NOTICE](NOTICE) | 已准备 |
 
@@ -47,6 +48,7 @@
 ## 技术强项
 
 - 真实离线路径：PC V5 使用本地 Gemma4 4B GGUF，可通过 `llama-cli` 或常驻 `llama-server` 调用，并定位为超声设备旁的离线分析终端。
+- 模型贡献可审计：Gemma4 接收的是超声特征、层级候选、质量分和安全约束；多智能体审计会记录最终报告来自 `gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 还是 `rule_template`。
 - 动态心超增强：EchoNet-Dynamic 特征增强 EF / 左室收缩功能减低识别，同时保留可审计的瓣膜反流规则。
 - 轻量多智能体：InputAgent、FeatureAgent、DiagnosisAgent、ReportAgent 和 SafetyAuditAgent 在本地串联，不额外调用云服务。
 - 超声专用预处理：B-mode 与 Color Doppler 分支分别提取边缘、纹理、血流方向、喷流宽度、涡量等代理特征。

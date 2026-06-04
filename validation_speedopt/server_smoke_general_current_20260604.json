@@ -1,0 +1,39 @@
+{
+  "server_url": "http://127.0.0.1:8088",
+  "ready_wait_seconds": 0.002,
+  "n_predict": 8,
+  "first_completion": {
+    "elapsed_seconds": 1.327,
+    "content_excerpt": "\n\nOK",
+    "predicted_n": null,
+    "tokens_cached": 7,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 5,
+      "prompt_ms": 803.563,
+      "prompt_per_token_ms": 160.7126,
+      "prompt_per_second": 6.222287487104309,
+      "predicted_n": 3,
+      "predicted_ms": 482.751,
+      "predicted_per_token_ms": 160.917,
+      "predicted_per_second": 6.214383812773044
+    }
+  },
+  "second_completion": {
+    "elapsed_seconds": 0.522,
+    "content_excerpt": "\n\nOK",
+    "predicted_n": null,
+    "tokens_cached": 7,
+    "timings": {
+      "cache_n": 1,
+      "prompt_n": 4,
+      "prompt_ms": 243.289,
+      "prompt_per_token_ms": 60.82225,
+      "prompt_per_second": 16.441351643518615,
+      "predicted_n": 3,
+      "predicted_ms": 272.238,
+      "predicted_per_token_ms": 90.746,
+      "predicted_per_second": 11.019769466422762
+    }
+  }
+}

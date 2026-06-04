@@ -36,7 +36,7 @@
 | 节段性室壁运动异常代理 | 33.3% |
 | 左房扩大代理 | 28.6% |
 
-解释：MR/TR 在有限代表帧下仍较稳定；AR、RWMA、左房扩大更依赖切面覆盖、连续帧和 DICOM 标尺信息。报告中因此保留“补扫/正式超声复核”的安全分层，而不把缺切面结果包装成高置信临床判断。
+解释：MR/TR 在有限代表帧中仍较稳定；AR、RWMA 和左房扩大更依赖切面覆盖、连续帧和 DICOM 标尺信息。报告中因此保留“补扫/正式超声复核”的安全分层，而不把缺切面结果包装成高置信临床判断。
 
 ## EchoNet-Dynamic 校准层
 
@@ -52,15 +52,26 @@ EchoNet-Dynamic 校准层用于增强 EF / 左室收缩功能减低教学识别�
 
 ## 本地常驻服务验证
 
-服务验证详见：[service_validation.md](service_validation.md)。
+服务验证详见 [service_validation.md](service_validation.md)。
 
-本次普通服务形态测试使用 `llama-server.exe` 常驻加载 Gemma4 4B GGUF，并通过 `http://127.0.0.1:8088/completion` 完成请求。通用 `/completion` smoke 连续两次请求均返回 `OK`：第一次 1.037 秒，第二次 0.402 秒。项目级链路使用 EchoBench 第 1 例、最多 12 个文件、`max_tokens=240`，服务诊断耗时 37.701 秒，输出包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：`，同时 `has_prompt_leakage=false`、`has_safety_boundary=true`。
+本次普通服务形态测试使用 `llama-server.exe` 常驻加载 Gemma4 4B GGUF，并通过 `http://127.0.0.1:8088/completion` 完成请求。通用 `/completion` smoke 连续两次请求均返回 `OK`：第一次 1.327 秒，第二次 0.522 秒。
+
+项目级链路使用 EchoBench 第 1 例、最多 12 个文件、`max_tokens<=240`，服务诊断耗时 69.168 秒，输出包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：`，同时 `has_prompt_leakage=false`、`has_safety_boundary=true`、`report_source=gemma4_repaired`。
 
 验证产物：
 
-- `validation_speedopt/server_smoke_general_20260604.json`
-- `validation_speedopt/server_pipeline_case1_240tok_20260604.json`
-- `validation_speedopt/agent_audit_server_pipeline_case1_20260604.json`
+- `validation_speedopt/server_smoke_general_current_20260604.json`
+- `validation_speedopt/server_pipeline_case1_current_20260604.json`
+- `validation_speedopt/agent_audit_server_pipeline_case1_current_20260604.json`
+
+## Gemma4 报告路径审计
+
+当前代码在 `ReportAgent` 中记录 `model_text_received`、`report_guard_rewritten` 和 `report_source`。评审可以据此确认最终报告来自：
+
+- `gemma4_preserved`：Gemma4 文本通过安全保护检查后保留。
+- `gemma4_repaired`：Gemma4 文本到达，报告保护只补齐必需字段或安全边界。
+- `gemma4_guarded_template`：Gemma4 文本到达，但因不完整、不安全或带提示词痕迹而被本地教学模板改写。
+- `rule_template`：未收到可用 Gemma4 文本，走本地规则兜底。
 
 ## 结论边界
 

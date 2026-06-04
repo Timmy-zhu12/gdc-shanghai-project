@@ -1,0 +1,88 @@
+{
+  "generated_at": "2026-06-04T20:06:13",
+  "server_url": "http://127.0.0.1:8088",
+  "smoke": {
+    "server_url": "http://127.0.0.1:8088",
+    "ready_wait_seconds": 0.002,
+    "n_predict": 8,
+    "first_completion": {
+      "elapsed_seconds": 1.327,
+      "content_excerpt": "\n\nOK",
+      "predicted_n": null,
+      "tokens_cached": 7,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 5,
+        "prompt_ms": 803.563,
+        "prompt_per_token_ms": 160.7126,
+        "prompt_per_second": 6.222287487104309,
+        "predicted_n": 3,
+        "predicted_ms": 482.751,
+        "predicted_per_token_ms": 160.917,
+        "predicted_per_second": 6.214383812773044
+      }
+    },
+    "second_completion": {
+      "elapsed_seconds": 0.522,
+      "content_excerpt": "\n\nOK",
+      "predicted_n": null,
+      "tokens_cached": 7,
+      "timings": {
+        "cache_n": 1,
+        "prompt_n": 4,
+        "prompt_ms": 243.289,
+        "prompt_per_token_ms": 60.82225,
+        "prompt_per_second": 16.441351643518615,
+        "predicted_n": 3,
+        "predicted_ms": 272.238,
+        "predicted_per_token_ms": 90.746,
+        "predicted_per_second": 11.019769466422762
+      }
+    }
+  },
+  "project_pipeline": {
+    "case_id": "8632",
+    "files_limit": 12,
+    "runtime_seconds": 69.168,
+    "model_status": "Gemma4 4B offline server: http://127.0.0.1:8088 (Gemma4 output received; report guard repaired required fields)",
+    "has_judgment": true,
+    "has_minimum_condition": true,
+    "has_logic_chain": true,
+    "has_required_fields": true,
+    "has_prompt_leakage": false,
+    "has_safety_boundary": true,
+    "pred_mr": "True",
+    "pred_tr": "True",
+    "pred_ar": "False",
+    "summary": {
+      "cases_attempted": 1,
+      "cases_ok": 1,
+      "total_runtime_seconds": 69.228,
+      "mean_case_runtime_seconds": 69.168,
+      "use_gguf": true,
+      "v4": true,
+      "gguf_limit": 1
+    },
+    "report_agent": {
+      "backend": "llama_server",
+      "llm_backend": "llama_server",
+      "model_text_received": true,
+      "report_guard_checked": true,
+      "report_guard_repaired": true,
+      "report_guard_rewritten": false,
+      "report_source": "gemma4_repaired",
+      "model_status": "Gemma4 4B offline server: http://127.0.0.1:8088 (Gemma4 output received; report guard repaired required fields)",
+      "has_judgment": true,
+      "has_minimum_condition": true,
+      "has_logic_chain": true
+    }
+  },
+  "diagnosis_seconds": 69.168,
+  "status": "Gemma4 4B offline server: http://127.0.0.1:8088 (Gemma4 output received; report guard repaired required fields)",
+  "has_prompt_leakage": false,
+  "has_safety_boundary": true,
+  "has_required_fields": true,
+  "report_source": "gemma4_repaired",
+  "load_seconds": 0.902,
+  "feature_seconds": 0.011
+}

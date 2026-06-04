@@ -194,6 +194,23 @@ def build_report_agent_step(report: str, model_status: str) -> AgentStep:
         backend = "llama_server"
     elif "cli" in status_lower or "offline:" in status_lower:
         backend = "llama_cli"
+    guard_rewritten = "guard rewrote" in status_lower
+    guard_repaired = "guard repaired" in status_lower
+    guard_preserved = "output preserved" in status_lower
+    model_text_received = (
+        "output received" in status_lower
+        or guard_preserved
+        or guard_rewritten
+        or guard_repaired
+    )
+    if model_text_received and guard_rewritten:
+        report_source = "gemma4_guarded_template"
+    elif model_text_received and guard_repaired:
+        report_source = "gemma4_repaired"
+    elif model_text_received:
+        report_source = "gemma4_preserved"
+    else:
+        report_source = "rule_template"
     markers = {
         "has_judgment": "教学参考病症判断：" in report,
         "has_minimum_condition": "最小病症：" in report,
@@ -205,8 +222,18 @@ def build_report_agent_step(report: str, model_status: str) -> AgentStep:
         status="ok" if all(markers.values()) else "field_warning",
         elapsed_ms=(perf_counter() - start) * 1000.0,
         input_summary=model_status,
-        output_summary=f"backend={backend}, chars={len(report)}",
-        evidence={"backend": backend, "model_status": model_status, **markers},
+        output_summary=f"backend={backend}, source={report_source}, chars={len(report)}",
+        evidence={
+            "backend": backend,
+            "llm_backend": backend if backend != "rule_fallback" else "",
+            "model_text_received": model_text_received,
+            "report_guard_checked": True,
+            "report_guard_repaired": guard_repaired,
+            "report_guard_rewritten": guard_rewritten,
+            "report_source": report_source,
+            "model_status": model_status,
+            **markers,
+        },
     )
 
 

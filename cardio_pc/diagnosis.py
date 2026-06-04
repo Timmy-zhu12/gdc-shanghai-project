@@ -12,7 +12,7 @@ from .calibration import estimate_low_contractility_from_bmode
 from .agents import OfflineMultiAgentOrchestrator
 from .features import StudyAnalysis
 from .guidance import build_primary_care_guidance
-from .v4_runtime import compact_prompt_for_llama3_budget, scheduler_audit_note
+from .v4_runtime import compact_prompt_for_gemma4_budget, scheduler_audit_note
 from .label_hierarchy import (
     HierarchicalDiagnosis,
     confidence_label,
@@ -24,6 +24,7 @@ from .label_hierarchy import (
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_PATH = PROJECT_DIR / "config.json"
+CONFIG_EXAMPLE_PATH = PROJECT_DIR / "config.example.json"
 SYSTEM_PROMPT_PATH = PROJECT_DIR / "prompts" / "hierarchical_system_prompt.txt"
 JUDGMENT_MARKER = "教学参考病症判断："
 MINIMUM_MARKER = "最小病症："
@@ -98,13 +99,21 @@ class ModelConfig:
         return "Rule fallback active; missing " + ", ".join(missing)
 
 
+@dataclass(frozen=True)
+class SanitizedReport:
+    text: str
+    action: str
+
+
 def load_config() -> ModelConfig:
-    if CONFIG_PATH.exists():
+    for path in (CONFIG_PATH, CONFIG_EXAMPLE_PATH):
+        if not path.exists():
+            continue
         try:
-            data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+            data = json.loads(path.read_text(encoding="utf-8"))
             return ModelConfig(**{**ModelConfig().__dict__, **data})
         except Exception:
-            return ModelConfig()
+            continue
     return ModelConfig()
 
 
@@ -131,7 +140,7 @@ def build_gemma4_prompt(study: StudyAnalysis, decision: HierarchicalDiagnosis | 
 最小病症：{decision.compact_label}。
 逻辑链：{required_logic_chain}。
 
-三句话之后再自然说明输入数量、体位覆盖、B-mode 依据、Doppler 依据、收缩/舒张识别依据、教学置信度、基层补扫建议和安全边界。语气要像给初学者看的报告摘要，避免“我将”“作为 AI”“请严格按照”等提示词口吻。
+三句话之后再用 4 到 6 句自然说明输入数量、体位覆盖、关键 B-mode/Doppler 依据、收缩/舒张识别、教学置信度、基层补扫建议和安全边界。总长度控制在 260 到 420 个中文字符，避免逐项复述所有数值，也避免“我将”“作为 AI”“请严格按照”等提示词口吻。
 
 层级候选：
 {decision.structured_text()}
@@ -178,11 +187,18 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
     else:
         decision = classify_teaching_condition_v4(study)
 
-    def finish(report: str, status: str) -> tuple[str, str]:
+    def finish(report: str, status: str, llm_output_received: bool = False) -> tuple[str, str]:
         sanitized = sanitize_diagnosis_report(report, decision, study)
-        if sanitized != report and ("Gemma4" in status or "server" in status.lower() or "CLI" in status):
-            status += " (report guard used local teaching template)"
-        report = sanitized
+        if llm_output_received:
+            if sanitized.action == "preserved":
+                status += " (Gemma4 output preserved after report guard check)"
+            elif sanitized.action == "repaired":
+                status += " (Gemma4 output received; report guard repaired required fields)"
+            else:
+                status += " (Gemma4 output received; report guard rewrote unsafe or incomplete text)"
+        elif "rule" not in status.lower():
+            status += " (local rule/template path; no Gemma4 text used)"
+        report = sanitized.text
         report = enforce_hierarchical_judgment_field(report, decision)
         if orchestrator and agent_state:
             report, _audit = orchestrator.finalize_report(agent_state, report, status)
@@ -193,7 +209,7 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
     if config.use_server and config.server_url:
         text, error = run_llama_server(prompt, config)
         if text.strip():
-            return finish(text.strip(), f"Gemma4 4B offline server: {config.server_url}")
+            return finish(text.strip(), f"Gemma4 4B offline server: {config.server_url}", llm_output_received=True)
         server_error = error
         if not config.model_ready:
             fallback = heuristic_diagnosis(study, decision)
@@ -205,7 +221,7 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
         if server_error:
             status += " (server unavailable; CLI fallback used)"
         if text.strip():
-            return finish(text.strip(), status)
+            return finish(text.strip(), status, llm_output_received=True)
         fallback = heuristic_diagnosis(study, decision)
         report = f"{fallback}\n\n[Gemma4 4B 调用失败，已使用本地层级规则后备：{error}]"
         return finish(report, status)
@@ -230,7 +246,7 @@ def load_system_prompt(required_parent_hierarchy: str, minimum_condition: str) -
 
 def prepare_llm_prompt(prompt: str, config: ModelConfig) -> str:
     original_prompt = prompt
-    prompt = compact_prompt_for_llama3_budget(prompt, config.prompt_token_budget)
+    prompt = compact_prompt_for_gemma4_budget(prompt, config.prompt_token_budget)
     if prompt != original_prompt:
         prompt = prompt + "\n\n" + scheduler_audit_note(original_prompt, prompt)
     return prompt
@@ -281,15 +297,66 @@ def extract_llama_server_text(data: dict) -> str:
     return ""
 
 
-def sanitize_diagnosis_report(text: str, decision: HierarchicalDiagnosis, study: StudyAnalysis) -> str:
+def sanitize_diagnosis_report(text: str, decision: HierarchicalDiagnosis, study: StudyAnalysis) -> SanitizedReport:
     raw = text or ""
     if report_has_prompt_artifacts(raw):
-        return compose_teaching_report(study, decision)
+        return SanitizedReport(compose_teaching_report(study, decision), "templated")
 
     cleaned = normalize_report_text(raw)
     if not report_is_usable(cleaned):
-        return compose_teaching_report(study, decision)
-    return cleaned
+        if model_report_too_truncated(cleaned):
+            return SanitizedReport(compose_teaching_report(study, decision), "templated")
+        repaired = repair_gemma4_report(cleaned, decision, study)
+        if report_is_usable(repaired):
+            return SanitizedReport(repaired, "repaired")
+        return SanitizedReport(compose_teaching_report(study, decision), "templated")
+    return SanitizedReport(cleaned, "preserved")
+
+
+def repair_gemma4_report(text: str, decision: HierarchicalDiagnosis, study: StudyAnalysis) -> str:
+    body = normalize_report_text(text)
+    if not body:
+        return body
+    lines = [line.strip() for line in body.splitlines() if line.strip()]
+    if not lines:
+        return body
+
+    if not body.startswith(JUDGMENT_MARKER):
+        first = lines[0].lstrip("：: ")
+        if decision.compact_label in first:
+            lines[0] = JUDGMENT_MARKER + first
+        else:
+            lines.insert(0, f"{JUDGMENT_MARKER}{format_judgment_sentence(decision)}。")
+
+    body_after_judgment = "\n".join(lines)
+    insert_at = 1
+    if MINIMUM_MARKER not in body_after_judgment:
+        lines.insert(insert_at, f"{MINIMUM_MARKER}{decision.compact_label}。")
+        insert_at += 1
+    if LOGIC_MARKER not in body_after_judgment:
+        lines.insert(insert_at, f"{LOGIC_MARKER}{build_logic_chain(decision, study)}。")
+
+    repaired = "\n".join(lines).strip()
+    if not has_safety_boundary(repaired):
+        repaired += (
+            "\n安全边界：本结论仅用于医学教学、算法演示和基层参考，不是医疗器械输出，"
+            "不作为正式临床诊断、治疗建议或医嘱；正式判断仍需有资质医师结合完整切面、DICOM 标尺、连续动态帧和病史体征复核。"
+        )
+    return repaired
+
+
+def model_report_too_truncated(text: str) -> bool:
+    body = text.strip()
+    if not body:
+        return True
+    if len(body) < 180 and not has_safety_boundary(body):
+        return True
+    tail = body[-24:]
+    if re.search(r"\d\.$", tail):
+        return True
+    if tail.endswith(("：", ":", "、", "，", ",")):
+        return True
+    return False
 
 
 def report_has_prompt_artifacts(text: str) -> bool:
@@ -327,11 +394,7 @@ def report_is_usable(text: str) -> bool:
         return False
     if not all(marker in body for marker in (JUDGMENT_MARKER, MINIMUM_MARKER, LOGIC_MARKER)):
         return False
-    safety_ok = (
-        "不是医疗器械" in body
-        and ("不作为正式临床诊断" in body or "不是临床诊断" in body)
-        and ("复核" in body or "转诊" in body)
-    )
+    safety_ok = has_safety_boundary(body)
     if not safety_ok:
         return False
     unfinished_tail = re.search(
@@ -339,6 +402,14 @@ def report_is_usable(text: str) -> bool:
         body,
     )
     return unfinished_tail is None
+
+
+def has_safety_boundary(text: str) -> bool:
+    return (
+        "不是医疗器械" in text
+        and ("不作为正式临床诊断" in text or "不是临床诊断" in text)
+        and ("复核" in text or "转诊" in text)
+    )
 
 
 def compose_teaching_report(study: StudyAnalysis, decision: HierarchicalDiagnosis) -> str:

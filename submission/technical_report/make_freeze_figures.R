@@ -38,8 +38,8 @@ old_summary <- read_json_text(file.path(root, "validation_speedopt", "old_baseli
 cold_summary <- read_json_text(file.path(root, "validation_speedopt", "speedopt_cold", "newtraining_summary.json"))
 full_latency <- read_json_text(file.path(root, "validation_speedopt", "full_evidence", "latency_summary.json"))
 rep12_latency <- read_json_text(file.path(root, "validation_speedopt", "freeze_runs", "echobench_20260604_175653", "latency_summary.json"))
-server_smoke <- read_json_text(file.path(root, "validation_speedopt", "server_smoke_general_20260604.json"))
-server_case <- read_json_text(file.path(root, "validation_speedopt", "server_pipeline_case1_240tok_20260604.json"))
+server_smoke <- read_json_text(file.path(root, "validation_speedopt", "server_smoke_general_current_20260604.json"))
+server_case <- read_json_text(file.path(root, "validation_speedopt", "server_pipeline_case1_current_20260604.json"))
 integrated <- read_csv(file.path(report_dir, "integrated_test_results.csv"))
 
 theme <- function() {

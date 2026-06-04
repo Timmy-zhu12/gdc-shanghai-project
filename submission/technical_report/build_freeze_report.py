@@ -125,8 +125,8 @@ def gather_data() -> dict:
     rep12_summary = read_json(
         ROOT / "validation_speedopt" / "freeze_runs" / "echobench_20260604_175653" / "validation" / "newtraining_summary.json"
     )
-    server_smoke = read_json(ROOT / "validation_speedopt" / "server_smoke_general_20260604.json")
-    server_case = read_json(ROOT / "validation_speedopt" / "server_pipeline_case1_240tok_20260604.json")
+    server_smoke = read_json(ROOT / "validation_speedopt" / "server_smoke_general_current_20260604.json")
+    server_case = read_json(ROOT / "validation_speedopt" / "server_pipeline_case1_current_20260604.json")
     integrated = read_csv(REPORT_DIR / "integrated_test_results.csv")
     return {
         "full_metrics": full_metrics,
@@ -262,7 +262,7 @@ def report_markdown(data: dict) -> str:
 
 CardioConsult PC V5 解决的问题是：在缺少心脏超声专科医生、网络条件有限或需要保护教学/脱敏病例数据的场景中，如何让超声初学者和基层医疗点从 PNG、DICOM/DCOM、cine/视频等文件中获得一份可解释、可审计、不会冒充正式诊断的心脏超声教学参考结果。系统把 PC 定义为接在超声机器、无线超声软件、DICOM 工作站或局域网导出目录旁的离线分析终端；所有图像预处理、特征提取、层级标签、轻量多智能体审计和 Gemma4 4B GGUF 文本生成都在本机完成。
 
-冻结前检查显示，当前仓库可以完成三类任务：第一，规则路径 `app.py --self-test-rule-only` 通过，输出包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：` 和安全边界；第二，授权本地 60 例 EchoBench 完整证据场景 60/60 成功，平均 {full_lat['mean']:.3f} 秒/例，MR F1={fmt(full_mr['f1'])}、AR F1={fmt(full_ar['f1'])}、低 EF F1={fmt(full_low['f1'])}；第三，12 帧代表输入场景 60/60 成功，warm-cache 平均 {rep_lat['mean']:.3f} 秒/例，MR F1={fmt(rep_mr['f1'])}、AR F1={fmt(rep_ar['f1'])}、低 EF F1={fmt(rep_low['f1'])}。本地 `llama-server` 项目链路第 1 例服务模式诊断耗时 {server['diagnosis_seconds']:.3f} 秒，报告保护层记录 `{server['status']}`，最终输出 `has_prompt_leakage=false`。
+冻结前检查显示，当前仓库可以完成三类任务：第一，规则路径 `app.py --self-test-rule-only` 通过，输出包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：` 和安全边界；第二，授权本地 60 例 EchoBench 完整证据场景 60/60 成功，平均 {full_lat['mean']:.3f} 秒/例，MR F1={fmt(full_mr['f1'])}、AR F1={fmt(full_ar['f1'])}、低 EF F1={fmt(full_low['f1'])}；第三，12 帧代表输入场景 60/60 成功，warm-cache 平均 {rep_lat['mean']:.3f} 秒/例，MR F1={fmt(rep_mr['f1'])}、AR F1={fmt(rep_ar['f1'])}、低 EF F1={fmt(rep_low['f1'])}。本地 `llama-server` 项目链路第 1 例服务模式诊断耗时 {server['diagnosis_seconds']:.3f} 秒，报告保护层记录 `{server['status']}`，最终输出 `has_prompt_leakage=false`、`report_source={server.get('report_source', '')}`。
 
 从评委视角看，V5 的强项不是单一公开排行榜最高分，而是低成本可运行、输入格式兼容、输出合同明确、审计链完整、隐私边界清楚。它的主要风险也清楚：AR、RWMA、左房扩大和严重程度分级在 12 帧输入下仍受切面覆盖影响；当前 60 例报告链接标签不是多专家盲评金标准；系统不能作为临床诊断或治疗建议。这个边界在 UI、README、技术报告和诊断输出中均需保留。
 
@@ -328,7 +328,7 @@ SpeedOpt 前 12 帧基线平均 {old_mean:.3f} 秒/例；SpeedOpt 冷缓存平�
 
 ![图5：llama-server 热启动复用](figures/fig5_server_smoke_hot_reuse.png)
 
-项目级服务链路使用 EchoBench 第 1 例、12 个文件、`max_tokens=240`：文件加载 {server['load_seconds']:.3f} 秒，特征提取 {server['feature_seconds']:.3f} 秒，Gemma4 服务诊断 {server['diagnosis_seconds']:.3f} 秒；报告保护层启用，最终 `has_prompt_leakage=false`，并保留医学安全边界。
+项目级服务链路使用 EchoBench 第 1 例、12 个文件、`max_tokens=240`：文件加载 {server['load_seconds']:.3f} 秒，特征提取 {server['feature_seconds']:.3f} 秒，Gemma4 服务诊断 {server['diagnosis_seconds']:.3f} 秒；报告保护层启用，最终 `has_prompt_leakage=false`、`report_source={server.get('report_source', '')}`，并保留医学安全边界。
 
 ### 4.4 EchoNet-Dynamic 校准层
 
@@ -395,8 +395,8 @@ CardioConsult V5 的差异化是：输入侧兼容真实超声导出文件；算
     ["规则自检", "python app.py --self-test-rule-only"],
     ["完整证据 run", "validation_speedopt/freeze_runs_full/echobench_20260604_180638"],
     ["12帧 run", "validation_speedopt/freeze_runs/echobench_20260604_175653"],
-    ["服务 smoke", "validation_speedopt/server_smoke_general_20260604.json"],
-    ["项目服务链路", "validation_speedopt/server_pipeline_case1_240tok_20260604.json"],
+    ["服务 smoke", "validation_speedopt/server_smoke_general_current_20260604.json"],
+    ["项目服务链路", "validation_speedopt/server_pipeline_case1_current_20260604.json"],
     ["R 图表脚本", "submission/technical_report/make_freeze_figures.R"],
 ])}
 
@@ -406,7 +406,7 @@ CardioConsult V5 的差异化是：输入侧兼容真实超声导出文件；算
 .\\.venv\\Scripts\\python.exe app.py --self-test-rule-only
 .\\.venv\\Scripts\\python.exe tools\\run_echobench_v1.py --mapping <mapping.csv> --out-root validation_speedopt\\freeze_runs_full --case-limit 60
 .\\.venv\\Scripts\\python.exe tools\\run_echobench_v1.py --mapping <mapping.csv> --out-root validation_speedopt\\freeze_runs --case-limit 60 --max-files-per-case 12
-.\\.venv\\Scripts\\python.exe tools\\benchmark_server_smoke.py --url http://127.0.0.1:8088 --out validation_speedopt\\server_smoke_general_20260604.json
+.\\.venv\\Scripts\\python.exe tools\\benchmark_server_smoke.py --url http://127.0.0.1:8088 --out validation_speedopt\\server_smoke_general_current_20260604.json
 ```
 
 ## 参考文献
@@ -643,7 +643,7 @@ def write_freeze_audit(data: dict) -> None:
 
 - 清理过时 BAT：仓库根目录只保留 `install_deps.bat` 和 `run_cardio_pc_v5.bat`。
 - 诊断链报告保护层已上线：提示词泄漏、markdown 模板、AI 口吻和截断输出会回退到本地自然化教学报告。
-- 已替换旧服务验证 JSON：`validation_speedopt/server_pipeline_case1_240tok_20260604.json` 现在记录 `has_prompt_leakage=false`。
+- 已新增当前服务验证 JSON：`validation_speedopt/server_pipeline_case1_current_20260604.json` 记录 `has_prompt_leakage=false`、`has_required_fields=true` 和 `report_source=gemma4_repaired`。
 - 冻结前 EchoBench 完整证据 60/60 通过，平均 {data['full_latency']['runtime_seconds']['mean']:.3f}s/例。
 - 冻结前 EchoBench 12 帧 60/60 通过，warm-cache 平均 {data['rep12_latency']['runtime_seconds']['mean']:.3f}s/例。
 - 本地 `llama-server` smoke 连续两次 OK，第二次 completion {data['server_smoke']['second_completion']['elapsed_seconds']:.3f}s。

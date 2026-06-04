@@ -20,19 +20,23 @@ CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向真实的医学
 
    报告从大方向开始，逐级收窄到中方向、最小具体问题、严重程度和证据充分度。如果证据不完整，系统仍会输出清晰的大方向，同时说明为什么无法定位到更具体瓣膜或病症。
 
-5. 演示稳定且不隐藏限制。
+5. Gemma4 贡献可审计。
+
+   Gemma4 接收的是本机提取后的结构化超声证据、层级候选、质量分和安全约束，负责生成中文教学报告和证据解释。`ReportAgent` 会记录最终报告来源：`gemma4_preserved` 表示模型文本通过保护检查后被保留，`gemma4_repaired` 表示模型文本到达且只被补齐必需字段或安全边界，`gemma4_guarded_template` 表示模型文本到达但被安全模板接管，`rule_template` 表示未收到可用模型文本并走规则兜底。
+
+6. 演示稳定且不隐藏限制。
 
    当 Gemma4 模型文件缺失、不兼容或设备资源不足时，本地规则仍能保持演示可运行。UI 和报告会说明输出来自模型推理还是规则后备。
 
-6. 多智能体不是口号，而是本地审计链。
+7. 多智能体不是口号，而是本地审计链。
 
    PC V5 新增轻量离线多智能体编排：InputAgent 核对输入，FeatureAgent 汇总 B-mode/Doppler 特征，DiagnosisAgent 生成层级病症决策，ReportAgent 记录报告后端，SafetyAuditAgent 检查医学安全边界。该链路不联网、不额外多次调用 Gemma4，主要开销是毫秒级字符串摘要和 JSON 审计写入。
 
-7. 设备策略清晰。
+8. 设备策略清晰。
 
    当前 Windows PC V5 参考实现发布在 `Timmy-zhu12/gdc-shanghai-project`，通过 `llama-cli` 或常驻 `llama-server` 使用本地 Gemma4 4B GGUF。它的设备角色是超声机器旁的离线分析终端，而不是远程云服务。V5 增加 EchoNet-Dynamic 动态 B-mode 校准，用于 EF / 左室收缩功能减低识别，同时保留可审计的瓣膜反流规则。后续移动端和其他桌面端可以复用同一诊断契约，但不是评估当前提交的必要条件。
 
-8. 证据包完整。
+9. 证据包完整。
 
    仓库包含 APA 技术报告、数据来源披露、验证报告、验证 DOCX 文件、在线演示源码、部署说明、安全策略、Apache 2.0 许可证和 Windows PC README。
 
