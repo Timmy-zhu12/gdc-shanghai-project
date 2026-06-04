@@ -1,6 +1,6 @@
-# CardioConsult PC V4 中文说明
+# CardioConsult PC V5 中文说明
 
-CardioConsult PC V4 是本项目面向 Gemma 4 开发者大赛 / GDG Track C 的 Windows 参考实现。项目服务于医学教学、心脏超声入门训练和基层医疗点参考场景，核心目标是在本地离线环境中导入脱敏心脏超声文件，完成边缘特征提取，并输出一段中文教学参考诊断文本。
+CardioConsult PC V5 是本项目的 Windows 参考实现。项目服务于医学教学、心脏超声入门训练和基层医疗点参考场景，核心目标是在本地离线环境中导入脱敏心脏超声文件，完成边缘特征提取、动态 B-mode 校准和本地 Gemma4 4B 报告生成，并输出一段中文教学参考诊断文本。
 
 统一提交入口、在线演示、技术报告、数据来源披露和所有平台仓库链接见主仓库：
 
@@ -8,19 +8,38 @@ CardioConsult PC V4 是本项目面向 Gemma 4 开发者大赛 / GDG Track C 的
 
 在线演示：
 
-[CardioConsult Track C 在线演示](https://timmy-zhu12.github.io/Track-C-gdc-project-shanghai-Total-Repository/)
+[CardioConsult 在线演示](https://timmy-zhu12.github.io/Track-C-gdc-project-shanghai-Total-Repository/)
 
 > 医学安全边界：本项目不是医疗器械，仅用于医学教学、算法演示和基层参考。它不能替代正式心脏超声报告、医师诊断、治疗决策、急诊分诊或医嘱。
 
-## 与 Track C 的对应关系
+## 当前 V5 技术状态
 
-Track C 强调端侧/边缘 AI、离线运行、真实设备演示和完整提交材料。PC V4 的对应实现如下：
+V5 在 V4 的 B-mode、Color Doppler、动图代表帧、层级病症标签和 Gemma4 4B GGUF 本地生成基础上，新增 EchoNet-Dynamic 动态 B-mode 校准层。该层用于增强 EF / 左室收缩功能减低识别，不替代 MR/TR/AR 等瓣膜反流规则。
 
-| 竞赛要点 | PC V4 对应实现 |
+本仓库已同步：
+
+- `cardio_pc/v5_echonet.py`：EchoNet-Dynamic 特征与 V5 校准运行时。
+- `tools/train_echonet_v5.py`：本地 EchoNet-Dynamic 训练脚本。
+- `tools/run_echobench_v1.py`：EchoBench v1 benchmark 入口。
+- `docs/v5_benchmark/`：V5 技术报告、DOCX 报告、图表和生成脚本。
+- `run_cardio_pc_v5.bat`：V5 桌面 UI 启动入口。
+
+V5 技术报告：
+
+- [Markdown 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.md)
+- [Word DOCX 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.docx)
+- [V5 EchoNet 增强说明](docs/v5_benchmark/V5_EchoNet_DL_Enhancement_Report.md)
+
+## 与端侧/边缘 AI 要求的对应关系
+
+本项目强调端侧/边缘 AI、离线运行、真实设备演示和完整可审查材料。PC V5 的对应实现如下：
+
+| 要点 | PC V5 对应实现 |
 |---|---|
 | 离线 Gemma4 | 使用本地 Gemma4 4B GGUF，可通过 llama.cpp 的 `llama-cli` 或常驻 `llama-server` 调用 |
 | 可运行演示 | 提供 Windows 桌面 UI、批处理启动脚本、示例输入和规则路径自检 |
 | 边缘计算价值 | B-mode 与 Color Doppler 分支先在本地提取结构化特征，再交给模型或规则层生成报告 |
+| 动态心超增强 | EchoNet-Dynamic 校准层用于 EF / 左室收缩功能减低教学识别 |
 | 演示稳定性 | GGUF 不存在或模型调用失败时，自动切换到可审计的本地规则后备 |
 | 数据透明 | 主仓库提供数据集来源、验证报告、许可证和模型/数据不随仓库分发的说明 |
 
@@ -56,6 +75,12 @@ Track C 强调端侧/边缘 AI、离线运行、真实设备演示和完整提�
 ## 快速启动
 
 在 Windows 上安装 Python 3.10 或更高版本，然后双击：
+
+```bat
+run_cardio_pc_v5.bat
+```
+
+兼容 V4 入口仍保留：
 
 ```bat
 run_cardio_pc_v4.bat
@@ -151,16 +176,35 @@ config.example.json -> config.json
 - 标签分支：大方向、中方向、最小病症、严重程度、证据充分度和来源说明。
 - Gemma4 分支：结构化短 prompt，强制首句、最小病症和逻辑链；重复演示优先使用常驻 `llama-server`。
 
-## 验证摘要
+## V5 验证摘要
 
-授权本地 60 例 DICOM 教学数据的 V4 验证摘要：
+授权本地 60 例 DICOM 教学数据的 V5 完整证据验证摘要：
 
-| 目标 | V4 F1 |
+| 目标 | V5 F1 |
 |---|---:|
 | 二尖瓣反流代理 | 96.4% |
 | 三尖瓣反流代理 | 100.0% |
 | 主动脉瓣反流代理 | 70.0% |
 | 低 EF 代理 | 85.7% |
+
+12 帧代表抽样验证摘要：
+
+| 目标 | V5 F1 |
+|---|---:|
+| 二尖瓣反流代理 | 93.6% |
+| 三尖瓣反流代理 | 100.0% |
+| 主动脉瓣反流代理 | 32.6% |
+| 低 EF 代理 | 61.5% |
+
+EchoNet-Dynamic 校准层 held-out 摘要：
+
+| 指标 | 数值 |
+|---|---:|
+| EF MAE | 7.271 |
+| EF RMSE | 9.603 |
+| EF 相关系数 | 0.647 |
+| 低 EF AUC | 0.764 |
+| 低 EF F1 | 0.496 |
 
 这些结果只代表小样本教学参考验证，不是临床性能声明。完整报告和数据披露见主仓库。
 

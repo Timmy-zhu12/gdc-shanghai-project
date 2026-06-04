@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -26,6 +27,22 @@ def bool_value(value: Any) -> bool:
 
 def media_files(case_dir: Path) -> list[Path]:
     return sorted(path for path in case_dir.rglob("*") if path.is_file())
+
+
+def limit_media_files(files: list[Path], limit: int) -> list[Path]:
+    if limit <= 0 or len(files) <= limit:
+        return files
+    if limit == 1:
+        return [files[len(files) // 2]]
+    indices = sorted(set(int(round(i)) for i in np.linspace(0, len(files) - 1, limit)))
+    limited = [files[index] for index in indices[:limit]]
+    while len(limited) < limit:
+        candidate = files[len(limited) * len(files) // limit]
+        if candidate not in limited:
+            limited.append(candidate)
+        else:
+            break
+    return sorted(limited)
 
 
 def decision_labels(decision: Any, report: str = "") -> dict[str, bool]:
@@ -86,11 +103,14 @@ def main() -> None:
     parser.add_argument("--v4", action="store_true", help="Apply V4 local calibration and edge-kernel fusion.")
     parser.add_argument("--gguf-limit", type=int, default=0)
     parser.add_argument("--max-files-per-case", type=int, default=0)
+    parser.add_argument("--case-limit", type=int, default=0)
     args = parser.parse_args()
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     mapping = pd.read_csv(args.mapping, encoding="utf-8-sig")
+    if args.case_limit > 0:
+        mapping = mapping.head(args.case_limit).copy()
 
     rows: list[dict[str, Any]] = []
     config = load_config()
@@ -102,7 +122,7 @@ def main() -> None:
         case_dir = Path(str(row["case_dir"]))
         files = media_files(case_dir)
         if args.max_files_per_case > 0:
-            files = files[: args.max_files_per_case]
+            files = limit_media_files(files, args.max_files_per_case)
         started = time.perf_counter()
         try:
             loaded = load_files(files)

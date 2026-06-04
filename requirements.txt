@@ -7,3 +7,6 @@ imageio-ffmpeg
 pylibjpeg
 pylibjpeg-libjpeg
 pylibjpeg-openjpeg
+pandas
+scikit-learn
+joblib

@@ -16,7 +16,7 @@ from .imaging import SUPPORTED_EXTENSIONS, LoadedImage, load_files
 class CardioConsultPCApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("CardioConsult PC Cine - Gemma4 4B Edge")
+        self.title("CardioConsult PC V5 - Gemma4 4B Edge + EchoNet Calibration")
         self.geometry("1180x760")
         self.minsize(960, 640)
 
@@ -238,7 +238,7 @@ class CardioConsultPCApp(tk.Tk):
         if not self.last_report:
             messagebox.showwarning("没有报告", "请先完成一次分析。")
             return
-        default = Path(__file__).resolve().parents[1] / "exports" / "cardio_consult_pc_v4_report.txt"
+        default = Path(__file__).resolve().parents[1] / "exports" / "cardio_consult_pc_v5_report.txt"
         default.parent.mkdir(parents=True, exist_ok=True)
         selected = filedialog.asksaveasfilename(
             title="保存疑似诊断文本",

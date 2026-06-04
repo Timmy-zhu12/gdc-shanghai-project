@@ -57,7 +57,7 @@ class ModelConfig:
     @property
     def status(self) -> str:
         if self.use_server and self.server_url:
-            return f"Gemma4 4B server mode configured: {self.server_url}"
+            return f"Gemma4 4B offline server: {self.server_url}"
         if self.model_ready:
             return f"Gemma4 4B offline: {Path(self.model_path).name}"
         missing = []
@@ -132,9 +132,11 @@ def build_gemma4_prompt(study: StudyAnalysis, decision: HierarchicalDiagnosis | 
 
 def classify_teaching_condition_v4(study: StudyAnalysis) -> HierarchicalDiagnosis:
     from .v4_calibration import apply_v4_calibration
+    from .v5_echonet import apply_v5_echonet_calibration
 
     base_decision = classify_teaching_condition(study)
-    return apply_v4_calibration(study, base_decision, make_decision)
+    v4_decision = apply_v4_calibration(study, base_decision, make_decision)
+    return apply_v5_echonet_calibration(study, v4_decision, make_decision)
 
 
 def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
