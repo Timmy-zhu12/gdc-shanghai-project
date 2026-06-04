@@ -1,17 +1,17 @@
-# CardioConsult PC V4 运行手册
+﻿# CardioConsult PC V5 运行手册
 
 ## 位置
 
 项目文件夹：
 
 ```text
-D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/05_pc_v4
+D:/gdc-shanghai-project-PC-speedopt_20260604
 ```
 
 启动命令：
 
 ```bat
-D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/05_pc_v4/run_cardio_pc_v4.bat
+D:/gdc-shanghai-project-PC-speedopt_20260604/run_cardio_pc_v5.bat
 ```
 
 ## 输入
@@ -37,7 +37,7 @@ UI 支持一次导入多个文件：
 
 ## 离线 Gemma4 4B
 
-V4 使用复制到该目录内的本地 `llama-cli.exe`。按设计，唯一允许的外部依赖是最早 PC 模型目录里已经下载好的 GGUF 文件：
+V5 使用仓库内的 Windows llama.cpp runtime。按设计，GGUF 权重不上传到 GitHub；本机可继续复用最早 PC 模型目录里已经下载好的 GGUF 文件：
 
 ```text
 D:/cardioconsult_PC_runbook/models/gemma-4-4b-it-Q4_K_M.gguf

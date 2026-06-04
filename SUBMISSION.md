@@ -1,4 +1,4 @@
-# Gemma4 开发者大赛提交检查表
+﻿# Gemma4 开发者大赛提交检查表
 
 本文件是评审进入 CardioConsult 项目的中文总入口。
 
@@ -40,7 +40,7 @@
 1. 打开 `docs/index.html` 或启用 GitHub Pages 后的在线演示链接。
 2. 克隆或打开本仓库，运行 `run_cardio_pc_v5.bat`。
 3. 演示 PC V5 从超声机器/工作站导出目录读取 PNG、DICOM、DCOM、cine/视频输入，以及一致的诊断输出合同。
-4. 多次本地 Gemma4 演示时，可先启动 `run_cardio_pc_v4_fast_server.bat`，复用已加载的 `llama-server`。
+4. 多次本地 Gemma4 演示时，可先启动 `run_cardio_pc_v5_fast_server.bat`，复用已加载的 `llama-server`。
 5. 展示 [docs/service_validation.md](docs/service_validation.md) 中的普通本地服务测试：`/completion` 两次短请求均成功，EchoBench 第 1 例服务诊断输出包含 `教学参考病症判断：`、`最小病症：` 和 `逻辑链：`。
 6. 说明模型权重和原始数据因许可证与隐私原因不随仓库分发，然后展示验证摘要和安全边界。
 

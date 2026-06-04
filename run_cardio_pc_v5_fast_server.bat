@@ -6,5 +6,5 @@ if errorlevel 1 (
   echo.
   echo Fast server mode could not start. The app will still open and use CLI or rule fallback.
 )
-call "%~dp0run_cardio_pc_v4.bat"
+call "%~dp0run_cardio_pc_v5.bat"
 endlocal

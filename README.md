@@ -1,4 +1,4 @@
-# CardioConsult PC V5 中文说明
+﻿# CardioConsult PC V5 中文说明
 
 CardioConsult PC V5 是本项目的 Windows 参考实现，也是可直接接入超声机器或超声工作站的本地离线分析设备。项目服务于医学教学、心脏超声入门训练和基层医疗点参考场景，核心目标是在检查室或基层医疗点内，通过 USB、局域网共享目录、DICOM 工作站导出目录或无线超声软件导出文件读取脱敏心脏超声资料，完成边缘特征提取、动态 B-mode 校准和本地 Gemma4 4B 报告生成，并输出一段中文教学参考诊断文本。
 
@@ -91,12 +91,6 @@ V5 技术报告：
 run_cardio_pc_v5.bat
 ```
 
-兼容 V4 入口仍保留：
-
-```bat
-run_cardio_pc_v4.bat
-```
-
 脚本会自动：
 
 1. 创建 `.venv` 虚拟环境。
@@ -107,7 +101,7 @@ run_cardio_pc_v4.bat
 若要进行最快的离线 Gemma4 演示，推荐使用：
 
 ```bat
-run_cardio_pc_v4_fast_server.bat
+run_cardio_pc_v5_fast_server.bat
 ```
 
 它会先启动本地常驻 `llama-server`，地址为：
@@ -121,8 +115,8 @@ http://127.0.0.1:8088
 手动启动或关闭模型服务：
 
 ```bat
-start_llama_server_v4.bat
-stop_llama_server_v4.bat
+start_llama_server.bat
+stop_llama_server.bat
 ```
 
 本地常驻服务验证文档：
@@ -139,15 +133,6 @@ stop_llama_server_v4.bat
 | 必需字段检查 | 通过 |
 
 正式服务演示建议 `max_tokens >= 240`。`max_tokens=96` 的极短测试可能截断模型输出，不适合作为最终演示参数。
-
-兼容旧入口仍保留，并已指向 V4 流程：
-
-```bat
-run_cardio_pc.bat
-run_cardio_pc_accuracy_improved.bat
-run_cardio_pc_accuracy_v2_hierarchical.bat
-run_cardio_pc_cine.bat
-```
 
 ## 离线模型配置
 
