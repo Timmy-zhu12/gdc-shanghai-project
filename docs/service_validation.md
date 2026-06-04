@@ -11,8 +11,8 @@
 | 服务端程序 | `tools/llama_cpp/llama-b9469-bin-win-cpu-x64/llama-server.exe` |
 | 模型文件 | `D:\cardioconsult_PC_runbook\models\gemma-4-4b-it-Q4_K_M.gguf` |
 | 监听地址 | `http://127.0.0.1:8088` |
-| 启动脚本 | `start_llama_server.bat` |
-| 停止脚本 | `stop_llama_server.bat` |
+| 启动方式 | PowerShell 调用 `start_llama_server_v4.ps1` |
+| 停止方式 | 按 `cardioconsult-gemma4` 进程标记停止 `llama-server.exe` |
 | 项目调用方式 | `ModelConfig(use_server=True, server_url="http://127.0.0.1:8088")` |
 
 ## 应测项目
@@ -32,7 +32,7 @@
 启动服务：
 
 ```powershell
-.\start_llama_server.bat
+powershell -NoProfile -ExecutionPolicy Bypass -File .\start_llama_server_v4.ps1
 ```
 
 通用服务 smoke：
@@ -51,7 +51,9 @@
 停止服务：
 
 ```powershell
-.\stop_llama_server.bat
+Get-CimInstance Win32_Process |
+  Where-Object { $_.Name -eq 'llama-server.exe' -and $_.CommandLine -like '*cardioconsult-gemma4*' } |
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
 ```
 
 ## 通用服务 Smoke 结果

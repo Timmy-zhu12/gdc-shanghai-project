@@ -39,6 +39,6 @@ CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向真实的医学
 ## 演示重点
 
 - 先打开在线演示，让评审立即看到产品形态。
-- 再展示 PC V5 参考应用：`https://github.com/Timmy-zhu12/gdc-shanghai-project`；运行 `run_cardio_pc_v5.bat`，并说明 PC 可接入超声机器或工作站导出目录完成本地分析。若需要多次本地 GGUF 调用，可先运行 `run_cardio_pc_v5_fast_server.bat` 复用热启动 llama.cpp server。
+- 再展示 PC V5 参考应用：`https://github.com/Timmy-zhu12/gdc-shanghai-project`；运行 `run_cardio_pc_v5.bat`，并说明 PC 可接入超声机器或工作站导出目录完成本地分析。若需要多次本地 GGUF 调用，可按 `docs/service_validation.md` 复用热启动 llama.cpp server。
 - 展示 `DATASETS.md` 和验证材料包，说明数据透明度。
 - 以严格安全边界收尾：仅用于医学教学参考，不是临床诊断或医疗器械输出。

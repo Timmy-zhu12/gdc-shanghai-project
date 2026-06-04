@@ -98,26 +98,13 @@ run_cardio_pc_v5.bat
 3. 如果缺少 `config.json`，从 `config.example.json` 创建。
 4. 启动桌面 UI。
 
-若要进行最快的离线 Gemma4 演示，推荐使用：
-
-```bat
-run_cardio_pc_v5_fast_server.bat
-```
-
-它会先启动本地常驻 `llama-server`，地址为：
+离线 Gemma4 可直接由应用按 `config.json` 调用。需要做服务性能复现时，可在 PowerShell 中手动启动本地常驻 `llama-server`，地址为：
 
 ```text
 http://127.0.0.1:8088
 ```
 
 第一次启动仍需要加载 GGUF 模型，但后续诊断会复用已加载模型，避免每次重新加载 5GB 级模型文件。
-
-手动启动或关闭模型服务：
-
-```bat
-start_llama_server.bat
-stop_llama_server.bat
-```
 
 本地常驻服务验证文档：
 

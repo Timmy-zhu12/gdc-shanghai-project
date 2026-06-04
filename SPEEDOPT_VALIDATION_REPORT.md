@@ -10,7 +10,7 @@
 2. 单帧特征缓存：按文件路径、大小、mtime、帧号、源帧号、图像 shape/dtype 和算法版本生成缓存键，缓存写入 `exports/feature_cache`。
 3. 线程池并行特征提取：4 帧及以上启用保序 `ThreadPoolExecutor.map`。
 4. 线程池并行文件加载：4 个文件及以上启用保序加载，主要加速 DICOM/DCOM 批量输入。
-5. 可选 `fast_cine_mode=auto`：默认关闭；仅通过 `CARDIO_FAST_CINE_MODE=auto` 或 `run_cardio_pc_v5_fast_cine_optional.bat` 启用。启用后，超长 cine/视频/多帧 DICOM 自动采样 24 个代表帧，不替换默认 48 帧模式。
+5. 可选 `fast_cine_mode=auto`：默认关闭；仅通过 `CARDIO_FAST_CINE_MODE=auto` 启用。启用后，超长 cine/视频/多帧 DICOM 自动采样 24 个代表帧，不替换默认 48 帧模式。
 
 ## 验收结果
 
@@ -25,7 +25,7 @@
 | 第一诊断字段一致性 | 60/60 完全一致 |
 | 主要标签 F1 | 无下降，metrics diff 为空 |
 | 默认模式是否改变 cine 采样 | 否，默认 120 帧仍采样 48 帧 |
-| `fast_cine_mode=auto` 是否独立 | 是，120 帧采样 24 帧，仅环境变量/独立 bat 触发 |
+| `fast_cine_mode=auto` 是否独立 | 是，120 帧采样 24 帧，仅环境变量触发 |
 
 ## EchoBench 对比
 
@@ -136,13 +136,7 @@
 run_cardio_pc_v5.bat
 ```
 
-可选 fast cine 测试模式使用：
-
-```bat
-run_cardio_pc_v5_fast_cine_optional.bat
-```
-
-或在命令行手动设置：
+可选 fast cine 测试模式在命令行手动设置：
 
 ```bat
 set CARDIO_FAST_CINE_MODE=auto
