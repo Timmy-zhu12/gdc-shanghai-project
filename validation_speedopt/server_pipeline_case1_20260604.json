@@ -1,10 +1,20 @@
 {
   "case_id": "8632",
   "files": 12,
-  "load_seconds": 0.938,
-  "feature_seconds": 0.014,
-  "diagnosis_seconds": 68.528,
-  "status": "Gemma4 4B offline server: http://127.0.0.1:8088",
-  "report_excerpt": "---\n\n**请严格按照以下格式输出：**\n\n教学参考病症判断：轻度三尖瓣反流伴轻度二尖瓣反流（瓣膜性心脏病 > 多瓣膜轻度反流）。\n最小病症：轻度三尖瓣反流伴轻度二尖瓣反流。\n逻辑链：体位覆盖1个/质量分0.81 + B-mode收缩幅度代理0.\n\n多智能体审计链：InputAgent -> FeatureAgent -> DiagnosisAgent -> ReportAgent -> SafetyAuditAgent；编排开销约 51.4 ms；审计文件：D:\\gdc-shanghai-project-PC-speedopt_20260604\\exports\\agent_audit\\agent_20260604_153605_615087.json。",
-  "has_required_fields": false
+  "max_tokens": 240,
+  "load_seconds": 0.902,
+  "feature_seconds": 0.011,
+  "diagnosis_seconds": 37.701,
+  "status": "Gemma4 4B offline server: http://127.0.0.1:8088 (report guard used local teaching template)",
+  "report_length": 1413,
+  "report_excerpt": "教学参考病症判断：轻度三尖瓣反流伴轻度二尖瓣反流（瓣膜性心脏病 > 多瓣膜轻度反流）。\n最小病症：轻度三尖瓣反流伴轻度二尖瓣反流。\n逻辑链：体位覆盖1个/质量分0.81 + B-mode收缩幅度代理0.952 + Doppler活跃区0.040/喷流宽度0.125 → 规则v4_local_dicom_shared_ek_coupled_ek → 瓣膜性心脏病 → 多瓣膜轻度反流 → 轻度三尖瓣反流伴轻度二尖瓣反流。\n\n本次资料包括 12 个文件/代表帧，覆盖约 1 个体位；软件识别到 1 个舒张态、1 个收缩态。 体位覆盖较少，输出只能作为低置信度的疑似教学判断。\n主要依据：V4本地授权教学数据校准层触发: 无标准体位文件名但为多帧DICOM序列，先用Color Doppler active/component/jet代理确认瓣膜反流大方向，再用shared-EK在三尖瓣、二尖瓣、主动脉瓣标签间分配证据；结构异常仅作为待排提示。V4证据链: 图像差分=0.175, STI应变代理=0.952, 光流代理=0.146, shared-EK瓣膜分=0.202, coupled-EK结构分=0.336\nB-mode 方面，边缘密度 0.111、纹理熵 0.571、散斑残差 0.086、对比增益 1.723、腔室面积代理差值 0.649、相对收缩幅度代理 0.952。\nColor Doppler 方面，活跃区比例 0.040、最大连通域占比 0.473、喷流宽度代理 0.125、方向一致性 0.795、湍流代理 0.045、涡量代理 0.006。\n层级诊断：大方向为瓣膜性心脏病；中方向为多瓣膜轻度反流；具体问题为轻度三尖瓣反流伴轻度二尖瓣反流；分级为轻度。证据充分度：仅有异常大方向，定位证据不足；教学置信度：中等；标签来源：local-newtraining-20260602, ASE-guidelines, V4-shared-EK, V4-coupled-EK。\n基层/初学者辅助提示：FoCUS 五切面完整性为无法评估，已见 0/5 个基础切面（无），图像质量为较好。建议补充：补扫 PLAX：左侧卧位优先，从胸骨左缘第 3-4 肋间开始，先找到二尖瓣、主动脉瓣和左室长轴；补扫 PSAX：在 PLAX 基础上顺时针旋转约 90 度，依次尝试主动脉瓣、二尖瓣、乳头肌和心尖层面；补扫 A4C：从心尖搏动处取窗，尽量让室间隔接近垂直，避免心尖切短。 安全分层：建议尽快上级复核。若患者伴胸痛、晕厥、明显呼吸困难、低血压、发绀或急性心衰表现，应优先转诊或联系上级超声/心内科复核。\n安全边界：这是一份医学教学和基层参考结果，不是医疗器械输出，也不作为正式临床诊断、治疗建议或医嘱。如有胸痛、晕厥、明显呼吸困难、低血压、发绀、急性心衰等高危表现，应直接进入正式医疗流程并由有资质医师复核。\n\n多智能体审计链：InputAgent -> FeatureAgent -> DiagnosisAgent -> ReportAgent -> SafetyAuditAgent；编排开销约 51.0 ms；审计文件：D:\\gdc-shanghai-project-PC-speedopt_20260604\\exports\\agent_audit\\agent_20260604_180024_824966.json。",
+  "required_marker_positions": {
+    "教学参考病症判断：": 0,
+    "最小病症：": 44,
+    "逻辑链：": 66
+  },
+  "has_required_fields": true,
+  "has_safety_boundary": true,
+  "has_prompt_leakage": false,
+  "agent_audit_copy": "D:\\gdc-shanghai-project-PC-speedopt_20260604\\validation_speedopt\\agent_audit_server_pipeline_case1_20260604.json"
 }

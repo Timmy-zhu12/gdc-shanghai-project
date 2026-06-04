@@ -63,29 +63,31 @@
 
 | 请求 | 端到端耗时 | prompt tok/s | predicted tok/s | 输出 |
 | --- | ---: | ---: | ---: | --- |
-| 第一次 | 1.040 s | 7.685 | 8.384 | OK |
-| 第二次 | 0.721 s | 10.431 | 9.061 | OK |
+| 第一次 | 1.037 s | 6.889 | 11.869 | OK |
+| 第二次 | 0.402 s | 24.247 | 12.949 | OK |
 
 项目诊断链路结果：
 
 | 阶段 | 耗时 |
 | --- | ---: |
-| 文件加载 | 0.951 s |
-| 特征提取 | 0.020 s |
-| 服务诊断 | 35.496 s |
+| 文件加载 | 0.902 s |
+| 特征提取 | 0.011 s |
+| 服务诊断 | 37.701 s |
 
 输出字段检查：
 
 ```json
 {
-  "教学参考病症判断：": 23,
-  "最小病症：": 67,
-  "逻辑链：": 89,
-  "has_required_fields": true
+  "教学参考病症判断：": 0,
+  "最小病症：": 44,
+  "逻辑链：": 66,
+  "has_required_fields": true,
+  "has_prompt_leakage": false,
+  "has_safety_boundary": true
 }
 ```
 
-服务测试完成后已停止本地 `llama-server.exe` 进程。
+服务测试可按 `docs/service_validation.md` 中的 PowerShell 命令启动或停止本地 `llama-server.exe`；正式演示时可以保留常驻服务以复用已加载 GGUF。
 
 ```json
 {

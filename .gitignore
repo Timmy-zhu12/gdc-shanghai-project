@@ -20,6 +20,8 @@ exports/*
 !exports/.gitkeep
 validation_speedopt/**/newtraining_cases.csv
 validation_speedopt/**/logs/
+submission/technical_report/rendered/
+submission/technical_report/figures/*.jpg
 
 # Local OS/editor noise.
 .DS_Store

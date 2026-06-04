@@ -42,26 +42,26 @@ CardioConsult PC V5 是当前 Windows 参考版本，也被设计为超声机器
 
 | 场景 | 平均秒/例 | P95 |
 |---|---:|---:|
-| 完整证据 | 3.761 | 5.513 |
-| 代表性 12 帧 | 2.562 | 3.201 |
+| 完整证据 | 1.418 | 2.499 |
+| 代表性 12 帧 warm-cache | 0.711 | 0.763 |
 
 GGUF / llama.cpp smoke：
 
 | 指标 | 数值 |
 |---|---:|
-| prompt 处理 | 37.76 tokens/s |
-| 文本生成 | 6.19 tokens/s |
-| server 首次 completion | 8.775 s |
-| server 热启动 completion | 0.492 s |
+| 第一次 prompt 处理 | 6.889 tokens/s |
+| 第二次 prompt 处理 | 24.247 tokens/s |
+| 第一次文本生成 | 11.869 tokens/s |
+| 第二次文本生成 | 12.949 tokens/s |
 
 SpeedOpt 后的本地常驻服务补充验证：
 
 | 场景 | 结果 |
 |---|---:|
-| `/completion` 第一次短请求 | 1.040 s |
-| `/completion` 第二次短请求 | 0.721 s |
-| EchoBench 第 1 例服务诊断 | 35.496 s |
-| 必需字段检查 | 通过 |
+| `/completion` 第一次短请求 | 1.037 s |
+| `/completion` 第二次短请求 | 0.402 s |
+| EchoBench 第 1 例服务诊断 | 37.701 s |
+| 必需字段/安全边界/提示词泄漏检查 | 通过 |
 
 服务验证文档：`docs/service_validation.md`。本次测试确认 `llama-server.exe` 常驻服务可通过 `127.0.0.1:8088/completion` 完成普通请求，并能被项目诊断链路调用；`max_tokens=240` 时输出包含 `教学参考病症判断：`、`最小病症：` 和 `逻辑链：` 三个必需字段。
 

@@ -37,6 +37,7 @@ V5 技术报告：
 
 - [Markdown 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.md)
 - [Word DOCX 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.docx)
+- [PDF 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.pdf)
 - [V5 EchoNet 增强说明](docs/v5_benchmark/V5_EchoNet_DL_Enhancement_Report.md)
 
 ## 与端侧/边缘 AI 要求的对应关系
@@ -114,10 +115,10 @@ http://127.0.0.1:8088
 
 | 项目 | 结果 |
 |---|---:|
-| `/completion` 第一次短请求 | 1.040 s |
-| `/completion` 第二次短请求 | 0.721 s |
-| EchoBench 第 1 例服务诊断 | 35.496 s |
-| 必需字段检查 | 通过 |
+| `/completion` 第一次短请求 | 1.037 s |
+| `/completion` 第二次短请求 | 0.402 s |
+| EchoBench 第 1 例服务诊断 | 37.701 s |
+| 必需字段/安全边界/提示词泄漏检查 | 通过 |
 
 正式服务演示建议 `max_tokens >= 240`。`max_tokens=96` 的极短测试可能截断模型输出，不适合作为最终演示参数。
 

@@ -1,276 +1,194 @@
-# CardioConsult PC V5 EchoBench 技术报告（APA 引用版）
+# CardioConsult PC V5 冻结版技术报告（APA 引用版）
 
-生成日期：2026-06-04  
-系统版本：CardioConsult PC V5 `V5_EchoNet_DL_20260604`  
-主运行目录：`<V5_ROOT>`
+生成日期：2026-06-04
 
-## 技术摘要
+系统版本：CardioConsult PC V5 freeze build `2026-06-04`
 
-CardioConsult PC V5 面向心脏超声教学参考和基层辅助初筛场景。这里的 PC 被定义为可直接接入超声机器或超声工作站的离线分析设备：它可以通过 USB、局域网共享目录、DICOM 工作站导出目录或无线超声软件导出文件读取 PNG、DICOM/DCOM 与超声动图，并在本机输出“从大方向到最小病症”的结构化疑似诊断文字。V5 在原有 B-mode 纹理、彩色多普勒代理特征、层级标签规则和 Gemma4 4B GGUF 本地报告生成基础上，加入 EchoNet-Dynamic 动态 B-mode 校准层，用于增强左室射血分数（EF）和左室收缩功能减低的识别能力。EchoNet-Dynamic 是公开心脏超声视频基准，包含 10,030 个心尖四腔心超视频及 EF、ESV、EDV 和专家左室追踪标注（Ouyang et al., 2020）。
+定位：超声机器旁离线分析设备；医学教学、算法演示与基层参考工具，不是医疗器械。
 
-本次按照 EchoBench v1 重新跑了两组可复现基准测试：一组使用 60 例授权本地 DICOM/报告映射数据的完整可用文件，另一组使用每例最多 12 个代表性文件/帧，模拟产品标准输入上限。完整证据场景 60/60 例成功，平均 3.76 秒/例；12 帧代表抽样场景 60/60 例成功，平均 2.56 秒/例。完整证据场景中，二尖瓣反流（MR）F1 为 0.964，主动脉瓣反流（AR）F1 为 0.700，低 EF F1 为 0.857；12 帧场景中 MR F1 为 0.936，低 EF F1 为 0.615，AR F1 降至 0.326。结果说明：V5 已经能在低成本本地硬件上保持稳定吞吐，但主动脉瓣反流、区域室壁运动异常、左房扩大等标签仍强依赖切面覆盖和报告标签密度。
+## 摘要
 
-V5 的主要改进不是把所有任务改成一个黑盒深度网络，而是采用“可审计边缘特征 + 小模型校准 + 轻量离线多智能体编排 + 本地 LLM 文本生成”的混合结构。这一取舍符合医疗 AI 良好机器学习实践中关于目标人群、数据代表性、可追溯开发流程和性能监测的原则（FDA, Health Canada, & MHRA, 2021），也更适合离线部署、低成本演示和敏感数据不出本地的项目约束。
+CardioConsult PC V5 解决的问题是：在缺少心脏超声专科医生、网络条件有限或需要保护教学/脱敏病例数据的场景中，如何让超声初学者和基层医疗点从 PNG、DICOM/DCOM、cine/视频等文件中获得一份可解释、可审计、不会冒充正式诊断的心脏超声教学参考结果。系统把 PC 定义为接在超声机器、无线超声软件、DICOM 工作站或局域网导出目录旁的离线分析终端；所有图像预处理、特征提取、层级标签、轻量多智能体审计和 Gemma4 4B GGUF 文本生成都在本机完成。
 
-### PC 设备定位：超声机器旁离线分析终端
+冻结前检查显示，当前仓库可以完成三类任务：第一，规则路径 `app.py --self-test-rule-only` 通过，输出包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：` 和安全边界；第二，授权本地 60 例 EchoBench 完整证据场景 60/60 成功，平均 1.418 秒/例，MR F1=0.964、AR F1=0.700、低 EF F1=0.857；第三，12 帧代表输入场景 60/60 成功，warm-cache 平均 0.711 秒/例，MR F1=0.936、AR F1=0.326、低 EF F1=0.615。本地 `llama-server` 项目链路第 1 例服务模式诊断耗时 37.701 秒，报告保护层记录 `Gemma4 4B offline server: http://127.0.0.1:8088 (report guard used local teaching template)`，最终输出 `has_prompt_leakage=false`。
 
-本报告中的 PC 不是云端后台，也不是仅用于展示的通用桌面软件，而是放置在超声检查室、教学训练室或基层医疗点的本地分析设备。实际工作流中，超声机器或无线超声软件完成采集后，可把 PNG、DICOM/DCOM、cine 或视频导出到 USB、局域网共享目录、DICOM 工作站目录或本机指定文件夹，PC V5 从这些位置读取资料并完成本地预处理、特征提取、规则判断和 Gemma4 4B GGUF 报告生成。
+从评委视角看，V5 的强项不是单一公开排行榜最高分，而是低成本可运行、输入格式兼容、输出合同明确、审计链完整、隐私边界清楚。它的主要风险也清楚：AR、RWMA、左房扩大和严重程度分级在 12 帧输入下仍受切面覆盖影响；当前 60 例报告链接标签不是多专家盲评金标准；系统不能作为临床诊断或治疗建议。这个边界在 UI、README、技术报告和诊断输出中均需保留。
 
-这种定位的目的有三点。第一，敏感图像和授权教学病例不需要上传云端，便于在网络不稳定或隐私要求高的场景中演示。第二，PC 能承担比手机更稳定的批量文件解析、视频抽帧、DICOM 兼容和 GGUF 常驻推理任务，适合作为超声设备旁的离线辅助终端。第三，输出始终限定为医学教学和基层参考，不替代正式超声报告、医师诊断、治疗建议或急诊分诊。
+## 1. 问题陈述与用户价值
 
-## 关键结果与图表证据
+基层医疗点和超声初学者常见困难不是“完全没有图像”，而是有图像、有 DICOM 或无线超声导出文件，却缺少稳定的心脏超声专科解读、补扫建议和教学级复盘。传统多人会诊依赖专家时间和网络条件；云端多模态模型又会带来隐私、成本、网络和部署不确定性。CardioConsult V5 的目标是提供一个离线、低边际成本、可审计的教学参考层，把系统输出限制在“疑似病症判断、证据链、补扫建议、安全分层”上。
 
-### 完整证据场景下，瓣膜反流主标签表现稳定，低 EF 被 V5 校准显著补强
+医学边界上，本项目遵循良好机器学习实践中关于目标人群、数据代表性、开发追溯、性能监测和人类监督的原则（FDA, Health Canada, & Medicines and Healthcare products Regulatory Agency, 2021）。工程边界上，它借鉴 MLPerf 对客户端、离线和服务场景的分层测量思路，但 EchoBench v1 是项目自建 benchmark，不是 MLCommons 官方提交（MLCommons, n.d.-a, n.d.-b）。
 
-完整证据场景使用每例所有可用文件，平均 17.3 个文件/例，最多 33 个文件/例。该场景代表资料相对充分时的系统能力上限。MR 的准确率为 0.933、敏感性 0.964、特异性 0.600、F1 0.964；TR 数据集在本批 60 例中全部为阳性，因此 F1 为 1.000，但特异性没有统计意义；AR 准确率为 0.700、敏感性 0.724、特异性 0.677、F1 0.700。低 EF 标签在完整证据场景中准确率为 0.967、敏感性 1.000、特异性 0.963、F1 0.857。
+## 2. 系统方案
 
-![完整证据与12帧F1对比](figures/fig1_f1_full_vs_12frame.png)
+系统分为五层：输入层读取 PNG/JPG、DICOM/DCOM、多帧 TIFF、GIF、MP4/MOV/AVI 等文件；B-mode 分支计算 SRAD/CLAHE 风格预处理、边缘密度、纹理熵、散斑残差、腔室面积代理和收缩舒张差；Color Doppler 分支将 HSV 血流颜色转为活跃区、连通域、喷流宽度、方向一致性、湍流和涡量代理；校准层用 V4 shared-EK/coupled-EK 与 V5 EchoNet-Dynamic 校准增强 EF / 左室收缩功能减低；报告层用规则或 Gemma4 4B GGUF 生成中文教学摘要，并由报告保护层清除提示词泄漏、截断和 AI 口吻。
 
-图 1 显示，V5 对 MR 和低 EF 的 F1 保持在可用于教学演示的水平；AR、RWMA、LA enlargement 在资料减少时下降明显，提示这几类标签需要更多切面、动态帧或更强结构化标注支持。该结果与超声实践一致：瓣膜反流严重程度和腔室大小判断依赖多切面、多参数综合评估，而不能只从单帧或单切面稳定推断（Lang et al., 2015; Zoghbi et al., 2017）。
+EchoNet-Dynamic 是公开心超视频数据集，包含心尖四腔视频和 EF/ESV/EDV/左室追踪标注，适合用于心功能任务（Ouyang et al., 2020）。CAMUS 则适合 2D 心超分割和腔室结构评估（Leclerc et al., 2019）。瓣膜反流和腔室定量的正式临床判断仍应遵循 ASE/EACVI 指南，而不能只依赖本项目的颜色代理特征（Lang et al., 2015; Zoghbi et al., 2017）。
 
-| 标签 | n | 阳性金标准 | TP | TN | FP | FN | 准确率 | 敏感性 | 特异性 | F1 |
+## 3. Benchmark 设计
+
+冻结版报告采用四组证据：
+
+1. **规则自检。** 本地 synthetic A4C ED/ES 输入，验证文件读取、特征提取、层级标签、自然化报告和安全边界。
+2. **EchoBench 完整证据。** 60 例授权 DICOM/报告时间映射，每例读取全部可用文件，衡量资料充分时的系统上限。
+3. **EchoBench 12 帧代表输入。** 每例最多 12 个文件/帧，模拟产品输入上限和现场演示限制。
+4. **本地服务。** 常驻 `llama-server` 加载 Gemma4 4B GGUF，测 `/completion` 热启动复用和项目级服务诊断链路。
+
+医疗项目指标包括准确率、敏感性、特异性、精确率、F1、EF MAE/RMSE/相关系数、报告安全字段、补扫提示和人工复核边界。一般工程指标包括启动可用性、每例延迟、P50/P90/P95/P99、热启动复用、边际调用成本、离线隐私、审计链和可复现命令。
+
+## 4. 主要性能结果
+
+### 4.1 完整证据：标签性能
+
+完整证据场景 60/60 例成功，平均 1.418 秒/例，P95=2.499 秒。MR、TR、低 EF 表现稳定；AR 中等；RWMA、心动过缓等标签因为样本少或未接入 ECG/完整报告结构化字段，不能过度宣称。
+
+![图1：完整证据与12帧F1对比](figures/fig1_f1_full_vs_12frame.png)
+
+| 标签 | n | 阳性 | TP | TN | FP | FN | 准确率 | 敏感性 | 特异性 | F1 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 二尖瓣反流（MR） | 60 | 55 | 53 | 3 | 2 | 2 | 0.933 | 0.964 | 0.600 | 0.964 |
-| 三尖瓣反流（TR） | 60 | 60 | 60 | 0 | 0 | 0 | 1.000 | 1.000 | 0.000* | 1.000 |
-| 主动脉瓣反流（AR） | 60 | 29 | 21 | 21 | 10 | 8 | 0.700 | 0.724 | 0.677 | 0.700 |
+| 二尖瓣反流 MR | 60 | 55 | 53 | 3 | 2 | 2 | 0.933 | 0.964 | 0.600 | 0.964 |
+| 三尖瓣反流 TR | 60 | 60 | 60 | 0 | 0 | 0 | 1.000 | 1.000 | 0.000 | 1.000 |
+| 主动脉瓣反流 AR | 60 | 29 | 21 | 21 | 10 | 8 | 0.700 | 0.724 | 0.677 | 0.700 |
 | 低 EF / 左室收缩功能减低 | 60 | 6 | 6 | 52 | 2 | 0 | 0.967 | 1.000 | 0.963 | 0.857 |
-| 区域室壁运动异常（RWMA） | 60 | 3 | 1 | 57 | 0 | 2 | 0.967 | 0.333 | 1.000 | 0.500 |
+| 节段性室壁运动异常 RWMA | 60 | 3 | 1 | 57 | 0 | 2 | 0.967 | 0.333 | 1.000 | 0.500 |
 | 左房扩大 | 60 | 8 | 8 | 45 | 7 | 0 | 0.883 | 1.000 | 0.865 | 0.696 |
+| 心动过缓 | 60 | 7 | 0 | 53 | 0 | 7 | 0.883 | 0.000 | 1.000 | 0.000 |
 
-注：TR 在本批测试集中没有阴性样本，因此特异性不能作为有效结论。
+注：TR 在本批 60 例中全部为阳性，因此特异性没有统计解释价值。
 
-### 12 帧代表抽样更接近演示输入上限，但会牺牲部分细粒度病症定位
+### 4.2 12 帧输入：现场演示上限
 
-12 帧场景将每例文件做均匀代表抽样，而不是只取前 12 个文件。这样可以避免早期文件顺序导致的系统性偏差。该场景平均 2.56 秒/例，适合现场演示和普通 PC 快速批量验证。MR 准确率为 0.883、F1 0.936；低 EF 准确率为 0.917、F1 0.615；AR 准确率为 0.517、F1 0.326。AR 降幅最大，说明主动脉瓣反流更容易受切面缺失、彩色多普勒覆盖不足和代表帧抽样影响。
+12 帧代表输入场景 60/60 例成功，warm-cache 平均 0.711 秒/例，P95=0.763 秒。MR F1 仍为 0.936，低 EF F1 为 0.615；AR F1 降至 0.326，提示主动脉瓣反流需要更完整的 A5C/主动脉瓣相关切面和彩色多普勒序列。
 
-![完整证据与12帧准确率对比](figures/fig2_accuracy_full_vs_12frame.png)
+![图2：12帧场景多指标画像](figures/fig2_12frame_metric_profile.png)
 
-| 标签 | n | 阳性金标准 | TP | TN | FP | FN | 准确率 | 敏感性 | 特异性 | F1 |
+| 标签 | n | 阳性 | TP | TN | FP | FN | 准确率 | 敏感性 | 特异性 | F1 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 二尖瓣反流（MR） | 60 | 55 | 51 | 2 | 3 | 4 | 0.883 | 0.927 | 0.400 | 0.936 |
-| 三尖瓣反流（TR） | 60 | 60 | 60 | 0 | 0 | 0 | 1.000 | 1.000 | 0.000* | 1.000 |
-| 主动脉瓣反流（AR） | 60 | 29 | 7 | 24 | 7 | 22 | 0.517 | 0.241 | 0.774 | 0.326 |
+| 二尖瓣反流 MR | 60 | 55 | 51 | 2 | 3 | 4 | 0.883 | 0.927 | 0.400 | 0.936 |
+| 三尖瓣反流 TR | 60 | 60 | 60 | 0 | 0 | 0 | 1.000 | 1.000 | 0.000 | 1.000 |
+| 主动脉瓣反流 AR | 60 | 29 | 7 | 24 | 7 | 22 | 0.517 | 0.241 | 0.774 | 0.326 |
 | 低 EF / 左室收缩功能减低 | 60 | 6 | 4 | 51 | 3 | 2 | 0.917 | 0.667 | 0.944 | 0.615 |
-| 区域室壁运动异常（RWMA） | 60 | 3 | 1 | 55 | 2 | 2 | 0.933 | 0.333 | 0.965 | 0.333 |
+| 节段性室壁运动异常 RWMA | 60 | 3 | 1 | 55 | 2 | 2 | 0.933 | 0.333 | 0.965 | 0.333 |
 | 左房扩大 | 60 | 8 | 3 | 42 | 10 | 5 | 0.750 | 0.375 | 0.808 | 0.286 |
+| 心动过缓 | 60 | 7 | 0 | 53 | 0 | 7 | 0.883 | 0.000 | 1.000 | 0.000 |
 
-注：12 帧场景不是用于证明所有病症的最终性能，而是用于评估输入受限时的稳定性。
+![图3：12帧混淆矩阵组成](figures/fig3_confusion_components_12frame.png)
 
-### 本地 PC 延迟满足交互式教学演示，GGUF 生成建议使用常驻 server 方式
+### 4.3 延迟、缓存和本地服务
 
-完整证据场景平均 3.76 秒/例，P95 为 5.51 秒；12 帧场景平均 2.56 秒/例，P95 为 3.20 秒。该速度来自规则与小模型校准流水线，不包含每例完整 GGUF 文本生成。Gemma4 4B GGUF 的 `llama-bench` 结果为 prompt processing 37.76 tokens/s、token generation 6.19 tokens/s；`llama-server` 冷启动首个 completion 约 8.78 秒，热启动第二个 completion 约 0.49 秒。因此 UI 演示建议启动常驻 server，再让 V5 把已结构化的特征和标签摘要交给本地模型生成最终教学解释。
+SpeedOpt 前 12 帧基线平均 2.670 秒/例；SpeedOpt 冷缓存平均 1.813 秒/例；冻结版 warm-cache 12 帧平均 0.711 秒/例，相比旧基线下降 73.4%。完整证据 warm-cache 平均 1.418 秒/例，说明当前普通 PC 上已经可以支撑交互式教学演示。
 
-![延迟百分位对比](figures/fig3_latency_full_vs_12frame.png)
+![图4：延迟阶梯](figures/fig4_latency_speedopt_freeze.png)
 
-| 场景 | 成功例数 | 平均秒/例 | P50 | P90 | P95 | P99 | 最大值 | 平均文件数/例 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 完整证据 | 60/60 | 3.761 | 3.311 | 5.012 | 5.513 | 6.704 | 7.282 | 17.283 |
-| 12 帧代表抽样 | 60/60 | 2.562 | 2.471 | 2.796 | 3.201 | 3.624 | 3.680 | 12.000 |
+| 场景 | 平均秒/例 | P50 | P90 | P95 | P99 | 最大值 | 平均文件数 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 完整证据 warm-cache | 1.418 | 1.107 | 2.225 | 2.499 | 3.105 | 3.394 | 17.283 |
+| 12帧 warm-cache | 0.711 | 0.705 | 0.749 | 0.763 | 0.858 | 0.986 | 12.000 |
+| 12帧 SpeedOpt 冷缓存 | 1.813 |  |  |  |  |  | 12.000 |
+| 12帧旧基线 | 2.670 |  |  |  |  |  | 12.000 |
 
-| GGUF/llama.cpp 指标 | 结果 |
-| --- | ---: |
-| GGUF 文件 | `gemma-4-4b-it-Q4_K_M.gguf` |
-| SHA256 | `519b9793ed6ce0ff530f1b7c96e848e08e49e7af4d57bb97f76215963a54146d` |
-| llama.cpp build | `b9469` |
-| CPU threads | 14 |
-| prompt processing | 37.76 tokens/s |
-| generation | 6.19 tokens/s |
-| server 首次 completion | 8.775 s |
-| server 热启动 completion | 0.492 s |
+本地服务 smoke 连续两次 `/completion` 均返回 OK：第一次 1.037 秒，第二次 0.402 秒。第二次请求 prompt tok/s 从 6.89 提升到 24.25，说明常驻模型复用有效。
 
-性能测量方式借鉴 MLPerf 对离线、单流和服务端场景的拆分思想，但 EchoBench v1 是项目自建基准测试，不是 MLPerf 官方提交结果（MLCommons, n.d.-a, n.d.-b）。
+![图5：llama-server 热启动复用](figures/fig5_server_smoke_hot_reuse.png)
 
-## 范围、数据与指标定义
+项目级服务链路使用 EchoBench 第 1 例、12 个文件、`max_tokens=240`：文件加载 0.902 秒，特征提取 0.011 秒，Gemma4 服务诊断 37.701 秒；报告保护层启用，最终 `has_prompt_leakage=false`，并保留医学安全边界。
 
-### 系统输入与输出
+### 4.4 EchoNet-Dynamic 校准层
 
-V5 保留 PC 版输入输出契约：输入支持 PNG/JPG、DICOM/DCOM、GIF、AVI/MP4/MOV 等图片或动图文件；单例输入可包含少量收缩/舒张态图像，也可包含最多标准心脏超声 12 个体位或多段动态文件。系统自动抽取代表帧、估计收缩/舒张相位、计算 B-mode 与彩色多普勒特征，并输出一段中文教学参考诊断。输出必须包含大方向、中方向、小方向/具体问题和最小病症，例如“瓣膜性心脏病 > 二尖瓣异常 > 轻度二尖瓣反流”。当证据不足以定位具体瓣膜时，系统应明确说明“定位证据不足”，但仍给出最小可支持的教学标签。
+V5 的 EchoNet-Dynamic 校准层用于补强 EF 和左室收缩功能减低识别，不替代瓣膜反流规则。held-out 指标为 EF MAE=7.271、EF RMSE=9.603、EF 相关系数=0.647、低 EF AUC=0.764、低 EF F1=0.496。这支持“教学提示”用途，但不足以宣称临床 EF 自动测量。
 
-### 本地授权 60 例数据
+![图6：EchoNet-Dynamic 校准指标](figures/fig6_echonet_training_metrics.png)
 
-本次 EchoBench v1 主测试集来自 `D:\new training dataset` 归档后的 DICOM 与报告时间映射，映射文件为：
+## 5. 数据来源与证据覆盖
 
-`<V4_ROOT>\03_mapping\case_report_time_mapping.csv`
+本仓库不分发原始 DICOM、公开数据集压缩包或 GGUF 权重，只保存汇总报告、指标和图表。CAMUS、EchoNet-Dynamic、HMC-QU、EchoXFlow、MR Ultrasound Images、MIMIC-IV-ECHO/ECHOVIEW、CACTUS 等来源按许可证或访问条件分级记录在 `DATASETS.md` 和 `integrated_test_results.*`。从冻结评审角度，最强证据是授权本地 60 例、CAMUS 阶段测试、本地 smoke 和服务链路；计划数据集只能写成后续路线，不能包装成已完成结果。
 
-测试集包含 60 个病例，每个病例已用报告时间与影像时间对应，并提取脱敏教学标签。该数据只用于本地授权教育验证，不随代码发布，不作为公开数据集再分发。报告标签被用作当前基准测试的“报告链接金标准”，但它不是独立多专家盲法复核金标准。
+![图7：证据覆盖情况](figures/fig7_evidence_coverage_matrix.png)
 
-### EchoNet-Dynamic 数据
+## 6. 与现有方案的比较
 
-V5 新增使用 EchoNet-Dynamic 公开数据进行动态 B-mode EF 校准。实际读取内容包括：
+EchoNet-Dynamic 和 CAMUS 这类公开方案的优势是任务定义清晰、数据结构规范、适合学术复现；限制是通常聚焦 EF、容积或分割，不直接覆盖基层教学场景中的 DICOM/DCOM 兼容、Color Doppler 代理、中文层级病症报告和离线本地部署（Leclerc et al., 2019; Ouyang et al., 2020）。云端多模态模型可能具备更强的自然语言解释能力，但会引入病例上传、网络、费用、审计和服务可用性问题。
 
-| 文件/目录 | 本地计数与用途 |
-| --- | --- |
-| `Videos` | 10,030 个 `.avi` 心尖四腔视频 |
-| `FileList.csv` | 10,030 行，含 EF、ESV、EDV、FPS、帧数、官方 split |
-| `VolumeTracings.csv` | 专家左室追踪帧，用于动态结构线索参考 |
+CardioConsult V5 的差异化是：输入侧兼容真实超声导出文件；算法侧融合 B-mode、Color Doppler、动图差分和 EchoNet 校准；输出侧强制最小病症、逻辑链和安全边界；运行侧采用本地规则、小模型与 GGUF LLM，边际调用成本接近 0。代价是部分细粒度病症在缺切面时准确率下降，需要明确补扫和复核。
 
-训练使用官方 split 的子集：train 1,200、validation 300、test 300，每个视频最多采样 16 帧。EchoNet-Dynamic 原论文使用视频深度学习对心功能进行逐搏评估，并报告该数据集可支持 EF、左室容积和专家追踪相关任务（Ouyang et al., 2020）。本项目没有把 EchoNet-Dynamic 用作瓣膜反流训练集，因为该数据集主要服务 A4C B-mode 心功能任务，不提供 MR/TR/AR 分级标签。
+## 7. 成本模型与取舍
 
-### 评价指标
+本地方案的主要成本是一次性 PC、存储和 GGUF 文件准备。运行时不按病例调用云 API，规则路径吞吐可按每小时数百到上千例估算；真实演示受人工选文件、磁盘、DICOM 解码和 GGUF 文本 token 数影响。以冻结版 warm-cache 为例，12 帧规则链路平均 0.711 秒/例，理论吞吐约 5063 例/小时；完整证据平均 1.418 秒/例，理论吞吐约 2539 例/小时。
 
-分类任务使用准确率、敏感性、特异性、精确率和 F1。对于全阳性或全阴性标签，特异性或敏感性不具备正常解释，需要在报告中单独标注。回归任务使用 MAE、RMSE 和相关系数。延迟使用 mean、P50、P90、P95、P99、max 和标准差。文本质量当前以结构化标签命中和安全提示完整性为主，后续应引入类似 HealthBench 的医师 rubric 评分方式，对医疗文本的事实性、完整性、风险提示和边界表达进行盲法评分（OpenAI, 2025）。
+![图8：工程取舍画像](figures/fig8_cost_privacy_tradeoff.png)
 
-## 方法：可审计特征、小模型校准与本地 LLM 生成
+主要取舍如下：
 
-### B-mode 与动图处理
+- 为了离线和低成本，牺牲了云端大模型的算力弹性。
+- 为了可审计和安全，核心标签由规则/校准层给出，LLM 主要负责表达，牺牲了部分自由生成能力。
+- 为了兼容 DICOM/DCOM 和动图，保留了较复杂的文件解析与代表帧抽样。
+- 为了提高基层筛查敏感性，低 EF 等标签更偏向“提示/待排”，正常特异性需要更多阴性样本继续优化。
 
-B-mode 分支保留 SRAD/CLAHE 风格的去噪增强、边缘密度、纹理熵、散斑残差、对比增益、腔室面积代理和收缩/舒张面积差。对于动图输入，V5 计算代表帧序列的时间差分、暗腔区域变化、质心漂移、宽高变化和低维缩略图特征。该设计不试图替代临床 Simpson 双平面法，而是为低成本本地模型提供可解释的动态代理信号。左室腔室量化和 EF 的临床标准仍应参考正式超声指南（Lang et al., 2015）。
+## 8. 冻结前补救与评审风险
 
-### 彩色多普勒处理
+本轮冻结检查完成了以下补救：
 
-Color Doppler 分支使用 HSV 颜色向量化和连通域过滤，提取活跃区比例、最大连通域占比、喷流宽度代理、方向一致性、湍流代理和涡量代理。该分支用于支持瓣膜反流教学标签，但当前仍是“代理特征”，不能替代正式多参数反流定量。瓣膜反流严重程度的临床判断应综合喷流、PISA、vena contracta、肺静脉/肝静脉血流、连续波多普勒和腔室反应等多参数（Zoghbi et al., 2017）。
+1. 删除无用或容易打不开的高级 BAT，只保留 `install_deps.bat` 和 `run_cardio_pc_v5.bat` 两个普通入口。
+2. 修正诊断链输出保护层，清除提示词泄漏、markdown 模板和“作为 AI / 我将”式口吻。
+3. 更新本地服务 JSON，旧的提示词泄漏片段已被干净报告替换。
+4. 重跑 60 例完整证据和 12 帧冻结 benchmark。
+5. 用 R 生成 8 张报告图，并同步到 submission 与 docs。
+6. 报告中明确写出医学边界、数据许可、未下载数据集和不可过度宣称的标签。
 
-### V5 EchoNet-Dynamic 校准层
+仍需诚实呈现的风险：
 
-V5 的特征向量长度为 825。候选模型包括 Ridge 回归、HistGradientBoostingRegressor、MLPRegressor、LogisticRegression、HistGradientBoostingClassifier、RandomForestClassifier 和 MLPClassifier。最终按验证集指标选择：
+- 当前 60 例是本地授权教学数据，不是多中心外部临床验证。
+- 报告链接标签不是多专家盲评共识标签。
+- TR 全阳性导致特异性不可解释；PR、severe、HCM 等标签样本不足。
+- 在线 demo 是规则匹配网页，不等于完整 PC 图像特征和 GGUF 推理。
+- 项目不能被描述为临床诊断系统、医疗器械或治疗建议工具。
 
-| 子任务 | 选中模型 | 选择依据 |
-| --- | --- | --- |
-| EF 回归 | HistGradientBoostingRegressor | 验证集 MAE/RMSE 优于 Ridge 与 MLP |
-| 低 EF 分类 | LogisticRegression | 验证集 F1 最优，AUC 接近树模型，推理更轻 |
+## 9. 下一步
 
-深度学习候选模型被训练和评估，但没有被强行采用。这个结果说明：在当前 CPU、本地离线和小样本预算下，轻量可解释模型反而能提供更稳定的校准收益。V5 的设计目标是把深度数据集引入到可运行系统中，而不是牺牲部署可行性去追求不可复现的大模型结构。
+1. 建立 2-3 位心超医生盲评表，计算 Cohen's Kappa、加权 Kappa 或 ICC（Bland & Altman, 1986; Cohen, 1960）。
+2. 补充 AR、PR、severe regurgitation、RWMA、LVH/HCM、LA enlargement 的阳性和阴性平衡样本。
+3. 训练轻量 ONNX/TFLite 左室/左房分割模型，用 CAMUS 和 EchoNet tracing 改善 EF 与腔室大小代理。
+4. 将 PLAX、PSAX、A4C、A2C、A5C、subcostal 等切面识别作为显式中间任务。
+5. 按 HealthBench 类似的 rubric 思路建立医疗文本质量评估：事实性、完整性、风险提示、边界表达、教学价值（OpenAI, 2025）。
 
-![EchoNet训练指标](figures/fig4_echonet_training_metrics.png)
-
-| EchoNet-Dynamic held-out 指标 | 数值 |
-| --- | ---: |
-| EF MAE | 7.271 |
-| EF RMSE | 9.603 |
-| EF 相关系数 | 0.647 |
-| 低 EF 准确率 | 0.770 |
-| 低 EF 精确率 | 0.479 |
-| 低 EF 召回率 | 0.515 |
-| 低 EF F1 | 0.496 |
-| 低 EF AUC | 0.764 |
-
-该 held-out 结果支持把 V5 校准层用于“左室收缩功能减低的教学提示”，但不足以把系统宣称为临床 EF 自动测量工具。
-
-### 轻量离线多智能体编排
-
-V5 新增 `OfflineMultiAgentOrchestrator`，把原先隐含在流水线中的职责拆成 5 个本地 agent：`InputAgent` 负责核对输入数量、媒体类型、体位覆盖和收缩/舒张配对；`FeatureAgent` 负责汇总 B-mode、Color Doppler 和动态图代理特征；`DiagnosisAgent` 负责复用层级规则、V4 校准和 V5 EchoNet 校准的最终决策；`ReportAgent` 负责记录报告后端是规则后备、`llama-cli` 还是常驻 `llama-server`；`SafetyAuditAgent` 负责检查教学用途、非医疗器械、非临床诊断和复核/转诊提示是否存在。
-
-该多智能体层不联网、不额外多次调用 Gemma4，也不重复执行图像特征提取。它主要提供职责拆分、可解释审计和提交演示时的透明链路。当前本机 synthetic rule-only smoke test 中，开启审计 JSON 写入后的诊断阶段平均约 4.1 ms/次，单次自检审计链显示约 8.6 ms，远低于 DICOM/视频解码和 GGUF 文本生成耗时。每次运行可把审计 JSON 写入 `exports/agent_audit/`，便于复查每个 agent 的输入摘要、输出摘要、耗时和安全检查结果。
-
-### Gemma4 4B GGUF 本地生成
-
-V5 使用原 PC 版 GGUF 文件，路径为：
-
-`D:\cardioconsult_PC_runbook\models\gemma-4-4b-it-Q4_K_M.gguf`
-
-GGUF 是 llama.cpp 生态常用的单文件量化模型格式，便于在本地 CPU/GPU 环境加载和分发（ggml-org, n.d.）。Gemma 开放模型家族的端侧尺寸和本地部署背景参考 Google AI for Developers 文档（Google AI for Developers, n.d.）。V5 把 LLM 放在诊断文本生成后段：规则与校准模型先生成结构化标签、证据和安全分层，再由本地模型组织为中文教学报告。这样可以降低 LLM 幻觉对核心标签的影响，并保留审计链路。
-
-## 基准测试设计
-
-EchoBench v1 被设计为项目级基准测试，而不是单脚本 smoke test。它包含三类场景：
-
-| 场景 | 状态 | 测量目的 |
-| --- | --- | --- |
-| S1 SingleStudy Interactive | 预留 | 单例 UI 上传、实时输出、可选 GGUF 报告 |
-| S2 OfflineBatch | 已运行 | 批量病例、每例延迟、标签准确率、吞吐 |
-| S3 PersistentServer | 部分运行 | llama-server 冷/热启动、GGUF tokens/s、端到端文本生成 |
-
-本次主报告使用 S2 完整证据、S2 12 帧代表抽样和 S3 GGUF smoke。基准测试思路参考 MLPerf Client 对 PC 本地 AI 工作负载的关注，以及 MLPerf Inference 对不同部署场景性能度量的拆分；医疗 AI 的多中心、隐私保留和可复核评估框架则参考 MedPerf 的联邦评估思想（MLCommons, n.d.-a, n.d.-b, n.d.-c）。
-
-## 与现有方案的比较
-
-### 现有公开心超 AI 方案
-
-EchoNet-Dynamic 证明了心超视频深度学习可以对 EF 和左室功能进行高质量估计，并提供公开数据与代码入口（Ouyang et al., 2020）。CAMUS 提供了大规模 2D 心超分割数据，可用于左室、心肌和左房结构分割研究（Leclerc et al., 2019）。这些方案的优势是深度学习任务定义清晰、公开基准强、适合学术复现；限制是它们通常聚焦单一任务，例如 EF、容积或分割，不直接覆盖基层教学所需的多标签疑似诊断、DICOM/DCOM 输入兼容、离线中文报告生成和低成本 PC/移动端部署。
-
-### CardioConsult V5 的差异化
-
-V5 的优势在于整合能力和部署成本：
-
-1. 输入侧保留 PNG、DICOM/DCOM 和动图兼容，不要求用户先把超声文件转换成单一研究格式。
-2. 算法侧同时包含 B-mode、Color Doppler、动图时间差分和 EchoNet 校准，不只看单帧纹理。
-3. 输出侧强制层级诊断和最小病症字段，适合教学复盘和基层转诊前参考。
-4. 推理侧使用本地规则、小模型和 GGUF LLM，边际调用成本接近 0，敏感图像不需要上传云端。
-
-代价是 V5 当前准确率仍依赖切面覆盖和规则标签质量，不能与专门训练的大型医学影像模型在单任务公开排行榜上直接竞争。更合理的定位是“低成本、本地可运行、可审计、多输入格式、多标签教学辅助系统”。
-
-## 成本模型
-
-V5 的成本结构主要是一次性硬件和模型文件成本，运行时不需要按病例调用云 API。以当前 PC 基准测试为例，完整证据场景平均 3.76 秒/例，理论规则流水线吞吐约 957 例/小时；12 帧场景平均 2.56 秒/例，理论吞吐约 1,405 例/小时。真实 UI 使用会受人工选文件、磁盘读取、DICOM 解码和 GGUF 文本生成影响，因此演示吞吐应按更保守数值估计。
-
-如果按云端多模态/LLM API 实现，成本通常随病例数线性增长，并涉及医学图像上传、网络可用性、合规审查和服务中断风险。V5 本地方案牺牲了部分云端大模型能力，但换取低边际成本、离线可用、部署可复制和数据不出本地的优势。对基层和教学场景，这种成本结构更接近实际需求。
-
-## 取舍与工程判断
-
-### 准确率与可部署性的取舍
-
-端到端大型视频模型可能在 EF 或分割任务上更强，但会带来 GPU/NPU 依赖、模型体积、训练时间和移动端迁移成本。V5 选择小模型校准和规则融合，是为了确保普通 PC 可跑、移动端后续可迁移，并且每条诊断都有特征证据和规则路径可追踪。
-
-### 完整证据与标准 12 帧输入的取舍
-
-完整证据可以提高 AR、LA enlargement 和低 EF 等标签的稳定性，但用户现场输入往往受文件数量、切面质量和时间限制影响。12 帧代表抽样降低延迟和内存占用，但会损失部分病症定位能力。V5 因此在输出中保留“证据充分度”和“建议补扫切面”，而不是在证据不足时假装高置信度。
-
-### LLM 解释能力与安全边界的取舍
-
-LLM 能把结构化证据组织成更自然的中文报告，但医疗文本必须控制幻觉风险。V5 把最小病症、分级、证据和安全分层放在规则/校准层生成，再让 LLM 做表达增强。这比让 LLM 直接从图像特征自由诊断更可审计，也更符合医疗 AI 输出应有的边界。
-
-## 限制、不确定性与鲁棒性
-
-1. 本地 60 例测试集规模有限，且来自授权本地数据，不是公开多中心盲法验证集。
-2. 报告链接标签是当前基准测试的金标准，但不是 2-3 位超声专家独立盲评后的共识标签。
-3. TR 在本批数据中全为阳性，不能解释特异性；PR 和 severe 标签样本不足，不能做有效结论。
-4. EchoNet-Dynamic 只增强 A4C B-mode 心功能相关任务，不提供瓣膜反流分级监督。
-5. AR、RWMA 和左房扩大在 12 帧抽样下降明显，说明未来必须增强切面识别、动图分割和标签平衡。
-6. GGUF 文本生成速度在 CPU 上受 token 数影响较大，正式演示应使用常驻 server，避免每例冷启动。
-7. 本系统是医学教学和算法演示工具，不是医疗器械输出，不应作为正式临床诊断、治疗建议或医嘱。
-
-## 推荐下一步
-
-1. 建立专家盲评表：每例输出由 2-3 位心超医生按病症定位、分级、证据完整性、安全提示和教学价值评分，计算 Cohen's Kappa、加权 Kappa 或 ICC。
-2. 扩展低样本标签：优先补充 AR、PR、severe regurgitation、RWMA、LVH/HCM、LA enlargement 的阳性和阴性平衡样本。
-3. 引入轻量分割模型：用 CAMUS 或 EchoNet tracing 训练 ONNX/TFLite 左室/左房分割模型，作为 V6 的 EF 与腔室大小更稳定输入。
-4. 增强切面识别：将 PLAX、PSAX、A4C、A2C、subcostal 等基础切面作为显式中间任务，降低“体位覆盖 1 个”时的定位不确定性。
-5. 完善正式 EchoBench：固定数据版本、病例清单、模型哈希、硬件信息、命令行、输出 CSV、图表和统计检验，形成每次提交可复跑的基准测试包。
-
-## 可复现信息
+## 10. 可复现信息
 
 | 项目 | 值 |
-| --- | --- |
-| V5 根目录 | `<V5_ROOT>` |
-| PC 应用目录 | `<V5_ROOT>\05_pc_v5` |
-| 基准测试主目录 | `<V5_ROOT>\08_benchmark_framework` |
-| 完整证据 run | `runs\echobench_20260604_114319` |
-| 12 帧 run | `runs\echobench_20260604_114016` |
-| EchoNet 训练报告 | `training\echonet_v5\training_report.json` |
-| GGUF 模型 | `D:\cardioconsult_PC_runbook\models\gemma-4-4b-it-Q4_K_M.gguf` |
-| GGUF SHA256 | `519b9793ed6ce0ff530f1b7c96e848e08e49e7af4d57bb97f76215963a54146d` |
-| R 图表脚本 | `reports\make_benchmark_figures.R` |
+| --- | ---: |
+| 仓库目录 | D:\gdc-shanghai-project-PC-speedopt_20260604 |
+| 规则自检 | python app.py --self-test-rule-only |
+| 完整证据 run | validation_speedopt/freeze_runs_full/echobench_20260604_180638 |
+| 12帧 run | validation_speedopt/freeze_runs/echobench_20260604_175653 |
+| 服务 smoke | validation_speedopt/server_smoke_general_20260604.json |
+| 项目服务链路 | validation_speedopt/server_pipeline_case1_240tok_20260604.json |
+| R 图表脚本 | submission/technical_report/make_freeze_figures.R |
 
 核心重跑命令：
 
 ```powershell
-<V5_ROOT>\05_pc_v5\.venv\Scripts\python.exe tools\run_echobench_v1.py --mapping <V4_ROOT>\03_mapping\case_report_time_mapping.csv --out-root <V5_ROOT>\08_benchmark_framework\runs --hash-model
-```
-
-```powershell
-<V5_ROOT>\05_pc_v5\.venv\Scripts\python.exe tools\run_echobench_v1.py --mapping <V4_ROOT>\03_mapping\case_report_time_mapping.csv --out-root <V5_ROOT>\08_benchmark_framework\runs --hash-model --max-files-per-case 12
+.\.venv\Scripts\python.exe app.py --self-test-rule-only
+.\.venv\Scripts\python.exe tools\run_echobench_v1.py --mapping <mapping.csv> --out-root validation_speedopt\freeze_runs_full --case-limit 60
+.\.venv\Scripts\python.exe tools\run_echobench_v1.py --mapping <mapping.csv> --out-root validation_speedopt\freeze_runs --case-limit 60 --max-files-per-case 12
+.\.venv\Scripts\python.exe tools\benchmark_server_smoke.py --url http://127.0.0.1:8088 --out validation_speedopt\server_smoke_general_20260604.json
 ```
 
 ## 参考文献
 
-FDA, Health Canada, & Medicines and Healthcare products Regulatory Agency. (2021). *Good machine learning practice for medical device development: Guiding principles*. https://www.gov.uk/government/publications/good-machine-learning-practice-for-medical-device-development-guiding-principles
-
-ggml-org. (n.d.). *GGUF file format - llama.cpp*. Retrieved June 4, 2026, from https://www.mintlify.com/ggml-org/llama.cpp/concepts/gguf-format
-
-Google AI for Developers. (n.d.). *Get started with Gemma models*. Retrieved June 4, 2026, from https://ai.google.dev/gemma/docs/get_started
-
-Lang, R. M., Badano, L. P., Mor-Avi, V., Afilalo, J., Armstrong, A., Ernande, L., Flachskampf, F. A., Foster, E., Goldstein, S. A., Kuznetsova, T., Lancellotti, P., Muraru, D., Picard, M. H., Rietzschel, E. R., Rudski, L., Spencer, K. T., Tsang, W., & Voigt, J.-U. (2015). Recommendations for cardiac chamber quantification by echocardiography in adults: An update from the American Society of Echocardiography and the European Association of Cardiovascular Imaging. *Journal of the American Society of Echocardiography, 28*(1), 1-39.e14. https://doi.org/10.1016/j.echo.2014.10.003
-
-Leclerc, S., Smistad, E., Pedrosa, J., Østvik, A., Cervenansky, F., Espinosa, F., Espeland, T., Berg, E. A. R., Jodoin, P.-M., Grenier, T., Lartizien, C., Dhooge, J., Lovstakken, L., Bernard, O., & Grenier, T. (2019). Deep learning for segmentation using an open large-scale dataset in 2D echocardiography. *IEEE Transactions on Medical Imaging, 38*(9), 2198-2210. https://doi.org/10.1109/TMI.2019.2900516
-
-MLCommons. (n.d.-a). *MLPerf Client*. Retrieved June 4, 2026, from https://mlcommons.org/benchmarks/client/
-
-MLCommons. (n.d.-b). *MLPerf Inference benchmarks*. Retrieved June 4, 2026, from https://docs.mlcommons.org/inference/
-
-MLCommons. (n.d.-c). *MedPerf: An open benchmarking platform for medical artificial intelligence using federated evaluation*. Retrieved June 4, 2026, from https://github.com/mlcommons/medperf
-
-OpenAI. (2025). *Introducing HealthBench*. https://openai.com/index/healthbench/
-
-Ouyang, D., He, B., Ghorbani, A., Yuan, N., Ebinger, J., Langlotz, C. P., Heidenreich, P. A., Harrington, R. A., Liang, D. H., Ashley, E. A., & Zou, J. Y. (2020). Video-based AI for beat-to-beat assessment of cardiac function. *Nature, 580*(7802), 252-256. https://doi.org/10.1038/s41586-020-2145-8
-
-Zoghbi, W. A., Adams, D., Bonow, R. O., Enriquez-Sarano, M., Foster, E., Grayburn, P. A., Hahn, R. T., Han, Y., Hung, J., Lang, R. M., Little, S. H., Shah, D. J., Shernan, S., Thavendiranathan, P., Thomas, J. D., & Weissman, N. J. (2017). Recommendations for noninvasive evaluation of native valvular regurgitation: A report from the American Society of Echocardiography developed in collaboration with the Society for Cardiovascular Magnetic Resonance. *Journal of the American Society of Echocardiography, 30*(4), 303-371. https://doi.org/10.1016/j.echo.2017.01.007
+- Bland, J. M., & Altman, D. G. (1986). Statistical methods for assessing agreement between two methods of clinical measurement. *The Lancet, 327*(8476), 307-310. https://doi.org/10.1016/S0140-6736(86)90837-8
+- Cohen, J. (1960). A coefficient of agreement for nominal scales. *Educational and Psychological Measurement, 20*(1), 37-46. https://doi.org/10.1177/001316446002000104
+- FDA, Health Canada, & Medicines and Healthcare products Regulatory Agency. (2021). *Good machine learning practice for medical device development: Guiding principles*. https://www.gov.uk/government/publications/good-machine-learning-practice-for-medical-device-development-guiding-principles
+- ggml-org. (n.d.). *GGUF file format - llama.cpp*. Retrieved June 4, 2026, from https://www.mintlify.com/ggml-org/llama.cpp/concepts/gguf-format
+- Google AI for Developers. (n.d.). *Get started with Gemma models*. Retrieved June 4, 2026, from https://ai.google.dev/gemma/docs/get_started
+- Google AI for Developers. (n.d.). *Run Gemma content generation and inferences*. Retrieved June 4, 2026, from https://ai.google.dev/gemma/docs/run
+- Karargyris, A., Umeton, R., Sheller, M. J., Aristizabal, A., George, J., Wuest, A., Pati, S., Kassem, H., Zenk, M., Baid, U., et al. (2023). Federated benchmarking of medical artificial intelligence with MedPerf. *Nature Machine Intelligence, 5*, 799-810. https://doi.org/10.1038/s42256-023-00652-2
+- Lang, R. M., Badano, L. P., Mor-Avi, V., Afilalo, J., Armstrong, A., Ernande, L., Flachskampf, F. A., Foster, E., Goldstein, S. A., Kuznetsova, T., Lancellotti, P., Muraru, D., Picard, M. H., Rietzschel, E. R., Rudski, L., Spencer, K. T., Tsang, W., & Voigt, J.-U. (2015). Recommendations for cardiac chamber quantification by echocardiography in adults: An update from the American Society of Echocardiography and the European Association of Cardiovascular Imaging. *Journal of the American Society of Echocardiography, 28*(1), 1-39.e14. https://doi.org/10.1016/j.echo.2014.10.003
+- Leclerc, S., Smistad, E., Pedrosa, J., Ostvik, A., Cervenansky, F., Espinosa, F., Espeland, T., Berg, E. A. R., Jodoin, P.-M., Grenier, T., Lartizien, C., D'Hooge, J., Lovstakken, L., & Bernard, O. (2019). Deep learning for segmentation using an open large-scale dataset in 2D echocardiography. *IEEE Transactions on Medical Imaging, 38*(9), 2198-2210. https://doi.org/10.1109/TMI.2019.2900516
+- MLCommons. (n.d.-a). *MLPerf Client*. Retrieved June 4, 2026, from https://mlcommons.org/benchmarks/client/
+- MLCommons. (n.d.-b). *MLPerf Inference benchmarks*. Retrieved June 4, 2026, from https://docs.mlcommons.org/inference/
+- OpenAI. (2025). *Introducing HealthBench*. https://openai.com/index/healthbench/
+- OpenAI. (2025). *HealthBench: Evaluating large language models towards improved human health*. https://arxiv.org/abs/2505.08775
+- Ouyang, D., He, B., Ghorbani, A., Yuan, N., Ebinger, J., Langlotz, C. P., Heidenreich, P. A., Harrington, R. A., Liang, D. H., Ashley, E. A., & Zou, J. Y. (2020). Video-based AI for beat-to-beat assessment of cardiac function. *Nature, 580*(7802), 252-256. https://doi.org/10.1038/s41586-020-2145-8
+- Vickers, A. J., & Elkin, E. B. (2006). Decision curve analysis: A novel method for evaluating prediction models. *Medical Decision Making, 26*(6), 565-574. https://doi.org/10.1177/0272989X06295361
+- Yu, Y., & Acton, S. T. (2002). Speckle reducing anisotropic diffusion. *IEEE Transactions on Image Processing, 11*(11), 1260-1270. https://doi.org/10.1109/TIP.2002.804276
+- Zoghbi, W. A., Adams, D., Bonow, R. O., Enriquez-Sarano, M., Foster, E., Grayburn, P. A., Hahn, R. T., Han, Y., Hung, J., Lang, R. M., Little, S. H., Shah, D. J., Shernan, S., Thavendiranathan, P., Thomas, J. D., & Weissman, N. J. (2017). Recommendations for noninvasive evaluation of native valvular regurgitation: A report from the American Society of Echocardiography developed in collaboration with the Society for Cardiovascular Magnetic Resonance. *Journal of the American Society of Echocardiography, 30*(4), 303-371. https://doi.org/10.1016/j.echo.2017.01.007

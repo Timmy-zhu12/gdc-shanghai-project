@@ -66,8 +66,8 @@ validation_speedopt/server_smoke_general_20260604.json
 
 | 请求 | 端到端耗时 | prompt tok/s | predicted tok/s | 输出 |
 |---|---:|---:|---:|---|
-| 第一次 | 1.040 s | 7.685 | 8.384 | OK |
-| 第二次 | 0.721 s | 10.431 | 9.061 | OK |
+| 第一次 | 1.037 s | 6.889 | 11.869 | OK |
+| 第二次 | 0.402 s | 24.247 | 12.949 | OK |
 
 解释：服务端口可连接，`/completion` 接口可用，第二次短请求能在同一常驻模型进程中完成。
 
@@ -81,23 +81,31 @@ validation_speedopt/server_pipeline_case1_240tok_20260604.json
 
 | 阶段 | 耗时 |
 |---|---:|
-| 文件加载 | 0.951 s |
-| 特征提取 | 0.020 s |
-| Gemma4 服务诊断 | 35.496 s |
+| 文件加载 | 0.902 s |
+| 特征提取 | 0.011 s |
+| Gemma4 服务诊断 | 37.701 s |
 
 输出字段检查：
 
 | 字段 | 位置 | 结果 |
 |---|---:|---|
-| `教学参考病症判断：` | 23 | 通过 |
-| `最小病症：` | 67 | 通过 |
-| `逻辑链：` | 89 | 通过 |
+| `教学参考病症判断：` | 0 | 通过 |
+| `最小病症：` | 44 | 通过 |
+| `逻辑链：` | 66 | 通过 |
 
 服务诊断状态：
 
 ```text
-Gemma4 4B offline server: http://127.0.0.1:8088
+Gemma4 4B offline server: http://127.0.0.1:8088 (report guard used local teaching template)
 ```
+
+报告保护检查：
+
+| 检查项 | 结果 |
+|---|---|
+| `has_prompt_leakage` | false |
+| `has_safety_boundary` | true |
+| `has_required_fields` | true |
 
 多智能体审计链已生成：
 
@@ -108,6 +116,6 @@ validation_speedopt/agent_audit_server_pipeline_case1_20260604.json
 ## 注意事项
 
 - `max_tokens=96` 的极短测试会导致模型输出截断，虽然能看到字段开头，但不适合作为正式演示参数。
-- 本次项目级服务 smoke 使用 `max_tokens=240` 后，三个必需字段均完整出现。
+- 本次项目级服务 smoke 使用 `max_tokens=240` 后，三个必需字段均完整出现，且报告保护层会在服务输出过短、带提示词痕迹或带 AI 口吻时回退为本地自然教学模板。
 - 对正式演示，建议使用常驻服务模式，先启动 `llama-server`，再运行 PC V5 UI，以避免每次重新加载 GGUF。
 - 本测试仍是医学教学与算法演示验证，不构成临床验证或医疗器械性能声明。

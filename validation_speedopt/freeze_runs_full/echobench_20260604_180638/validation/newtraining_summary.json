@@ -1,0 +1,9 @@
+{
+  "cases_attempted": 60,
+  "cases_ok": 60,
+  "total_runtime_seconds": 85.323,
+  "mean_case_runtime_seconds": 1.4177000000000002,
+  "use_gguf": false,
+  "v4": true,
+  "gguf_limit": 0
+}

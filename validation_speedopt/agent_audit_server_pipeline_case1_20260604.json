@@ -1,13 +1,13 @@
 {
-  "run_id": "agent_20260604_153810_085654",
-  "created_at": "2026-06-04T15:38:10",
-  "audit_path": "D:\\gdc-shanghai-project-PC-speedopt_20260604\\exports\\agent_audit\\agent_20260604_153810_085654.json",
+  "run_id": "agent_20260604_180024_824966",
+  "created_at": "2026-06-04T18:00:24",
+  "audit_path": "D:\\gdc-shanghai-project-PC-speedopt_20260604\\exports\\agent_audit\\agent_20260604_180024_824966.json",
   "steps": [
     {
       "name": "InputAgent",
       "role": "核对输入文件、体位覆盖、收缩/舒张配对",
       "status": "ok",
-      "elapsed_ms": 0.039,
+      "elapsed_ms": 0.01,
       "input_summary": "files_or_frames=12, source_types=dicom",
       "output_summary": "views=1, phases={'systole': 1, 'diastole': 1}, warning=体位覆盖较少，输出只能作为低置信度的疑似教学判断。",
       "evidence": {
@@ -28,7 +28,7 @@
       "name": "FeatureAgent",
       "role": "汇总 B-mode、Color Doppler 和动态图代理特征",
       "status": "ok",
-      "elapsed_ms": 0.129,
+      "elapsed_ms": 0.012,
       "input_summary": "quality=0.807, contractility=0.952",
       "output_summary": "B-mode edge=0.111, Doppler active=0.040",
       "evidence": {
@@ -46,7 +46,7 @@
       "name": "DiagnosisAgent",
       "role": "执行层级标签规则、V4 校准和 V5 EchoNet 校准",
       "status": "ok",
-      "elapsed_ms": 53.874,
+      "elapsed_ms": 50.934,
       "input_summary": "quality=0.807, views=1, frames=12",
       "output_summary": "轻度三尖瓣反流伴轻度二尖瓣反流",
       "evidence": {
@@ -66,12 +66,12 @@
       "name": "ReportAgent",
       "role": "记录报告生成后端并检查强制输出字段",
       "status": "ok",
-      "elapsed_ms": 0.014,
-      "input_summary": "Gemma4 4B offline server: http://127.0.0.1:8088",
-      "output_summary": "backend=llama_server, chars=327",
+      "elapsed_ms": 0.017,
+      "input_summary": "Gemma4 4B offline server: http://127.0.0.1:8088 (report guard used local teaching template)",
+      "output_summary": "backend=llama_server, chars=1205",
       "evidence": {
         "backend": "llama_server",
-        "model_status": "Gemma4 4B offline server: http://127.0.0.1:8088",
+        "model_status": "Gemma4 4B offline server: http://127.0.0.1:8088 (report guard used local teaching template)",
         "has_judgment": true,
         "has_minimum_condition": true,
         "has_logic_chain": true
@@ -80,15 +80,15 @@
     {
       "name": "SafetyAuditAgent",
       "role": "检查医学教学边界、复核/转诊提示和非临床诊断声明",
-      "status": "safety_warning",
-      "elapsed_ms": 0.013,
+      "status": "ok",
+      "elapsed_ms": 0.015,
       "input_summary": "final_report",
-      "output_summary": "safety markers incomplete",
+      "output_summary": "safety markers ok",
       "evidence": {
         "teaching_only": true,
-        "not_medical_device": false,
-        "not_clinical_diagnosis": false,
-        "referral_or_review": false
+        "not_medical_device": true,
+        "not_clinical_diagnosis": true,
+        "referral_or_review": true
       }
     }
   ]

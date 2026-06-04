@@ -1,0 +1,126 @@
+{
+  "benchmark_name": "CardioConsult EchoBench",
+  "benchmark_version": "1.0",
+  "run_id": "echobench_20260604_175653",
+  "created_at": "2026-06-04T17:57:37",
+  "system_under_test": {
+    "name": "CardioConsult PC V5",
+    "version": "V5_EchoNet_DL_20260604",
+    "path": "D:\\gdc-shanghai-project-PC-speedopt_20260604",
+    "git_commit": null,
+    "folder_hash": null
+  },
+  "hardware": {
+    "os": "Windows 10 10.0.26200",
+    "cpu": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+    "gpu": null,
+    "npu": null,
+    "ram_gb": 31.47,
+    "device_class": "pc"
+  },
+  "software": {
+    "python": "3.11.9",
+    "llama_cpp_build": "llama.cpp b9469 when using bundled runtime",
+    "runtime_backend": "python-rule-pipeline",
+    "app_config_path": "D:\\gdc-shanghai-project-PC-speedopt_20260604\\config.json"
+  },
+  "model": {
+    "name": "Gemma4 4B GGUF",
+    "path": "D:\\gdc-shanghai-project-PC-speedopt_20260604\\models\\gemma-4-4b-it-Q4_K_M.gguf",
+    "sha256": null,
+    "quantization": "Q4_K_M",
+    "context_size": null,
+    "max_tokens": null
+  },
+  "dataset": {
+    "name": "authorized newtraining DICOM/report mapping",
+    "case_count": 60,
+    "manifest_path": "D:\\CardioConsult_Gemma4_TrackC_Final_V4_20260604\\03_mapping\\case_report_time_mapping.csv",
+    "dataset_hash": "f41064133853a85de5aafd98b9a4c3c0b1cbe7216e7d06bb9ae325d0f548a017",
+    "license_or_use_terms": "local authorized educational validation; do not redistribute source DICOM",
+    "contains_phi": false
+  },
+  "scenarios": [
+    {
+      "id": "S1",
+      "name": "SingleStudy Interactive",
+      "enabled": false,
+      "input_contract": "one case, PNG/DICOM/DCOM/cine-compatible files, optional GGUF report",
+      "metrics": [
+        "latency",
+        "completion",
+        "label_accuracy"
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "OfflineBatch",
+      "enabled": true,
+      "input_contract": "batch case folders from mapping CSV",
+      "metrics": [
+        "cases_per_hour",
+        "per_case_latency",
+        "label_accuracy"
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "PersistentServer",
+      "enabled": false,
+      "input_contract": "Gemma4 server/CLI optional report generation",
+      "metrics": [
+        "model_status",
+        "end_to_end_latency"
+      ]
+    }
+  ],
+  "artifacts": {
+    "per_case_csv": "validation_speedopt\\freeze_runs\\echobench_20260604_175653\\validation\\newtraining_cases.csv",
+    "metrics_csv": "validation_speedopt\\freeze_runs\\echobench_20260604_175653\\validation\\newtraining_metrics.csv",
+    "summary_json": "validation_speedopt\\freeze_runs\\echobench_20260604_175653\\validation\\newtraining_summary.json",
+    "latency_summary_json": "validation_speedopt\\freeze_runs\\echobench_20260604_175653\\latency_summary.json",
+    "report_md": "validation_speedopt\\freeze_runs\\echobench_20260604_175653\\report.md",
+    "logs_dir": "validation_speedopt\\freeze_runs\\echobench_20260604_175653\\logs"
+  },
+  "command": [
+    "D:\\CardioConsult_Gemma4_TrackC_Final_V5_EchoNet_DL_20260604\\05_pc_v5\\.venv\\Scripts\\python.exe",
+    "tools/run_newtraining_validation.py",
+    "--mapping",
+    "D:\\CardioConsult_Gemma4_TrackC_Final_V4_20260604\\03_mapping\\case_report_time_mapping.csv",
+    "--out-dir",
+    "validation_speedopt\\freeze_runs\\echobench_20260604_175653\\validation",
+    "--v4",
+    "--case-limit",
+    "60",
+    "--max-files-per-case",
+    "12"
+  ],
+  "summary": {
+    "validation": {
+      "cases_attempted": 60,
+      "cases_ok": 60,
+      "total_runtime_seconds": 42.899,
+      "mean_case_runtime_seconds": 0.7105,
+      "use_gguf": false,
+      "v4": true,
+      "gguf_limit": 0,
+      "echobench_wall_seconds": 43.903
+    },
+    "latency": {
+      "case_count": 60,
+      "runtime_seconds": {
+        "mean": 0.711,
+        "median_p50": 0.705,
+        "p90": 0.749,
+        "p95": 0.763,
+        "p99": 0.858,
+        "max": 0.986,
+        "stdev": 0.049
+      },
+      "files_per_case": {
+        "mean": 12.0,
+        "max": 12
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "case_count": 60,
+  "runtime_seconds": {
+    "mean": 1.418,
+    "median_p50": 1.107,
+    "p90": 2.225,
+    "p95": 2.499,
+    "p99": 3.105,
+    "max": 3.394,
+    "stdev": 0.585
+  },
+  "files_per_case": {
+    "mean": 17.283,
+    "max": 33
+  }
+}
