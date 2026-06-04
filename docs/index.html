@@ -3,92 +3,804 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CardioConsult PC V5 Online Demo</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <title>CardioConsult PC V5 Rule Demo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f8;
+        --ink: #162126;
+        --muted: #66747c;
+        --line: #d8e0e4;
+        --panel: #ffffff;
+        --soft: #eef3f2;
+        --accent: #0f766e;
+        --accent-dark: #0b5f59;
+        --danger: #9f2f1f;
+        --blue: #2454a6;
+        --shadow: 0 16px 42px rgba(22, 33, 38, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      .shell {
+        min-height: 100vh;
+        padding: 22px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        max-width: 1280px;
+        margin: 0 auto 18px;
+      }
+
+      .eyebrow {
+        margin: 0 0 5px;
+        color: var(--accent-dark);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 0;
+        font-size: 28px;
+        line-height: 1.16;
+      }
+
+      h2 {
+        margin-bottom: 8px;
+        font-size: 23px;
+        line-height: 1.25;
+      }
+
+      h3 {
+        margin-bottom: 10px;
+        font-size: 15px;
+      }
+
+      .status {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel);
+        color: var(--muted);
+        padding: 8px 12px;
+        white-space: nowrap;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 360px) minmax(420px, 1fr);
+        gap: 16px;
+        max-width: 1280px;
+        margin: 0 auto;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .controls {
+        padding: 16px;
+      }
+
+      .drop {
+        display: grid;
+        place-items: center;
+        gap: 8px;
+        min-height: 142px;
+        border: 1px dashed #93a4ad;
+        border-radius: 8px;
+        background: var(--soft);
+        text-align: center;
+        cursor: pointer;
+        padding: 16px;
+      }
+
+      .drop.dragging {
+        border-color: var(--accent);
+        background: #dff2ef;
+      }
+
+      .drop strong {
+        font-size: 15px;
+      }
+
+      .drop small,
+      .hint,
+      .meta {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      #fileInput {
+        display: none;
+      }
+
+      .button-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin: 14px 0;
+      }
+
+      button {
+        min-height: 39px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+        font-weight: 800;
+      }
+
+      button:hover {
+        border-color: var(--accent-dark);
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      label {
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      select {
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--ink);
+        padding: 0 10px;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin: 14px 0;
+      }
+
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fbfcfc;
+        padding: 10px;
+      }
+
+      .metric span {
+        display: block;
+        font-size: 22px;
+        font-weight: 900;
+      }
+
+      .file-list {
+        display: grid;
+        gap: 8px;
+        max-height: 280px;
+        overflow: auto;
+      }
+
+      .file-row {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        padding: 9px 10px;
+      }
+
+      .file-row strong {
+        display: block;
+        overflow-wrap: anywhere;
+        font-size: 13px;
+      }
+
+      .output {
+        padding: 16px;
+        min-height: 650px;
+      }
+
+      .diagnosis {
+        border: 1px solid #bddbd6;
+        border-radius: 8px;
+        background: #f2faf8;
+        padding: 14px;
+        margin-bottom: 14px;
+      }
+
+      .diagnosis h2 {
+        color: var(--accent-dark);
+      }
+
+      .report-section {
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+        margin-top: 14px;
+      }
+
+      .report-text {
+        white-space: pre-wrap;
+        line-height: 1.72;
+      }
+
+      pre {
+        margin: 0;
+        overflow: auto;
+        white-space: pre-wrap;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #11191d;
+        color: #dce9e7;
+        padding: 12px;
+        line-height: 1.55;
+      }
+
+      .safety {
+        color: var(--danger);
+        font-weight: 800;
+      }
+
+      @media (max-width: 900px) {
+        .shell {
+          padding: 14px;
+        }
+
+        .topbar,
+        .grid {
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+
+        .status {
+          justify-self: start;
+        }
+      }
+    </style>
   </head>
   <body>
-    <main class="app-shell">
+    <main class="shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Gemma4 Offline Edge AI</p>
+          <p class="eyebrow">Rule Matching Only</p>
           <h1>CardioConsult PC V5 Online Demo</h1>
         </div>
-        <div class="status-pill" id="modelStatus">Browser edge demo</div>
+        <div class="status" id="status">静态网页已启动</div>
       </header>
 
-      <section class="workspace" aria-label="CardioConsult online demo workspace">
-        <aside class="control-panel">
-          <div class="panel-section">
-            <label class="file-drop" for="fileInput" id="dropZone">
-              <span class="file-icon">+</span>
-              <span>Upload ultrasound files</span>
-              <small>PNG/JPEG/WebP/GIF, large DICOM/DCOM, MP4/MOV/WebM</small>
-            </label>
-            <input
-              id="fileInput"
-              type="file"
-              multiple
-              accept="image/*,video/*,.dcm,.dicom,.dcom,.cine"
-            />
-          </div>
+      <section class="grid" aria-label="CardioConsult rule matching demo">
+        <aside class="panel controls">
+          <label class="drop" for="fileInput" id="dropZone">
+            <strong>选择或拖入心超文件</strong>
+            <small>PNG/JPEG/WebP/GIF、DICOM/DCOM/DCM、CINE、MP4/MOV/WebM。网页只读取文件名、扩展名和大小，因此大 DICOM/DCOM 也不会被完整载入。</small>
+          </label>
+          <input id="fileInput" type="file" multiple accept="image/*,video/*,.dcm,.dicom,.dcom,.cine" />
 
           <div class="button-row">
-            <button id="sampleButton" type="button">Sample</button>
-            <button id="analyzeButton" type="button" class="primary">Analyze</button>
-            <button id="resetButton" type="button">Reset</button>
+            <button type="button" id="sampleButton">示例</button>
+            <button type="button" id="analyzeButton" class="primary">规则判断</button>
+            <button type="button" id="resetButton">重置</button>
           </div>
 
-          <div class="metric-grid" aria-label="Study metrics">
-            <div>
-              <span id="metricFiles">0</span>
-              <small>files/frames</small>
-            </div>
-            <div>
-              <span id="metricViews">0</span>
-              <small>views</small>
-            </div>
-            <div>
-              <span id="metricDiastole">0</span>
-              <small>diastole</small>
-            </div>
-            <div>
-              <span id="metricSystole">0</span>
-              <small>systole</small>
-            </div>
+          <div class="field">
+            <label for="preset">病症规则</label>
+            <select id="preset">
+              <option value="auto">自动：文件名 + 下方规则项</option>
+              <option value="mr_mild">轻度二尖瓣反流</option>
+              <option value="tr_mild">轻度三尖瓣反流</option>
+              <option value="mr_tr_mild">轻度二尖瓣反流合并轻度三尖瓣反流</option>
+              <option value="low_ef">左室收缩功能减低</option>
+              <option value="pericardial_effusion">心包积液</option>
+              <option value="aortic_stenosis">主动脉瓣狭窄</option>
+              <option value="unknown_valve_flow">瓣膜异常待定位的彩色多普勒异常血流</option>
+            </select>
           </div>
 
+          <div class="field">
+            <label for="doppler">Color Doppler 规则强度</label>
+            <select id="doppler">
+              <option value="none">未见明确异常血流</option>
+              <option value="mild" selected>轻度异常血流/小喷流</option>
+              <option value="moderate">中度异常血流/中等喷流</option>
+              <option value="severe">重度异常血流/大喷流</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="view">主要切面</label>
+            <select id="view">
+              <option value="auto">自动从文件名识别</option>
+              <option value="plax">PLAX 胸骨旁长轴</option>
+              <option value="psax">PSAX 胸骨旁短轴</option>
+              <option value="a4c">A4C 心尖四腔心</option>
+              <option value="subcostal">剑突下/下腔静脉</option>
+              <option value="unknown">不确定</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="bmode">B-mode 规则项</label>
+            <select id="bmode">
+              <option value="none">未触发明确结构异常</option>
+              <option value="low_ef">收缩幅度减低/疑似低 EF</option>
+              <option value="lv_dilation">左室扩大</option>
+              <option value="pericardial_effusion">心包无回声区/积液</option>
+              <option value="wall_motion">节段性室壁运动异常</option>
+            </select>
+          </div>
+
+          <div class="metrics" aria-label="file metrics">
+            <div class="metric"><span id="metricFiles">0</span><small>files</small></div>
+            <div class="metric"><span id="metricViews">0</span><small>views</small></div>
+            <div class="metric"><span id="metricDia">0</span><small>diastole</small></div>
+            <div class="metric"><span id="metricSys">0</span><small>systole</small></div>
+          </div>
+
+          <p class="hint">这是线上可启动演示页，只做规则匹配。完整离线 Gemma4 4B GGUF 计算、图像特征提取和 DICOM 像素处理请运行 PC V5 应用。</p>
           <div class="file-list" id="fileList" aria-live="polite"></div>
         </aside>
 
-        <section class="preview-panel">
-          <canvas id="previewCanvas" width="512" height="384" aria-label="Ultrasound preview"></canvas>
-          <div class="filmstrip" id="filmstrip" aria-label="Loaded frames"></div>
-        </section>
-
-        <section class="report-panel" aria-live="polite">
-          <div class="diagnosis-block">
-            <p class="eyebrow">Teaching reference diagnosis</p>
-            <h2 id="diagnosisTitle">Awaiting input</h2>
-            <p id="confidenceText">Load files or run the sample study.</p>
+        <section class="panel output" aria-live="polite">
+          <div class="diagnosis">
+            <p class="eyebrow">Teaching Reference Diagnosis</p>
+            <h2 id="diagnosisTitle">等待输入</h2>
+            <p id="confidence">请上传文件，或点击“示例”。</p>
           </div>
 
           <div class="report-section">
-            <h3>Report</h3>
-            <p id="reportText">
-              The online demo runs browser-side feature extraction and the PC
-              rule fallback. Full offline Gemma4 4B inference runs through
-              local GGUF files in the Windows PC V5 application.
-            </p>
+            <h3>疑似诊断输出字段</h3>
+            <p class="report-text" id="reportText">在线 demo 已启动。当前页面不调用模型、不上传文件、不读取 DICOM 像素，只用规则项和文件名进行教学参考匹配。</p>
           </div>
 
           <div class="report-section">
-            <h3>Feature Summary</h3>
-            <pre id="featureText">No features yet.</pre>
+            <h3>规则摘要</h3>
+            <pre id="featureText">No rule evidence yet.</pre>
           </div>
         </section>
       </section>
     </main>
 
-    <script src="./demo.js"></script>
+    <script>
+      (() => {
+        const state = { files: [] };
+        const els = {
+          fileInput: document.getElementById("fileInput"),
+          dropZone: document.getElementById("dropZone"),
+          sampleButton: document.getElementById("sampleButton"),
+          analyzeButton: document.getElementById("analyzeButton"),
+          resetButton: document.getElementById("resetButton"),
+          preset: document.getElementById("preset"),
+          doppler: document.getElementById("doppler"),
+          view: document.getElementById("view"),
+          bmode: document.getElementById("bmode"),
+          fileList: document.getElementById("fileList"),
+          status: document.getElementById("status"),
+          metricFiles: document.getElementById("metricFiles"),
+          metricViews: document.getElementById("metricViews"),
+          metricDia: document.getElementById("metricDia"),
+          metricSys: document.getElementById("metricSys"),
+          diagnosisTitle: document.getElementById("diagnosisTitle"),
+          confidence: document.getElementById("confidence"),
+          reportText: document.getElementById("reportText"),
+          featureText: document.getElementById("featureText")
+        };
+
+        const viewRules = [
+          ["plax", /plax|parasternal.?long|长轴|胸骨旁长轴|lvot|aortic/i],
+          ["psax", /psax|parasternal.?short|短轴|乳头肌|papillary/i],
+          ["a4c", /a4c|apical.?4|四腔|心尖四腔|tricuspid|三尖瓣|mitral|二尖瓣/i],
+          ["subcostal", /subcostal|ivc|剑突|下腔静脉/i]
+        ];
+
+        els.fileInput.addEventListener("change", (event) => {
+          state.files = Array.from(event.target.files);
+          renderFiles();
+          analyze();
+        });
+
+        els.dropZone.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          els.dropZone.classList.add("dragging");
+        });
+
+        els.dropZone.addEventListener("dragleave", () => {
+          els.dropZone.classList.remove("dragging");
+        });
+
+        els.dropZone.addEventListener("drop", (event) => {
+          event.preventDefault();
+          els.dropZone.classList.remove("dragging");
+          state.files = Array.from(event.dataTransfer.files);
+          renderFiles();
+          analyze();
+        });
+
+        els.sampleButton.addEventListener("click", () => {
+          state.files = [
+            sampleFile("A4C_color_mild_MR_diastole.png", 842000),
+            sampleFile("A4C_color_mild_MR_systole.png", 861000),
+            sampleFile("A4C_color_mild_TR_diastole.dcm", 2147483648),
+            sampleFile("A4C_color_mild_TR_systole.dcom", 2147483648)
+          ];
+          els.preset.value = "mr_tr_mild";
+          els.doppler.value = "mild";
+          els.view.value = "a4c";
+          els.bmode.value = "none";
+          renderFiles();
+          analyze();
+        });
+
+        els.analyzeButton.addEventListener("click", () => {
+          if (state.files.length === 0) {
+            state.files = [sampleFile("A4C_color_mild_MR_systole.png", 842000), sampleFile("A4C_color_mild_MR_diastole.png", 861000)];
+            renderFiles();
+          }
+          analyze();
+        });
+
+        els.resetButton.addEventListener("click", () => {
+          state.files = [];
+          els.fileInput.value = "";
+          els.preset.value = "auto";
+          els.doppler.value = "mild";
+          els.view.value = "auto";
+          els.bmode.value = "none";
+          renderFiles();
+          renderEmpty();
+        });
+
+        [els.preset, els.doppler, els.view, els.bmode].forEach((control) => {
+          control.addEventListener("change", () => {
+            if (state.files.length > 0) analyze();
+          });
+        });
+
+        renderEmpty();
+
+        function sampleFile(name, size) {
+          return { name, size, type: extensionOf(name), sample: true };
+        }
+
+        function renderFiles() {
+          els.metricFiles.textContent = String(state.files.length);
+          const study = summarizeStudy(state.files);
+          els.metricViews.textContent = String(study.viewCount);
+          els.metricDia.textContent = String(study.diastole);
+          els.metricSys.textContent = String(study.systole);
+          els.fileList.innerHTML = "";
+          for (const file of state.files.slice(0, 80)) {
+            const row = document.createElement("div");
+            row.className = "file-row";
+            row.innerHTML = "<strong></strong><small></small>";
+            row.querySelector("strong").textContent = file.name;
+            row.querySelector("small").textContent = `${extensionOf(file.name).toUpperCase()} · ${formatBytes(file.size || 0)}${file.sample ? " · sample" : ""}`;
+            els.fileList.appendChild(row);
+          }
+          if (state.files.length > 80) {
+            const more = document.createElement("div");
+            more.className = "file-row";
+            more.textContent = `另有 ${state.files.length - 80} 个文件已计入规则匹配。`;
+            els.fileList.appendChild(more);
+          }
+        }
+
+        function renderEmpty() {
+          els.metricFiles.textContent = "0";
+          els.metricViews.textContent = "0";
+          els.metricDia.textContent = "0";
+          els.metricSys.textContent = "0";
+          els.fileList.innerHTML = "";
+          els.status.textContent = "静态网页已启动";
+          els.diagnosisTitle.textContent = "等待输入";
+          els.confidence.textContent = "请上传文件，或点击“示例”。";
+          els.reportText.textContent = "在线 demo 已启动。当前页面不调用模型、不上传文件、不读取 DICOM 像素，只用规则项和文件名进行教学参考匹配。";
+          els.featureText.textContent = "No rule evidence yet.";
+        }
+
+        function analyze() {
+          const study = summarizeStudy(state.files);
+          const result = diagnose(study);
+          els.status.textContent = "规则匹配完成";
+          els.diagnosisTitle.textContent = result.minDisease;
+          els.confidence.textContent = `教学参考置信度：${result.confidence} · 规则：${result.rule}`;
+          els.reportText.textContent = buildReport(study, result);
+          els.featureText.textContent = buildFeatureText(study, result);
+          els.metricViews.textContent = String(study.viewCount);
+          els.metricDia.textContent = String(study.diastole);
+          els.metricSys.textContent = String(study.systole);
+        }
+
+        function summarizeStudy(files) {
+          const names = files.map((file) => file.name || "").join(" | ");
+          const lower = names.toLowerCase();
+          const extensions = files.map((file) => extensionOf(file.name));
+          const totalBytes = files.reduce((sum, file) => sum + (file.size || 0), 0);
+          const hasDicom = extensions.some((ext) => ["dcm", "dicom", "dcom"].includes(ext));
+          const hasVideo = extensions.some((ext) => ["cine", "mp4", "mov", "webm", "avi", "mkv"].includes(ext));
+          const hasImage = extensions.some((ext) => ["png", "jpg", "jpeg", "webp", "gif", "bmp"].includes(ext));
+          const selectedView = els.view.value;
+          const views = new Set();
+          if (selectedView !== "auto" && selectedView !== "unknown") {
+            views.add(selectedView);
+          }
+          for (const [view, pattern] of viewRules) {
+            if (pattern.test(names)) views.add(view);
+          }
+          const systole = countMatches(lower, [/systole|sys|收缩|_es\b|\bes\b|endsyst/i]);
+          const diastole = countMatches(lower, [/diastole|dia|舒张|_ed\b|\bed\b|enddiast/i]);
+          const estimatedPhase = systole === 0 && diastole === 0 && files.length >= 2;
+          const severity = severityFromText(lower) || els.doppler.value;
+          const signals = {
+            mitral: /mitral|mr\b|二尖瓣|二尖|mvr/i.test(names),
+            tricuspid: /tricuspid|tr\b|三尖瓣|三尖|tvr/i.test(names),
+            aortic: /aortic|as\b|ar\b|主动脉瓣|主动脉/i.test(names),
+            pulmonary: /pulmonary|肺动脉瓣|肺动脉/i.test(names),
+            regurgitation: /regurg|反流|返流|mr\b|tr\b|ar\b|pr\b/i.test(names),
+            stenosis: /stenosis|狭窄|as\b|ms\b/i.test(names),
+            lowEf: /low.?ef|lvef|ef.?low|收缩功能|心衰|射血分数|hfref/i.test(names) || els.bmode.value === "low_ef",
+            pericardial: /pericardial|effusion|心包|积液/i.test(names) || els.bmode.value === "pericardial_effusion",
+            wallMotion: /wall.?motion|室壁|节段/i.test(names) || els.bmode.value === "wall_motion",
+            lvDilation: /lv.?dilat|左室扩大|扩大/i.test(names) || els.bmode.value === "lv_dilation",
+            color: /color|doppler|cdfi|血流|彩色|彩超/i.test(names) || els.doppler.value !== "none"
+          };
+          return {
+            fileCount: files.length,
+            names,
+            extensions,
+            totalBytes,
+            hasDicom,
+            hasVideo,
+            hasImage,
+            viewCount: Math.max(views.size, files.length > 0 ? 1 : 0),
+            viewNames: Array.from(views),
+            systole: estimatedPhase ? 1 : systole,
+            diastole: estimatedPhase ? 1 : diastole,
+            estimatedPhase,
+            severity,
+            signals
+          };
+        }
+
+        function diagnose(study) {
+          const preset = els.preset.value;
+          if (preset !== "auto") return presetDiagnosis(preset, study);
+          const s = study.signals;
+          if (s.mitral && s.tricuspid && (s.regurgitation || s.color)) {
+            return valveResult("mr_tr", study.severity, "filename_mr_tr_rule", "二尖瓣/三尖瓣疾病", `${cnSeverity(study.severity)}二尖瓣反流合并${cnSeverity(study.severity)}三尖瓣反流`, "文件名或规则项同时触发二尖瓣与三尖瓣反流线索。");
+          }
+          if (s.mitral && (s.regurgitation || s.color)) {
+            return valveResult("mr", study.severity, "filename_mr_rule", "二尖瓣疾病", `${cnSeverity(study.severity)}二尖瓣反流`, "文件名或规则项触发二尖瓣反流线索。");
+          }
+          if (s.tricuspid && (s.regurgitation || s.color)) {
+            return valveResult("tr", study.severity, "filename_tr_rule", "三尖瓣疾病", `${cnSeverity(study.severity)}三尖瓣反流`, "文件名或规则项触发三尖瓣反流线索。");
+          }
+          if (s.aortic && s.stenosis) {
+            return {
+              hierarchy: `瓣膜性心脏病 > 主动脉瓣疾病 > ${cnSeverity(study.severity)}主动脉瓣狭窄`,
+              broad: "瓣膜性心脏病",
+              middle: "主动脉瓣疾病",
+              minDisease: `${cnSeverity(study.severity)}主动脉瓣狭窄`,
+              confidence: confidenceFor(study),
+              rule: "filename_aortic_stenosis_rule",
+              rationale: "文件名或规则项触发主动脉瓣狭窄线索。"
+            };
+          }
+          if (s.lowEf) {
+            return {
+              hierarchy: `心肌/心功能异常 > 左室收缩功能异常 > ${cnSeverity(study.severity)}左室收缩功能减低`,
+              broad: "心肌/心功能异常",
+              middle: "左室收缩功能异常",
+              minDisease: `${cnSeverity(study.severity)}左室收缩功能减低`,
+              confidence: confidenceFor(study),
+              rule: "bmode_low_ef_rule",
+              rationale: "B-mode 规则项或文件名触发收缩功能减低线索。"
+            };
+          }
+          if (s.pericardial) {
+            return {
+              hierarchy: `心包疾病 > 心包积液 > ${cnSeverity(study.severity)}心包积液`,
+              broad: "心包疾病",
+              middle: "心包积液",
+              minDisease: `${cnSeverity(study.severity)}心包积液`,
+              confidence: confidenceFor(study),
+              rule: "bmode_pericardial_effusion_rule",
+              rationale: "B-mode 规则项或文件名触发心包积液线索。"
+            };
+          }
+          if (s.color) {
+            return valveResult("unknown", study.severity, "color_flow_unlocalized_rule", "瓣膜异常待定位", `${cnSeverity(study.severity)}彩色多普勒异常血流`, "检测到 Color Doppler 规则项，但缺少足够瓣膜定位线索。");
+          }
+          return valveResult("default_mr", "mild", "default_teaching_min_disease_rule", "二尖瓣疾病待排", "轻度二尖瓣反流待排", "在线 demo 未读取像素；缺少定位证据时，为满足教学演示输出合同，给出低置信度最小病症占位并要求补扫。");
+        }
+
+        function presetDiagnosis(preset, study) {
+          const severity = preset.includes("mild") ? "mild" : study.severity;
+          const map = {
+            mr_mild: valveResult("mr", "mild", "manual_mr_rule", "二尖瓣疾病", "轻度二尖瓣反流", "用户选择了轻度二尖瓣反流规则。"),
+            tr_mild: valveResult("tr", "mild", "manual_tr_rule", "三尖瓣疾病", "轻度三尖瓣反流", "用户选择了轻度三尖瓣反流规则。"),
+            mr_tr_mild: valveResult("mr_tr", "mild", "manual_mr_tr_rule", "二尖瓣/三尖瓣疾病", "轻度二尖瓣反流合并轻度三尖瓣反流", "用户选择了二尖瓣与三尖瓣轻度反流合并规则。"),
+            low_ef: {
+              hierarchy: `心肌/心功能异常 > 左室收缩功能异常 > ${cnSeverity(severity)}左室收缩功能减低`,
+              broad: "心肌/心功能异常",
+              middle: "左室收缩功能异常",
+              minDisease: `${cnSeverity(severity)}左室收缩功能减低`,
+              confidence: confidenceFor(study),
+              rule: "manual_low_ef_rule",
+              rationale: "用户选择了左室收缩功能减低规则。"
+            },
+            pericardial_effusion: {
+              hierarchy: `心包疾病 > 心包积液 > ${cnSeverity(severity)}心包积液`,
+              broad: "心包疾病",
+              middle: "心包积液",
+              minDisease: `${cnSeverity(severity)}心包积液`,
+              confidence: confidenceFor(study),
+              rule: "manual_pericardial_effusion_rule",
+              rationale: "用户选择了心包积液规则。"
+            },
+            aortic_stenosis: {
+              hierarchy: `瓣膜性心脏病 > 主动脉瓣疾病 > ${cnSeverity(severity)}主动脉瓣狭窄`,
+              broad: "瓣膜性心脏病",
+              middle: "主动脉瓣疾病",
+              minDisease: `${cnSeverity(severity)}主动脉瓣狭窄`,
+              confidence: confidenceFor(study),
+              rule: "manual_aortic_stenosis_rule",
+              rationale: "用户选择了主动脉瓣狭窄规则。"
+            },
+            unknown_valve_flow: valveResult("unknown", study.severity, "manual_unlocalized_flow_rule", "瓣膜异常待定位", `${cnSeverity(study.severity)}彩色多普勒异常血流`, "用户选择了瓣膜异常待定位的彩色多普勒异常血流规则。")
+          };
+          return map[preset] || map.mr_mild;
+        }
+
+        function valveResult(kind, severity, rule, middle, minDisease, rationale) {
+          const broad = "瓣膜性心脏病";
+          const exactMiddle = middle || (kind === "tr" ? "三尖瓣疾病" : "二尖瓣疾病");
+          return {
+            hierarchy: `${broad} > ${exactMiddle} > ${minDisease}`,
+            broad,
+            middle: exactMiddle,
+            minDisease,
+            confidence: "中等",
+            rule,
+            severity: cnSeverity(severity),
+            rationale
+          };
+        }
+
+        function buildReport(study, result) {
+          const phaseText = study.estimatedPhase ? "系统按文件数估计存在 1 个舒张态、1 个收缩态" : `文件名规则识别出 ${study.diastole} 个舒张态、${study.systole} 个收缩态`;
+          const viewText = study.viewNames.length > 0 ? study.viewNames.join(", ") : "未定位具体切面";
+          const inputTypes = [
+            study.hasImage ? "图片" : "",
+            study.hasDicom ? "DICOM/DCOM" : "",
+            study.hasVideo ? "动图/视频" : ""
+          ].filter(Boolean).join("、") || "未知格式";
+          return [
+            `教学参考病症判断：${result.hierarchy}。`,
+            `最小病症：${result.minDisease}。`,
+            `逻辑链：${study.fileCount} 个文件 + ${inputTypes} + 切面 ${viewText} + Doppler 规则强度 ${cnSeverity(study.severity)} + B-mode 规则项 ${labelForBmode(els.bmode.value)} -> 规则 ${result.rule} -> ${result.broad} -> ${result.middle} -> ${result.minDisease}。`,
+            `本次输入合计 ${formatBytes(study.totalBytes)}；${phaseText}；线上 demo 只读取文件名、扩展名和大小，不读取 DICOM/DCOM 像素矩阵。`,
+            `判断依据：${result.rationale}`,
+            `基层/初学者辅助提示：若当前只覆盖 1 个体位或文件名无法确认切面，建议补扫 PLAX、PSAX、A4C、剑突下四腔心和 IVC，并以正式超声报告复核。`,
+            `安全分层：建议补扫或正式超声复核；若患者伴胸痛、晕厥、明显呼吸困难、低血压、发绀或急性心衰表现，应优先进入正式医疗流程。`,
+            `本结论仅用于医学教学、算法演示和基层参考，不是医疗器械输出，不作为正式临床诊断、治疗建议或医嘱。`
+          ].join("\n\n");
+        }
+
+        function buildFeatureText(study, result) {
+          return [
+            `mode=static_rule_matching_only`,
+            `rule=${result.rule}`,
+            `hierarchy=${result.hierarchy}`,
+            `files=${study.fileCount}`,
+            `total_size=${formatBytes(study.totalBytes)}`,
+            `extensions=${unique(study.extensions).join(", ") || "none"}`,
+            `has_image=${study.hasImage}`,
+            `has_dicom_or_dcom=${study.hasDicom}`,
+            `has_cine_or_video=${study.hasVideo}`,
+            `views=${study.viewNames.join(", ") || "unknown"}`,
+            `systole=${study.systole}`,
+            `diastole=${study.diastole}`,
+            `phase_estimated=${study.estimatedPhase}`,
+            `doppler_severity=${study.severity}`,
+            `signals=${JSON.stringify(study.signals, null, 2)}`
+          ].join("\n");
+        }
+
+        function countMatches(text, patterns) {
+          let count = 0;
+          for (const pattern of patterns) {
+            const matches = text.match(new RegExp(pattern.source, "gi"));
+            count += matches ? matches.length : 0;
+          }
+          return count;
+        }
+
+        function severityFromText(text) {
+          if (/severe|重度/.test(text)) return "severe";
+          if (/moderate|中度/.test(text)) return "moderate";
+          if (/mild|trace|轻度|少量/.test(text)) return "mild";
+          return "";
+        }
+
+        function cnSeverity(value) {
+          if (value === "severe") return "重度";
+          if (value === "moderate") return "中度";
+          return "轻度";
+        }
+
+        function confidenceFor(study) {
+          if (study.fileCount >= 6 && study.viewCount >= 3 && study.systole > 0 && study.diastole > 0) return "中高";
+          if (study.fileCount >= 2 && study.systole > 0 && study.diastole > 0) return "中等";
+          return "低";
+        }
+
+        function labelForBmode(value) {
+          const labels = {
+            none: "未触发明确结构异常",
+            low_ef: "收缩幅度减低/疑似低 EF",
+            lv_dilation: "左室扩大",
+            pericardial_effusion: "心包无回声区/积液",
+            wall_motion: "节段性室壁运动异常"
+          };
+          return labels[value] || value;
+        }
+
+        function extensionOf(name) {
+          const clean = String(name || "").split("?")[0];
+          const index = clean.lastIndexOf(".");
+          return index >= 0 ? clean.slice(index + 1).toLowerCase() : "unknown";
+        }
+
+        function formatBytes(bytes) {
+          const value = Number(bytes) || 0;
+          if (value >= 1024 ** 3) return `${(value / 1024 ** 3).toFixed(2)} GB`;
+          if (value >= 1024 ** 2) return `${(value / 1024 ** 2).toFixed(2)} MB`;
+          if (value >= 1024) return `${(value / 1024).toFixed(1)} KB`;
+          return `${value} B`;
+        }
+
+        function unique(values) {
+          return Array.from(new Set(values.filter(Boolean)));
+        }
+      })();
+    </script>
   </body>
 </html>

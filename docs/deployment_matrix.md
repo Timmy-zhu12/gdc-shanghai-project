@@ -7,7 +7,7 @@ This repository is the single submission entry point. The maintained runnable ta
 | Windows PC V5 app | Repository root | `run_cardio_pc_v5.bat` | Current maintained offline reference implementation |
 | Warm GGUF inference server | Repository root | `run_cardio_pc_v4_fast_server.bat` | Optional persistent `llama-server` mode for repeated local Gemma4 4B calls |
 | Rule-only smoke test | Repository root | `python app.py --self-test-rule-only` | Fast validation when GGUF weights are not present |
-| Static online demo | `docs/` | `index.html` | Browser-side feature extraction and PC rule-fallback demonstration; can be served by GitHub Pages |
+| Static online demo | `docs/` | `index.html` | Single-file browser rule-matching demonstration; can be served by GitHub Pages or opened directly |
 | Technical report bundle | `submission/technical_report/` and `docs/v5_benchmark/` | `.docx`, `.pdf`, `.md`, figures | Submission report, benchmark narrative, and generated visuals |
 
 Recommended demo order:

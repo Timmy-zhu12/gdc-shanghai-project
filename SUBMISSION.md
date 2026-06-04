@@ -13,7 +13,7 @@ Track alignment: Track C - Edge AI. The official description requires fully offl
 | Code repository | This repository: `https://github.com/Timmy-zhu12/gdc-shanghai-project` | Ready |
 | Demo video within 5 minutes | Final public video URL should be pasted into the submission form after upload | Pending final upload |
 | Technical report | [DOCX](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx), [PDF](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf), [Markdown](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md) | Ready |
-| Online demo URL | Static demo source is in [docs/index.html](docs/index.html); if GitHub Pages is enabled from `/docs`, use `https://timmy-zhu12.github.io/gdc-shanghai-project/` | Ready in repo |
+| Online demo URL | Single-file rule-matching demo source is in [docs/index.html](docs/index.html); if GitHub Pages is enabled from `/docs`, use `https://timmy-zhu12.github.io/gdc-shanghai-project/` | Ready in repo |
 | Training data disclosure | [DATASETS.md](DATASETS.md) and [docs/data_and_model_policy.md](docs/data_and_model_policy.md) | Ready |
 | Competitive differentiators | [docs/competitive_edge.md](docs/competitive_edge.md) | Ready |
 | License | [Apache License 2.0](LICENSE) with [NOTICE](NOTICE) | Ready |
@@ -28,15 +28,15 @@ This repository is the submission repository. PC V5 is the only actively maintai
 |---|---:|---|
 | Real-world impact | 30% | Medical education and primary-care ultrasound reference workflow; safety boundary in README and UI; de-identified local workflow |
 | Technical excellence | 25% | B-mode GLDM/texture proxies, SRAD/CLAHE preprocessing, Color Doppler HSV/vector proxies, cine/DICOM support, EchoNet-Dynamic EF calibration, offline Gemma4 4B via `llama-cli` or persistent `llama-server` |
-| Completeness | 20% | Runnable PC V5 repository, online demo static page, sample files, validation reports, deployment scripts, technical report, rule-smoke test |
+| Completeness | 20% | Runnable PC V5 repository, online rule-matching demo, sample files, validation reports, deployment scripts, technical report, rule-smoke test |
 | Innovation | 15% | Hybrid edge-computing + Gemma4 report generation, hierarchical disease label output, offline-first medical teaching workflow |
-| Presentation quality | 10% | APA technical report, validation bundle, README deployment guides, and static online demo |
+| Presentation quality | 10% | APA technical report, validation bundle, README deployment guides, and single-file online demo |
 
 ## Offline Demo Path
 
 Recommended judge demo path:
 
-1. Open the static online demo from `docs/index.html` or the GitHub Pages URL if enabled.
+1. Open the single-file rule-matching demo from `docs/index.html` or the GitHub Pages URL if enabled.
 2. Clone/open this repository and run `run_cardio_pc_v5.bat`.
 3. Demonstrate PNG/DICOM/DCOM/cine input and the same diagnosis output contract.
 4. For repeated local Gemma4 runs, start `run_cardio_pc_v4_fast_server.bat` first to reuse a warm llama.cpp server.
