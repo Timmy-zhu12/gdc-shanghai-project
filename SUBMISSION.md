@@ -13,7 +13,7 @@
 | 代码仓库 | 本仓库：`https://github.com/Timmy-zhu12/gdc-shanghai-project` | 已准备 |
 | 5 分钟内演示视频 | 视频上传后，将公开视频链接填入提交表单 | 待最终上传 |
 | 技术报告 | [DOCX](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx)、[PDF](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf)、[Markdown](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md) | 已准备 |
-| 在线演示链接 | 单文件规则匹配网页位于 [docs/index.html](docs/index.html)；若 GitHub Pages 从 `/docs` 启用，可使用 `https://timmy-zhu12.github.io/gdc-shanghai-project/` | 已在仓库内准备 |
+| 在线演示链接 | 单文件规则匹配网页已发布：`https://timmy-zhu12.github.io/gdc-shanghai-project/`；源码位于 [docs/index.html](docs/index.html) | 已上线 |
 | 训练/验证数据来源披露 | [DATASETS.md](DATASETS.md) 和 [docs/data_and_model_policy.md](docs/data_and_model_policy.md) | 已准备 |
 | 技术亮点说明 | [docs/competitive_edge.md](docs/competitive_edge.md) | 已准备 |
 | 许可证 | [Apache License 2.0](LICENSE) 与 [NOTICE](NOTICE) | 已准备 |
@@ -70,6 +70,6 @@ CardioConsult 是医学教学和算法演示原型，不是医疗器械，不能
 ## 提交前人工检查项
 
 - 录制或上传演示视频，并把公开视频链接填入提交表单。
-- 如果需要公开在线演示 URL，确认本仓库已从 `/docs` 启用 GitHub Pages。
+- 确认在线演示 URL `https://timmy-zhu12.github.io/gdc-shanghai-project/` 仍可访问。
 - 确认本仓库为公开仓库，或评审可访问。
 - 确认没有提交原始病人数据、模型权重、`config.json`、包含密钥的本地路径或数据集下载缓存。

@@ -3,7 +3,7 @@
 在线演示源码保存在 `docs/`，因此 GitHub Pages 可以直接从同一个 PC 提交仓库提供服务。
 
 - 本地文件：`docs/index.html`
-- 启用 `/docs` 作为 Pages 来源后，预期公开地址：`https://timmy-zhu12.github.io/gdc-shanghai-project/`
+- 已发布公开地址：`https://timmy-zhu12.github.io/gdc-shanghai-project/`
 - 演示范围：单文件浏览器规则匹配，并保持同样的诊断输出合同
 - 完整离线 Gemma4 4B 推理：需要在 Windows PC V5 应用中放置本地 GGUF 文件并运行
 

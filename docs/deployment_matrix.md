@@ -7,7 +7,7 @@
 | Windows PC V5 应用 | 仓库根目录 | `run_cardio_pc_v5.bat` | 当前维护的离线参考实现 |
 | 热启动 GGUF 推理服务 | 仓库根目录 | `run_cardio_pc_v4_fast_server.bat` | 可选常驻 `llama-server` 模式，用于多次本地 Gemma4 4B 调用 |
 | 规则自检 | 仓库根目录 | `python app.py --self-test-rule-only` | 没有 GGUF 权重时的快速验证 |
-| 静态在线演示 | `docs/` | `index.html` | 单文件浏览器规则匹配演示，可由 GitHub Pages 提供服务，也可直接打开 |
+| 静态在线演示 | `docs/` | `index.html` | 单文件浏览器规则匹配演示，已发布到 `https://timmy-zhu12.github.io/gdc-shanghai-project/` |
 | 技术报告包 | `submission/technical_report/` 和 `docs/v5_benchmark/` | `.docx`、`.pdf`、`.md`、图表 | 提交报告、benchmark 叙述和可视化结果 |
 
 推荐演示顺序：

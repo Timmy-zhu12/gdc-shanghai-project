@@ -10,7 +10,7 @@ CardioConsult PC V5 是本项目的 Windows 参考实现。项目服务于医学
 docs/index.html
 ```
 
-若 GitHub Pages 从 `/docs` 启用，公开地址通常为：
+在线演示已通过 GitHub Pages 发布，公开地址为：
 
 ```text
 https://timmy-zhu12.github.io/gdc-shanghai-project/
