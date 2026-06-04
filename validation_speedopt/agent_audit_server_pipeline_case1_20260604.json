@@ -1,0 +1,95 @@
+{
+  "run_id": "agent_20260604_153810_085654",
+  "created_at": "2026-06-04T15:38:10",
+  "audit_path": "D:\\gdc-shanghai-project-PC-speedopt_20260604\\exports\\agent_audit\\agent_20260604_153810_085654.json",
+  "steps": [
+    {
+      "name": "InputAgent",
+      "role": "核对输入文件、体位覆盖、收缩/舒张配对",
+      "status": "ok",
+      "elapsed_ms": 0.039,
+      "input_summary": "files_or_frames=12, source_types=dicom",
+      "output_summary": "views=1, phases={'systole': 1, 'diastole': 1}, warning=体位覆盖较少，输出只能作为低置信度的疑似教学判断。",
+      "evidence": {
+        "input_count": 12,
+        "view_count": 1,
+        "views": [
+          "UNKNOWN"
+        ],
+        "source_types": [
+          "dicom"
+        ],
+        "systole_count": 1,
+        "diastole_count": 1,
+        "coverage_warning": "体位覆盖较少，输出只能作为低置信度的疑似教学判断。"
+      }
+    },
+    {
+      "name": "FeatureAgent",
+      "role": "汇总 B-mode、Color Doppler 和动态图代理特征",
+      "status": "ok",
+      "elapsed_ms": 0.129,
+      "input_summary": "quality=0.807, contractility=0.952",
+      "output_summary": "B-mode edge=0.111, Doppler active=0.040",
+      "evidence": {
+        "quality_score": 0.8072,
+        "contractility_proxy": 0.649,
+        "contractility_fraction_proxy": 0.9522,
+        "bmode_edge_density": 0.1107,
+        "bmode_entropy": 0.5705,
+        "doppler_active_ratio": 0.0401,
+        "doppler_jet_width_proxy": 0.1247,
+        "doppler_vorticity_proxy": 0.0055
+      }
+    },
+    {
+      "name": "DiagnosisAgent",
+      "role": "执行层级标签规则、V4 校准和 V5 EchoNet 校准",
+      "status": "ok",
+      "elapsed_ms": 53.874,
+      "input_summary": "quality=0.807, views=1, frames=12",
+      "output_summary": "轻度三尖瓣反流伴轻度二尖瓣反流",
+      "evidence": {
+        "label_path": "瓣膜性心脏病 > 多瓣膜轻度反流 > 轻度三尖瓣反流伴轻度二尖瓣反流",
+        "rule_id": "v4_local_dicom_shared_ek_coupled_ek",
+        "confidence": "中等",
+        "evidence_level": "仅有异常大方向，定位证据不足",
+        "sources": [
+          "local-newtraining-20260602",
+          "ASE-guidelines",
+          "V4-shared-EK",
+          "V4-coupled-EK"
+        ]
+      }
+    },
+    {
+      "name": "ReportAgent",
+      "role": "记录报告生成后端并检查强制输出字段",
+      "status": "ok",
+      "elapsed_ms": 0.014,
+      "input_summary": "Gemma4 4B offline server: http://127.0.0.1:8088",
+      "output_summary": "backend=llama_server, chars=327",
+      "evidence": {
+        "backend": "llama_server",
+        "model_status": "Gemma4 4B offline server: http://127.0.0.1:8088",
+        "has_judgment": true,
+        "has_minimum_condition": true,
+        "has_logic_chain": true
+      }
+    },
+    {
+      "name": "SafetyAuditAgent",
+      "role": "检查医学教学边界、复核/转诊提示和非临床诊断声明",
+      "status": "safety_warning",
+      "elapsed_ms": 0.013,
+      "input_summary": "final_report",
+      "output_summary": "safety markers incomplete",
+      "evidence": {
+        "teaching_only": true,
+        "not_medical_device": false,
+        "not_clinical_diagnosis": false,
+        "referral_or_review": false
+      }
+    }
+  ]
+}

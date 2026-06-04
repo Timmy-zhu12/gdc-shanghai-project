@@ -17,6 +17,7 @@ from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = PROJECT_ROOT
 DEFAULT_MAPPING = PROJECT_ROOT / "validation" / "case_report_time_mapping.csv"
 DEFAULT_MODEL = PROJECT_ROOT / "models" / "gemma-4-4b-it-Q4_K_M.gguf"
 

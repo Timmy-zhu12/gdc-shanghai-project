@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +50,10 @@ SUPPORTED_EXTENSIONS = STATIC_IMAGE_EXTENSIONS | ANIMATED_IMAGE_EXTENSIONS | DIC
 
 MAX_FRAMES_PER_CINE = 48
 DEFAULT_VIDEO_STRIDE = 0
+MIN_PARALLEL_LOAD_FILES = 4
+MAX_LOAD_WORKERS = max(1, min(8, (os.cpu_count() or 4) - 1))
+FAST_CINE_MODE_ENV = "CARDIO_FAST_CINE_MODE"
+FAST_CINE_AUTO_MAX_FRAMES = 24
 
 
 @dataclass(frozen=True)
@@ -72,26 +78,39 @@ def load_files(paths: list[str | Path]) -> list[LoadedImage]:
     loaded: list[LoadedImage] = []
     errors: list[str] = []
 
-    for raw_path in paths:
-        path = Path(raw_path)
-        if not path.exists():
-            errors.append(f"{path}: file not found")
-            continue
-        try:
-            if path.suffix.lower() in DICOM_EXTENSIONS:
-                loaded.extend(load_dicom(path))
-            elif path.suffix.lower() in VIDEO_EXTENSIONS:
-                loaded.extend(load_video(path))
-            elif path.suffix.lower() in SUPPORTED_EXTENSIONS:
-                loaded.extend(load_pillow_image_or_animation(path))
-            else:
-                loaded.extend(load_unknown_by_probe(path))
-        except Exception as exc:  # noqa: BLE001 - UI needs concrete messages.
-            errors.append(f"{path.name}: load failed: {exc}")
+    raw_paths = [Path(raw_path) for raw_path in paths]
+    if len(raw_paths) >= MIN_PARALLEL_LOAD_FILES and MAX_LOAD_WORKERS > 1:
+        workers = min(MAX_LOAD_WORKERS, len(raw_paths))
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            results = list(executor.map(load_one_path, raw_paths))
+    else:
+        results = [load_one_path(path) for path in raw_paths]
+
+    for frames, error in results:
+        if frames:
+            loaded.extend(frames)
+        if error:
+            errors.append(error)
 
     if errors and not loaded:
         raise RuntimeError("\n".join(errors))
     return loaded
+
+
+def load_one_path(path: Path) -> tuple[list[LoadedImage], str]:
+    if not path.exists():
+        return [], f"{path}: file not found"
+    try:
+        suffix = path.suffix.lower()
+        if suffix in DICOM_EXTENSIONS:
+            return load_dicom(path), ""
+        if suffix in VIDEO_EXTENSIONS:
+            return load_video(path), ""
+        if suffix in SUPPORTED_EXTENSIONS:
+            return load_pillow_image_or_animation(path), ""
+        return load_unknown_by_probe(path), ""
+    except Exception as exc:  # noqa: BLE001 - UI needs concrete messages.
+        return [], f"{path.name}: load failed: {exc}"
 
 
 def load_pillow_image_or_animation(path: Path) -> list[LoadedImage]:
@@ -352,9 +371,16 @@ def _normalize_to_uint8(arr: np.ndarray) -> np.ndarray:
 def sample_indices(total_frames: int, max_frames: int = MAX_FRAMES_PER_CINE) -> list[int]:
     total_frames = max(1, int(total_frames))
     max_frames = max(1, int(max_frames))
+    if should_use_fast_cine_auto(total_frames, max_frames):
+        max_frames = FAST_CINE_AUTO_MAX_FRAMES
     if total_frames <= max_frames:
         return list(range(total_frames))
     return sorted({int(round(value)) for value in np.linspace(0, total_frames - 1, max_frames)})
+
+
+def should_use_fast_cine_auto(total_frames: int, max_frames: int) -> bool:
+    mode = os.environ.get(FAST_CINE_MODE_ENV, "off").strip().lower()
+    return mode == "auto" and max_frames == MAX_FRAMES_PER_CINE and total_frames > FAST_CINE_AUTO_MAX_FRAMES
 
 
 def _first_number(value: Any) -> float | None:

@@ -78,6 +78,8 @@ V5 的主要改进不是把所有任务改成一个黑盒深度网络，而是�
 | server 首次 completion | 8.775 s |
 | server 热启动 completion | 0.492 s |
 
+SpeedOpt 补充了一组普通本地服务验证，用于确认 PC V5 不只在规则自检或批处理 benchmark 中可运行，也能作为本机常驻推理服务被项目链路调用。测试使用 `llama-server.exe` 常驻加载 `gemma-4-4b-it-Q4_K_M.gguf`，监听 `http://127.0.0.1:8088`。通用 `/completion` smoke 连续两次返回 `OK`，第一次端到端 1.040 秒，第二次 0.721 秒。项目级链路使用 EchoBench 第 1 例、最多 12 个文件，文件加载 0.951 秒，特征提取 0.020 秒，服务模式 Gemma4 诊断 35.496 秒；输出包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：` 三个必需字段，并生成多智能体审计 JSON。完整记录见 `docs/service_validation.md` 与 `validation_speedopt/server_pipeline_case1_240tok_20260604.json`。
+
 性能测量方式借鉴 MLPerf 对离线、单流和服务端场景的拆分思想，但 EchoBench v1 是项目自建基准测试，不是 MLPerf 官方提交结果（MLCommons, n.d.-a, n.d.-b）。
 
 ## 范围、数据与指标定义

@@ -54,6 +54,17 @@ GGUF / llama.cpp smoke：
 | server 首次 completion | 8.775 s |
 | server 热启动 completion | 0.492 s |
 
+SpeedOpt 后的本地常驻服务补充验证：
+
+| 场景 | 结果 |
+|---|---:|
+| `/completion` 第一次短请求 | 1.040 s |
+| `/completion` 第二次短请求 | 0.721 s |
+| EchoBench 第 1 例服务诊断 | 35.496 s |
+| 必需字段检查 | 通过 |
+
+服务验证文档：`docs/service_validation.md`。本次测试确认 `llama-server.exe` 常驻服务可通过 `127.0.0.1:8088/completion` 完成普通请求，并能被项目诊断链路调用；`max_tokens=240` 时输出包含 `教学参考病症判断：`、`最小病症：` 和 `逻辑链：` 三个必需字段。
+
 ## 报告材料
 
 - `docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.md`

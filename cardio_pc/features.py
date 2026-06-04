@@ -1,7 +1,11 @@
 ﻿from __future__ import annotations
 
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import hashlib
+import json
+import os
 from pathlib import Path
 from typing import Iterable
 
@@ -9,6 +13,13 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 from .imaging import LoadedImage
+
+
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+FEATURE_ALGORITHM_VERSION = "v5-speedopt-20260604-preprocess-cache-threaded"
+FEATURE_CACHE_DIR = PROJECT_DIR / "exports" / "feature_cache"
+MIN_PARALLEL_FRAMES = 4
+MAX_FEATURE_WORKERS = max(1, min(8, (os.cpu_count() or 4) - 1))
 
 
 STANDARD_VIEWS: list[tuple[str, tuple[str, ...]]] = [
@@ -73,25 +84,7 @@ def analyze_loaded_images(images: list[LoadedImage]) -> StudyAnalysis:
     if not images:
         raise ValueError("No input images were loaded")
 
-    provisional: list[FrameAnalysis] = []
-    for image in images:
-        arr = resize_rgb(image.image)
-        gray = rgb_to_gray(arr)
-        bmode = bmode_features(gray)
-        flow = flow_features(arr)
-        enhanced = preprocess_bmode(gray)
-        provisional.append(
-            FrameAnalysis(
-                loaded=image,
-                view=detect_view(image.path),
-                phase=phase_from_name(image.path),
-                chamber_area_proxy=chamber_area_proxy(enhanced),
-                has_color_doppler=bool(flow[4] > 0.018 and flow[10] > 0.10),
-                bmode_features=bmode,
-                flow_features=flow,
-                notes="SRAD/CLAHE enhanced B-mode; connected-component filtered Doppler",
-            )
-        )
+    provisional = analyze_frames_parallel(images)
 
     frames = assign_phases(provisional)
     views = {frame.view for frame in frames}
@@ -115,6 +108,7 @@ def analyze_loaded_images(images: list[LoadedImage]) -> StudyAnalysis:
         "改进版使用 SRAD-inspired 散斑抑制、CLAHE 局部对比度增强、"
         "ED/ES 腔室面积代理相位识别、Doppler 连通域过滤、喷流宽度代理、"
         "方向一致性、散度与涡量代理，并加入 CAMUS B-mode 低 EF 校准和层级标签体系。"
+        "SpeedOpt 版本复用 B-mode 预处理结果、启用单帧特征缓存和线程池并行特征提取。"
     )
     summary = build_feature_summary(frames, mean_b, mean_f, contractility, contractility_fraction, quality, warning)
     return StudyAnalysis(
@@ -131,6 +125,119 @@ def analyze_loaded_images(images: list[LoadedImage]) -> StudyAnalysis:
         feature_summary=summary,
         quality_score=quality,
         method_notes=method_notes,
+    )
+
+
+def analyze_frames_parallel(images: list[LoadedImage]) -> list[FrameAnalysis]:
+    if len(images) < MIN_PARALLEL_FRAMES or MAX_FEATURE_WORKERS <= 1:
+        return [analyze_single_frame_cached(image) for image in images]
+    workers = min(MAX_FEATURE_WORKERS, len(images))
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        return list(executor.map(analyze_single_frame_cached, images))
+
+
+def analyze_single_frame_cached(image: LoadedImage) -> FrameAnalysis:
+    key = feature_cache_key(image)
+    if key:
+        cached = read_feature_cache(key)
+        if cached is not None:
+            return frame_from_cache(image, cached)
+
+    frame = analyze_single_frame_uncached(image)
+    if key:
+        write_feature_cache(key, frame)
+    return frame
+
+
+def analyze_single_frame_uncached(image: LoadedImage) -> FrameAnalysis:
+    arr = resize_rgb(image.image)
+    gray = rgb_to_gray(arr)
+    bmode = bmode_features(gray)
+    flow = flow_features(arr)
+    return FrameAnalysis(
+        loaded=image,
+        view=detect_view(image.path),
+        phase=phase_from_name(image.path),
+        chamber_area_proxy=float(bmode[9]),
+        has_color_doppler=bool(flow[4] > 0.018 and flow[10] > 0.10),
+        bmode_features=bmode,
+        flow_features=flow,
+        notes="SRAD/CLAHE enhanced B-mode; connected-component filtered Doppler; cached/threaded SpeedOpt path",
+    )
+
+
+def feature_cache_key(image: LoadedImage) -> str:
+    try:
+        path = image.path.resolve()
+        if not path.exists():
+            return ""
+        stat = path.stat()
+    except Exception:
+        return ""
+    source_frame_index = str(image.metadata.get("source_frame_index", image.frame_index))
+    raw = "|".join(
+        [
+            FEATURE_ALGORITHM_VERSION,
+            str(path),
+            str(stat.st_size),
+            str(stat.st_mtime_ns),
+            str(image.frame_index),
+            source_frame_index,
+            str(image.image.shape),
+            str(image.image.dtype),
+        ]
+    )
+    return hashlib.sha256(raw.encode("utf-8", errors="replace")).hexdigest()
+
+
+def read_feature_cache(key: str) -> dict | None:
+    path = FEATURE_CACHE_DIR / f"{key}.json"
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if data.get("algorithm_version") != FEATURE_ALGORITHM_VERSION:
+        return None
+    return data
+
+
+def write_feature_cache(key: str, frame: FrameAnalysis) -> None:
+    try:
+        FEATURE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        path = FEATURE_CACHE_DIR / f"{key}.json"
+        tmp = path.with_suffix(".tmp")
+        payload = {
+            "algorithm_version": FEATURE_ALGORITHM_VERSION,
+            "view": frame.view,
+            "phase": frame.phase,
+            "chamber_area_proxy": float(frame.chamber_area_proxy),
+            "has_color_doppler": bool(frame.has_color_doppler),
+            "bmode_features": [float(value) for value in frame.bmode_features],
+            "flow_features": [float(value) for value in frame.flow_features],
+            "notes": frame.notes,
+        }
+        tmp.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        tmp.replace(path)
+    except Exception:
+        pass
+
+
+def frame_from_cache(image: LoadedImage, data: dict) -> FrameAnalysis:
+    bmode = np.asarray(data.get("bmode_features", []), dtype=np.float32)
+    flow = np.asarray(data.get("flow_features", []), dtype=np.float32)
+    if bmode.shape != (14,) or flow.shape != (14,):
+        return analyze_single_frame_uncached(image)
+    return FrameAnalysis(
+        loaded=image,
+        view=str(data.get("view", detect_view(image.path))),
+        phase=str(data.get("phase", phase_from_name(image.path))),
+        chamber_area_proxy=float(data.get("chamber_area_proxy", 0.0)),
+        has_color_doppler=bool(data.get("has_color_doppler", False)),
+        bmode_features=bmode,
+        flow_features=flow,
+        notes=str(data.get("notes", "cached SpeedOpt feature vector")),
     )
 
 

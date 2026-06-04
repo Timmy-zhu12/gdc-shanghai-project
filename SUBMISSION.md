@@ -16,6 +16,7 @@
 | 在线演示链接 | 单文件规则匹配网页已发布：`https://timmy-zhu12.github.io/gdc-shanghai-project/`；源码位于 [docs/index.html](docs/index.html) | 已上线 |
 | 训练/验证数据来源披露 | [DATASETS.md](DATASETS.md) 和 [docs/data_and_model_policy.md](docs/data_and_model_policy.md) | 已准备 |
 | 技术亮点说明 | [docs/competitive_edge.md](docs/competitive_edge.md) | 已准备 |
+| 本地服务验证 | [docs/service_validation.md](docs/service_validation.md)，包含 `llama-server` 端口、`/completion` smoke、项目诊断链路和多智能体审计检查 | 已通过 |
 | 许可证 | [Apache License 2.0](LICENSE) 与 [NOTICE](NOTICE) | 已准备 |
 
 ## 仓库范围
@@ -40,7 +41,8 @@
 2. 克隆或打开本仓库，运行 `run_cardio_pc_v5.bat`。
 3. 演示 PC V5 从超声机器/工作站导出目录读取 PNG、DICOM、DCOM、cine/视频输入，以及一致的诊断输出合同。
 4. 多次本地 Gemma4 演示时，可先启动 `run_cardio_pc_v4_fast_server.bat`，复用已加载的 `llama-server`。
-5. 说明模型权重和原始数据因许可证与隐私原因不随仓库分发，然后展示验证摘要和安全边界。
+5. 展示 [docs/service_validation.md](docs/service_validation.md) 中的普通本地服务测试：`/completion` 两次短请求均成功，EchoBench 第 1 例服务诊断输出包含 `教学参考病症判断：`、`最小病症：` 和 `逻辑链：`。
+6. 说明模型权重和原始数据因许可证与隐私原因不随仓库分发，然后展示验证摘要和安全边界。
 
 ## 技术强项
 

@@ -1,0 +1,10 @@
+{
+  "case_id": "8632",
+  "files": 12,
+  "load_seconds": 0.938,
+  "feature_seconds": 0.014,
+  "diagnosis_seconds": 68.528,
+  "status": "Gemma4 4B offline server: http://127.0.0.1:8088",
+  "report_excerpt": "---\n\n**请严格按照以下格式输出：**\n\n教学参考病症判断：轻度三尖瓣反流伴轻度二尖瓣反流（瓣膜性心脏病 > 多瓣膜轻度反流）。\n最小病症：轻度三尖瓣反流伴轻度二尖瓣反流。\n逻辑链：体位覆盖1个/质量分0.81 + B-mode收缩幅度代理0.\n\n多智能体审计链：InputAgent -> FeatureAgent -> DiagnosisAgent -> ReportAgent -> SafetyAuditAgent；编排开销约 51.4 ms；审计文件：D:\\gdc-shanghai-project-PC-speedopt_20260604\\exports\\agent_audit\\agent_20260604_153605_615087.json。",
+  "has_required_fields": false
+}

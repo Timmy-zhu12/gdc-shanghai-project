@@ -1,0 +1,9 @@
+{
+  "case_count_old": 60,
+  "case_count_new": 60,
+  "case_field_differences": [],
+  "metric_differences": [],
+  "old_mean_case_seconds": 2.6695,
+  "new_mean_case_seconds": 1.8133000000000004,
+  "speedup_percent": 32.073421989136534
+}

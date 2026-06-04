@@ -18,6 +18,8 @@ tools/llama_cpp/*.zip
 # Generated reports and local test outputs.
 exports/*
 !exports/.gitkeep
+validation_speedopt/**/newtraining_cases.csv
+validation_speedopt/**/logs/
 
 # Local OS/editor noise.
 .DS_Store

@@ -125,6 +125,21 @@ start_llama_server_v4.bat
 stop_llama_server_v4.bat
 ```
 
+本地常驻服务验证文档：
+
+- [docs/service_validation.md](docs/service_validation.md)：记录 `llama-server.exe` 普通服务形态下的端口就绪、`/completion` smoke、项目诊断链路、多智能体审计和服务停止检查。
+
+最新本地服务 smoke 摘要：
+
+| 项目 | 结果 |
+|---|---:|
+| `/completion` 第一次短请求 | 1.040 s |
+| `/completion` 第二次短请求 | 0.721 s |
+| EchoBench 第 1 例服务诊断 | 35.496 s |
+| 必需字段检查 | 通过 |
+
+正式服务演示建议 `max_tokens >= 240`。`max_tokens=96` 的极短测试可能截断模型输出，不适合作为最终演示参数。
+
 兼容旧入口仍保留，并已指向 V4 流程：
 
 ```bat
