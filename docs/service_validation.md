@@ -1,4 +1,4 @@
-# 本地常驻服务验证
+﻿# 本地常驻服务验证
 
 更新日期：2026-06-04
 
@@ -11,8 +11,8 @@
 | 服务端程序 | `tools/llama_cpp/llama-b9469-bin-win-cpu-x64/llama-server.exe` |
 | 模型文件 | `D:\cardioconsult_PC_runbook\models\gemma-4-4b-it-Q4_K_M.gguf` |
 | 监听地址 | `http://127.0.0.1:8088` |
-| 启动脚本 | `start_llama_server_v4.bat` / `start_llama_server_v4.ps1` |
-| 停止脚本 | `stop_llama_server_v4.bat` |
+| 启动脚本 | `start_llama_server.bat` |
+| 停止脚本 | `stop_llama_server.bat` |
 | 项目调用方式 | `ModelConfig(use_server=True, server_url="http://127.0.0.1:8088")` |
 
 ## 应测项目
@@ -32,7 +32,7 @@
 启动服务：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\start_llama_server_v4.ps1
+.\start_llama_server.bat
 ```
 
 通用服务 smoke：
@@ -51,7 +51,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\start_llama_server_v4.ps1
 停止服务：
 
 ```powershell
-.\stop_llama_server_v4.bat
+.\stop_llama_server.bat
 ```
 
 ## 通用服务 Smoke 结果
