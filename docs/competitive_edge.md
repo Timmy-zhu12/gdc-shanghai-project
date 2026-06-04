@@ -1,12 +1,12 @@
 # 技术亮点
 
-CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向真实的医学教学和基层心脏超声参考流程。项目不是简单模型封装，而是把超声专用边缘特征、确定性安全后备和 Gemma4 报告生成组合成一个可复现的 Windows PC 工作流。
+CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向真实的医学教学和基层心脏超声参考流程。项目不是简单模型封装，而是把超声专用边缘特征、确定性安全后备和 Gemma4 报告生成组合成一个可部署在超声设备旁的 Windows PC 离线分析终端。
 
 ## 为什么它不同
 
 1. 离线优先的医疗教育场景。
 
-   目标使用场景是医学教学和基层心脏超声参考。此类场景可能网络不稳定、缺少专科医生、且对隐私要求高。应用可以本地运行，不要求原始病人数据离开设备。
+   目标使用场景是医学教学和基层心脏超声参考。此类场景可能网络不稳定、缺少专科医生、且对隐私要求高。PC 可放在超声机器旁，通过设备导出目录、DICOM 工作站或局域网共享目录直接读取资料，应用本地运行，不要求原始病人数据离开现场设备。
 
 2. LLM 之前先做超声数学处理。
 
@@ -14,7 +14,7 @@ CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向真实的医学
 
 3. 稳定的输入输出合同。
 
-   PC V5 应用和浏览器演示保持同一个用户承诺：导入一个或多个脱敏 PNG/JPG/DICOM/DCOM/cine 文件，输出一段中文教学参考诊断，其中包含最小病症、证据链、置信度和安全边界。
+   PC V5 应用和浏览器演示保持同一个用户承诺：导入一个或多个来自超声设备导出的脱敏 PNG/JPG/DICOM/DCOM/cine 文件，输出一段中文教学参考诊断，其中包含最小病症、证据链、置信度和安全边界。
 
 4. 层级病症标签。
 
@@ -26,7 +26,7 @@ CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向真实的医学
 
 6. 设备策略清晰。
 
-   当前 Windows PC V5 参考实现发布在 `Timmy-zhu12/gdc-shanghai-project`，通过 `llama-cli` 或常驻 `llama-server` 使用本地 Gemma4 4B GGUF。V5 增加 EchoNet-Dynamic 动态 B-mode 校准，用于 EF / 左室收缩功能减低识别，同时保留可审计的瓣膜反流规则。后续移动端和其他桌面端可以复用同一诊断契约，但不是评估当前提交的必要条件。
+   当前 Windows PC V5 参考实现发布在 `Timmy-zhu12/gdc-shanghai-project`，通过 `llama-cli` 或常驻 `llama-server` 使用本地 Gemma4 4B GGUF。它的设备角色是超声机器旁的离线分析终端，而不是远程云服务。V5 增加 EchoNet-Dynamic 动态 B-mode 校准，用于 EF / 左室收缩功能减低识别，同时保留可审计的瓣膜反流规则。后续移动端和其他桌面端可以复用同一诊断契约，但不是评估当前提交的必要条件。
 
 7. 证据包完整。
 
@@ -35,6 +35,6 @@ CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向真实的医学
 ## 演示重点
 
 - 先打开在线演示，让评审立即看到产品形态。
-- 再展示 PC V5 参考应用：`https://github.com/Timmy-zhu12/gdc-shanghai-project`；运行 `run_cardio_pc_v5.bat`。若需要多次本地 GGUF 调用，可先运行 `run_cardio_pc_v4_fast_server.bat` 复用热启动 llama.cpp server。
+- 再展示 PC V5 参考应用：`https://github.com/Timmy-zhu12/gdc-shanghai-project`；运行 `run_cardio_pc_v5.bat`，并说明 PC 可接入超声机器或工作站导出目录完成本地分析。若需要多次本地 GGUF 调用，可先运行 `run_cardio_pc_v4_fast_server.bat` 复用热启动 llama.cpp server。
 - 展示 `DATASETS.md` 和验证材料包，说明数据透明度。
 - 以严格安全边界收尾：仅用于医学教学参考，不是临床诊断或医疗器械输出。

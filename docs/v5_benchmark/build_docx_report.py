@@ -27,7 +27,9 @@ BORDER = "CBD5E1"
 
 
 def set_run_font(run, size=None, bold=None, italic=None, color=None, east_asia="Microsoft YaHei"):
-    run.font.name = "Calibri"
+    run.font.name = east_asia
+    run._element.rPr.rFonts.set(qn("w:ascii"), east_asia)
+    run._element.rPr.rFonts.set(qn("w:hAnsi"), east_asia)
     run._element.rPr.rFonts.set(qn("w:eastAsia"), east_asia)
     if size is not None:
         run.font.size = Pt(size)
@@ -40,7 +42,9 @@ def set_run_font(run, size=None, bold=None, italic=None, color=None, east_asia="
 
 
 def set_style_font(style, size=None, bold=None, color=None, east_asia="Microsoft YaHei"):
-    style.font.name = "Calibri"
+    style.font.name = east_asia
+    style._element.rPr.rFonts.set(qn("w:ascii"), east_asia)
+    style._element.rPr.rFonts.set(qn("w:hAnsi"), east_asia)
     style._element.rPr.rFonts.set(qn("w:eastAsia"), east_asia)
     if size is not None:
         style.font.size = Pt(size)
@@ -131,6 +135,16 @@ def add_para(doc, text="", style=None, bold_prefix=None):
     else:
         r = p.add_run(text)
         set_run_font(r)
+    return p
+
+
+def add_section_heading(doc, text):
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(16)
+    p.paragraph_format.space_after = Pt(8)
+    p.paragraph_format.keep_with_next = True
+    r = p.add_run(text)
+    set_run_font(r, size=16, bold=True, color=ACCENT)
     return p
 
 
@@ -268,10 +282,14 @@ def build():
     add_callout(
         doc,
         "技术摘要",
-        "CardioConsult PC V5 面向心脏超声教学参考和基层辅助初筛场景，目标是在普通 PC 上离线读取 PNG、DICOM/DCOM 与超声动图文件，输出从大方向到最小病症的结构化疑似诊断文字。V5 在原有 B-mode、Color Doppler、层级标签规则和 Gemma4 4B GGUF 本地报告生成基础上，加入 EchoNet-Dynamic 动态 B-mode 校准层，用于增强 EF 和左室收缩功能减低识别。"
+        "CardioConsult PC V5 面向心脏超声教学参考和基层辅助初筛场景。这里的 PC 被定义为可直接接入超声机器或超声工作站的离线分析设备：它可以通过 USB、局域网共享目录、DICOM 工作站导出目录或无线超声软件导出文件读取 PNG、DICOM/DCOM 与超声动图，并在本机输出从大方向到最小病症的结构化疑似诊断文字。V5 在原有 B-mode、Color Doppler、层级标签规则和 Gemma4 4B GGUF 本地报告生成基础上，加入 EchoNet-Dynamic 动态 B-mode 校准层，用于增强 EF 和左室收缩功能减低识别。"
     )
 
-    doc.add_heading("关键结论", level=1)
+    add_section_heading(doc, "PC 设备定位：超声机器旁离线分析终端")
+    add_para(doc, "本报告中的 PC 不是云端后台，也不是仅用于展示的通用桌面软件，而是放置在超声检查室、教学训练室或基层医疗点的本地分析设备。实际工作流中，超声机器或无线超声软件完成采集后，可把 PNG、DICOM/DCOM、cine 或视频导出到 USB、局域网共享目录、DICOM 工作站目录或本机指定文件夹，PC V5 从这些位置读取资料并完成本地预处理、特征提取、规则判断和 Gemma4 4B GGUF 报告生成。")
+    add_para(doc, "这种定位的目的有三点。第一，敏感图像和授权教学病例不需要上传云端，便于在网络不稳定或隐私要求高的场景中演示。第二，PC 能承担比手机更稳定的批量文件解析、视频抽帧、DICOM 兼容和 GGUF 常驻推理任务，适合作为超声设备旁的离线辅助终端。第三，输出始终限定为医学教学和基层参考，不替代正式超声报告、医师诊断、治疗建议或急诊分诊。")
+
+    add_section_heading(doc, "关键结论")
     bullets = [
         "完整证据场景 60/60 例成功，平均 3.76 秒/例；12 帧代表抽样场景 60/60 例成功，平均 2.56 秒/例。",
         "完整证据下 MR F1 为 0.964，AR F1 为 0.700，低 EF F1 为 0.857；MR 与低 EF 已达到较稳定的教学演示水平。",
@@ -284,7 +302,7 @@ def build():
         r = p.add_run(item)
         set_run_font(r)
 
-    doc.add_heading("完整证据场景：核心指标", level=1)
+    add_section_heading(doc, "完整证据场景：核心指标")
     add_para(doc, "完整证据场景使用每例所有可用文件，平均 17.3 个文件/例，最多 33 个文件/例。该场景代表资料相对充分时的系统能力上限。TR 在本批数据中没有阴性样本，因此特异性不能作为有效结论。")
     full_rows = [
         ["MR（二尖瓣）", "60", "55", "0.933", "0.964", "0.600", "0.964"],
@@ -302,7 +320,7 @@ def build():
     )
     add_figure(doc, "fig1_f1_full_vs_12frame.png", "图 1. EchoBench v1 F1：完整证据与 12 帧代表抽样对比。")
 
-    doc.add_heading("12 帧代表抽样：输入受限场景", level=1)
+    add_section_heading(doc, "12 帧代表抽样：输入受限场景")
     add_para(doc, "12 帧场景将每例文件做均匀代表抽样，而不是只取前 12 个文件。该场景更接近现场演示和标准输入上限，但会牺牲部分细粒度病症定位能力。")
     rep_rows = [
         ["MR（二尖瓣）", "60", "55", "0.883", "0.927", "0.400", "0.936"],
@@ -320,7 +338,7 @@ def build():
     )
     add_figure(doc, "fig2_accuracy_full_vs_12frame.png", "图 2. EchoBench v1 准确率：完整证据与 12 帧代表抽样对比。")
 
-    doc.add_heading("延迟与本地 GGUF 性能", level=1)
+    add_section_heading(doc, "延迟与本地 GGUF 性能")
     add_para(doc, "完整证据场景平均 3.76 秒/例，P95 为 5.51 秒；12 帧场景平均 2.56 秒/例，P95 为 3.20 秒。规则与小模型校准流水线不包含每例完整 GGUF 文本生成。")
     add_table(
         doc,
@@ -349,7 +367,7 @@ def build():
         font_size=8.1,
     )
 
-    doc.add_heading("数据、模型与方法", level=1)
+    add_section_heading(doc, "数据、模型与方法")
     add_para(doc, "本次主测试集来自授权本地 DICOM/报告时间映射，共 60 个病例。该数据只用于本地授权教育验证，不随代码发布，不作为公开数据集再分发。报告链接标签被用作当前 benchmark 的报告链接金标准，但不是独立多专家盲法复核金标准。")
     add_para(doc, "V5 使用 EchoNet-Dynamic 公开数据进行动态 B-mode EF 校准。实际读取 10,030 个心尖四腔 .avi 视频、FileList.csv 中的 EF/ESV/EDV/FPS/帧数/官方 split，以及 VolumeTracings.csv 中的专家左室追踪帧。EchoNet-Dynamic 原论文证明心超视频深度学习可用于逐搏心功能评估（Ouyang et al., 2020）。")
     add_table(
@@ -378,15 +396,15 @@ def build():
     )
     add_figure(doc, "fig4_echonet_training_metrics.png", "图 4. V5 EchoNet-Dynamic 校准层 held-out 指标。")
 
-    doc.add_heading("Benchmark 设计与现有方案比较", level=1)
+    add_section_heading(doc, "Benchmark 设计与现有方案比较")
     add_para(doc, "EchoBench v1 是项目级 benchmark，而不是单脚本 smoke test。它包含单例交互、离线批量和常驻 server 三类场景。本次主报告使用离线批量完整证据、离线批量 12 帧代表抽样和 GGUF server smoke。性能测量思路参考 MLPerf 对离线、客户端和服务端场景的拆分，但本报告不是 MLPerf 官方提交结果（MLCommons, n.d.-a, n.d.-b）。")
     add_para(doc, "现有公开心超 AI 方案中，EchoNet-Dynamic 聚焦 EF 与左室功能，CAMUS 聚焦 2D 心超分割（Leclerc et al., 2019; Ouyang et al., 2020）。CardioConsult V5 的差异化在于多格式输入、B-mode 与 Color Doppler 代理特征、动图兼容、层级病症输出和本地离线 Gemma4 4B GGUF 中文报告生成。")
 
-    doc.add_heading("成本模型与工程取舍", level=1)
+    add_section_heading(doc, "成本模型与工程取舍")
     add_para(doc, "V5 的成本结构主要是一次性硬件和模型文件成本，运行时不需要按病例调用云 API。完整证据场景按平均 3.76 秒/例估算，规则流水线理论吞吐约 957 例/小时；12 帧场景按平均 2.56 秒/例估算，理论吞吐约 1,405 例/小时。真实 UI 使用会受人工选文件、磁盘读取、DICOM 解码和 GGUF 文本生成影响，因此演示吞吐应按更保守数值估计。")
-    add_para(doc, "端到端大型视频模型可能在 EF 或分割任务上更强，但会带来 GPU/NPU 依赖、模型体积、训练时间和移动端迁移成本。V5 选择小模型校准和规则融合，是为了确保普通 PC 可跑、移动端后续可迁移，并且每条诊断都有特征证据和规则路径可追踪。")
+    add_para(doc, "端到端大型视频模型可能在 EF 或分割任务上更强，但会带来 GPU/NPU 依赖、模型体积、训练时间和移动端迁移成本。V5 选择小模型校准和规则融合，是为了确保超声设备旁的普通 PC 可跑、移动端后续可迁移，并且每条诊断都有特征证据和规则路径可追踪。")
 
-    doc.add_heading("限制与下一步", level=1)
+    add_section_heading(doc, "限制与下一步")
     limits = [
         "本地 60 例测试集规模有限，且来自授权本地数据，不是公开多中心盲法验证集。",
         "报告链接标签是当前 benchmark 的金标准，但不是 2-3 位超声专家独立盲评后的共识标签。",
@@ -405,7 +423,7 @@ def build():
         "本系统仅用于医学教学、算法演示和基层参考，不是医疗器械输出，不作为正式临床诊断、治疗建议或医嘱。若患者存在胸痛、晕厥、明显呼吸困难、低血压、发绀或急性心衰表现，应直接进入正式医疗流程并由有资质医师复核。"
     )
 
-    doc.add_heading("可复现信息", level=1)
+    add_section_heading(doc, "可复现信息")
     add_table(
         doc,
         ["项目", "值"],
@@ -421,7 +439,7 @@ def build():
         font_size=8.2,
     )
 
-    doc.add_heading("参考文献", level=1)
+    add_section_heading(doc, "参考文献")
     refs = [
         "FDA, Health Canada, & Medicines and Healthcare products Regulatory Agency. (2021). Good machine learning practice for medical device development: Guiding principles. https://www.gov.uk/government/publications/good-machine-learning-practice-for-medical-device-development-guiding-principles",
         "ggml-org. (n.d.). GGUF file format - llama.cpp. Retrieved June 4, 2026, from https://www.mintlify.com/ggml-org/llama.cpp/concepts/gguf-format",
