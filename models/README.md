@@ -24,8 +24,8 @@ models/echonet_v5_lowef_mlp.joblib
 
 该文件默认不提交，因为它是基于第三方研究数据训练得到的产物。若需本地重建，请先按 EchoNet-Dynamic 自身访问条款获取数据，然后运行：
 
-```bat
-train_echonet_v5_balanced.bat
+```powershell
+.\.venv\Scripts\python.exe tools\train_echonet_v5.py --train-limit 600 --val-limit 160 --test-limit 160 --max-frames 16
 ```
 
 如果缺少该文件，应用仍可运行，并会回退到 V4 规则/校准行为。
