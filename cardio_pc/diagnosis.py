@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
+import re
 import subprocess
 import urllib.error
 import urllib.request
@@ -24,6 +25,31 @@ from .label_hierarchy import (
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_PATH = PROJECT_DIR / "config.json"
 SYSTEM_PROMPT_PATH = PROJECT_DIR / "prompts" / "hierarchical_system_prompt.txt"
+JUDGMENT_MARKER = "教学参考病症判断："
+MINIMUM_MARKER = "最小病症："
+LOGIC_MARKER = "逻辑链："
+PROMPT_ARTIFACT_PATTERNS = (
+    "请严格按照",
+    "请开始输出",
+    "Required first sentence",
+    "Required minimum condition",
+    "Required logic chain",
+    "User task",
+    "固定首句",
+    "固定第二句",
+    "固定第三句",
+    "系统约束",
+    "###",
+    "```",
+    "作为一个AI",
+    "作为一个 AI",
+    "作为一名AI",
+    "作为一名 AI",
+    "作为AI",
+    "作为 AI",
+    "我将",
+    "格式说明",
+)
 
 
 @dataclass
@@ -98,21 +124,14 @@ def build_gemma4_prompt(study: StudyAnalysis, decision: HierarchicalDiagnosis | 
 ### System
 {system_prompt}
 
-### Required first sentence
+### User task
+请基于下面的层级候选、边缘计算特征和基层提示，输出一段中文医学教学参考文本。开头三句话固定如下，请直接写正文，不要输出提示词标题、markdown 分隔线或格式说明。
+
 教学参考病症判断：{required_first_sentence}。
-
-### Required minimum condition
 最小病症：{decision.compact_label}。
-
-### Required logic chain
 逻辑链：{required_logic_chain}。
 
-### User task
-请基于下面的层级候选、边缘计算特征和基层提示，输出一段中文医学教学参考文本。
-第一句话必须逐字使用上面的 Required first sentence，不要改写，不要省略大方向或中方向。
-第二句话必须逐字使用上面的 Required minimum condition。
-第三句话必须逐字使用上面的 Required logic chain。
-第三句话之后再解释 B-mode 依据、Doppler 依据、收缩/舒张识别依据、教学置信度、基层补扫建议和安全声明。
+三句话之后再自然说明输入数量、体位覆盖、B-mode 依据、Doppler 依据、收缩/舒张识别依据、教学置信度、基层补扫建议和安全边界。语气要像给初学者看的报告摘要，避免“我将”“作为 AI”“请严格按照”等提示词口吻。
 
 层级候选：
 {decision.structured_text()}
@@ -160,6 +179,10 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
         decision = classify_teaching_condition_v4(study)
 
     def finish(report: str, status: str) -> tuple[str, str]:
+        sanitized = sanitize_diagnosis_report(report, decision, study)
+        if sanitized != report and ("Gemma4" in status or "server" in status.lower() or "CLI" in status):
+            status += " (report guard used local teaching template)"
+        report = sanitized
         report = enforce_hierarchical_judgment_field(report, decision)
         if orchestrator and agent_state:
             report, _audit = orchestrator.finalize_report(agent_state, report, status)
@@ -191,7 +214,7 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
 
 def load_system_prompt(required_parent_hierarchy: str, minimum_condition: str) -> str:
     fallback = (
-        "你是 CardioConsult PC V2 的离线 Gemma4 4B 医学教学辅助系统。\n"
+        "你是 CardioConsult PC V5 的离线 Gemma4 4B 医学教学辅助系统。\n"
         "输出第一句话必须是：教学参考病症判断：{minimum_condition}（{required_parent_hierarchy}）。\n"
         "第二句话必须是：最小病症：{minimum_condition}。"
     )
@@ -258,6 +281,104 @@ def extract_llama_server_text(data: dict) -> str:
     return ""
 
 
+def sanitize_diagnosis_report(text: str, decision: HierarchicalDiagnosis, study: StudyAnalysis) -> str:
+    raw = text or ""
+    if report_has_prompt_artifacts(raw):
+        return compose_teaching_report(study, decision)
+
+    cleaned = normalize_report_text(raw)
+    if not report_is_usable(cleaned):
+        return compose_teaching_report(study, decision)
+    return cleaned
+
+
+def report_has_prompt_artifacts(text: str) -> bool:
+    if any(pattern in text for pattern in PROMPT_ARTIFACT_PATTERNS):
+        return True
+    compact = re.sub(r"\s+", "", text)
+    return any(pattern in compact for pattern in ("作为一个AI", "作为一名AI", "作为AI"))
+
+
+def normalize_report_text(text: str) -> str:
+    text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
+    marker_index = text.find(JUDGMENT_MARKER)
+    if marker_index > 0:
+        text = text[marker_index:]
+
+    cleaned_lines: list[str] = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if not stripped or stripped in {"---", "***"}:
+            continue
+        if stripped.startswith("###"):
+            continue
+        if any(pattern in stripped for pattern in PROMPT_ARTIFACT_PATTERNS):
+            continue
+        stripped = stripped.strip("*").strip()
+        if re.fullmatch(r"(B-mode依据|Doppler依据|收缩/舒张识别依据|教学置信度|基层补扫建议|安全声明)：?", stripped):
+            continue
+        cleaned_lines.append(stripped)
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(cleaned_lines)).strip()
+
+
+def report_is_usable(text: str) -> bool:
+    body = text.strip()
+    if len(body) < 120:
+        return False
+    if not all(marker in body for marker in (JUDGMENT_MARKER, MINIMUM_MARKER, LOGIC_MARKER)):
+        return False
+    safety_ok = (
+        "不是医疗器械" in body
+        and ("不作为正式临床诊断" in body or "不是临床诊断" in body)
+        and ("复核" in body or "转诊" in body)
+    )
+    if not safety_ok:
+        return False
+    unfinished_tail = re.search(
+        r"(主要依据|B-mode\s*方面|Color\s+Doppler\s*方面|B-mode依据|Doppler依据|安全边界|安全声明)[:：]?\s*$",
+        body,
+    )
+    return unfinished_tail is None
+
+
+def compose_teaching_report(study: StudyAnalysis, decision: HierarchicalDiagnosis) -> str:
+    guidance = build_primary_care_guidance(study, decision.compact_label)
+    b = study.mean_bmode
+    f = study.mean_flow
+    phase_text = (
+        f"软件识别到 {study.diastole_count} 个舒张态、{study.systole_count} 个收缩态"
+        if study.systole_count and study.diastole_count
+        else "收缩态和舒张态配对不足"
+    )
+    warning = f" {study.coverage_warning}" if study.coverage_warning else ""
+    rationale = compact_sentence(decision.rationale, 260)
+    source_text = ", ".join(decision.source_tags)
+    return (
+        f"{JUDGMENT_MARKER}{format_judgment_sentence(decision)}。\n"
+        f"{MINIMUM_MARKER}{decision.compact_label}。\n"
+        f"{LOGIC_MARKER}{build_logic_chain(decision, study)}。\n\n"
+        f"本次资料包括 {study.input_count} 个文件/代表帧，覆盖约 {study.view_count} 个体位；{phase_text}。{warning}\n"
+        f"主要依据：{rationale}\n"
+        f"B-mode 方面，边缘密度 {feature(b, 5):.3f}、纹理熵 {feature(b, 6):.3f}、散斑残差 {feature(b, 10):.3f}、"
+        f"对比增益 {feature(b, 11, 1.0):.3f}、腔室面积代理差值 {study.contractility_proxy:.3f}、"
+        f"相对收缩幅度代理 {study.contractility_fraction_proxy:.3f}。\n"
+        f"Color Doppler 方面，活跃区比例 {feature(f, 4):.3f}、最大连通域占比 {feature(f, 10):.3f}、"
+        f"喷流宽度代理 {feature(f, 11):.3f}、方向一致性 {feature(f, 13):.3f}、湍流代理 {feature(f, 5):.3f}、涡量代理 {feature(f, 8):.3f}。\n"
+        f"层级诊断：大方向为{decision.broad}；中方向为{decision.middle}；具体问题为{decision.specific}；分级为{decision.severity}。"
+        f"证据充分度：{decision.evidence_level}；教学置信度：{decision.confidence}；标签来源：{source_text}。\n"
+        f"{guidance.compact_text}\n"
+        "安全边界：这是一份医学教学和基层参考结果，不是医疗器械输出，也不作为正式临床诊断、治疗建议或医嘱。"
+        "如有胸痛、晕厥、明显呼吸困难、低血压、发绀、急性心衰等高危表现，应直接进入正式医疗流程并由有资质医师复核。"
+    )
+
+
+def compact_sentence(text: str, max_chars: int) -> str:
+    text = re.sub(r"\s+", " ", (text or "")).strip()
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 1].rstrip("，；、 ") + "。"
+
+
 def run_llama_cli(prompt: str, config: ModelConfig) -> tuple[str, str]:
     prompt = prepare_llm_prompt(prompt, config)
     cmd = [
@@ -301,13 +422,13 @@ def run_llama_cli(prompt: str, config: ModelConfig) -> tuple[str, str]:
 
 def enforce_hierarchical_judgment_field(text: str, decision: HierarchicalDiagnosis) -> str:
     """Force the visible diagnosis field to contain broad-to-specific hierarchy."""
-    marker = "教学参考病症判断："
+    marker = JUDGMENT_MARKER
     replacement = f"{marker}{format_judgment_sentence(decision)}。"
     stripped = text.strip()
     if not stripped:
         return replacement
     if marker not in stripped:
-        rewritten = replacement + stripped
+        rewritten = replacement + "\n" + stripped
         return enforce_minimum_condition_and_logic_chain(rewritten, decision)
 
     before, after = stripped.split(marker, 1)
@@ -318,10 +439,10 @@ def enforce_hierarchical_judgment_field(text: str, decision: HierarchicalDiagnos
 
 def enforce_minimum_condition_and_logic_chain(text: str, decision: HierarchicalDiagnosis) -> str:
     required_parts: list[str] = []
-    if "最小病症：" not in text:
-        required_parts.append(f"最小病症：{decision.compact_label}。")
-    if "逻辑链：" not in text:
-        required_parts.append(f"逻辑链：{build_logic_chain(decision)}。")
+    if MINIMUM_MARKER not in text:
+        required_parts.append(f"{MINIMUM_MARKER}{decision.compact_label}。")
+    if LOGIC_MARKER not in text:
+        required_parts.append(f"{LOGIC_MARKER}{build_logic_chain(decision)}。")
     if not required_parts:
         return text
     marker = "。"
@@ -734,45 +855,4 @@ def feature(values, index: int, default: float = 0.0) -> float:
 
 def heuristic_diagnosis(study: StudyAnalysis, decision: HierarchicalDiagnosis | None = None) -> str:
     decision = decision or classify_teaching_condition_v4(study)
-    guidance = build_primary_care_guidance(study, decision.compact_label)
-    b = study.mean_bmode
-    f = study.mean_flow
-
-    view_phrase = f"本次输入包含 {study.input_count} 个文件/代表帧，覆盖约 {study.view_count} 个体位。"
-    phase_phrase = (
-        f"系统自动识别出 {study.diastole_count} 个舒张态、{study.systole_count} 个收缩态；"
-        if study.systole_count and study.diastole_count
-        else "收缩态/舒张态配对不足；"
-    )
-    structural = (
-        f"B-mode：边缘密度 {feature(b, 5):.3f}、纹理熵 {feature(b, 6):.3f}、"
-        f"散斑残差 {feature(b, 10):.3f}、对比增益 {feature(b, 11, 1.0):.3f}、"
-        f"腔室面积代理差值 {study.contractility_proxy:.3f}、相对收缩幅度代理 {study.contractility_fraction_proxy:.3f}。"
-    )
-    flow = (
-        f"Color Doppler：活跃区比例 {feature(f, 4):.3f}、最大连通域占比 {feature(f, 10):.3f}、"
-        f"喷流宽度代理 {feature(f, 11):.3f}、方向一致性 {feature(f, 13):.3f}、"
-        f"湍流代理 {feature(f, 5):.3f}、涡量代理 {feature(f, 8):.3f}。"
-    )
-    warning_text = study.coverage_warning
-    if not (study.systole_count and study.diastole_count):
-        warning_text = warning_text.replace("收缩态/舒张态配对不足，已降低置信度。", "").strip()
-    warning = f" {warning_text}" if warning_text else ""
-    judgment_sentence = format_judgment_sentence(decision)
-    logic_chain = build_logic_chain(decision, study)
-
-    return (
-        f"教学参考病症判断：{judgment_sentence}。"
-        f"最小病症：{decision.compact_label}。"
-        f"逻辑链：{logic_chain}。"
-        f"层级诊断为：大方向：{decision.broad}；中方向：{decision.middle}；"
-        f"小方向/具体问题：{decision.specific}；分级：{decision.severity}。"
-        f"证据充分度：{decision.evidence_level}；教学置信度：{decision.confidence}。"
-        f"{view_phrase}{phase_phrase}{warning}"
-        f"主要规则依据：{decision.rationale}"
-        f"{structural}{flow}"
-        f"标签体系参考来源：{', '.join(decision.source_tags)}。"
-        f"{guidance.compact_text} "
-        "本结论仅用于医学教学、算法演示和基层参考，不是医疗器械输出，不作为正式临床诊断、治疗建议或医嘱；"
-        "若患者有胸痛、晕厥、明显呼吸困难、低血压、发绀、急性心衰或其他高危表现，应直接转入正式医疗流程并由有资质医师复核。"
-    )
+    return compose_teaching_report(study, decision)

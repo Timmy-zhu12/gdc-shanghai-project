@@ -35,7 +35,7 @@ def compact_prompt_for_llama3_budget(prompt: str, max_estimated_tokens: int = 18
         )
         candidate = (
             "### System\n"
-            "你是离线 Gemma4 4B 医学教学辅助系统。必须逐字使用 Required first/minimum/logic chain 三句；"
+            "你是离线 Gemma4 4B 医学教学辅助系统。开头必须保留教学参考病症判断、最小病症、逻辑链三句；"
             "仅作教学参考，不是临床最终诊断、治疗建议或医嘱。\n\n"
             + candidate
         )
