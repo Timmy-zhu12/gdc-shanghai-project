@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CardioConsult PC V5 Online Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Gemma4 Offline Edge AI</p>
+          <h1>CardioConsult PC V5 Online Demo</h1>
+        </div>
+        <div class="status-pill" id="modelStatus">Browser edge demo</div>
+      </header>
+
+      <section class="workspace" aria-label="CardioConsult online demo workspace">
+        <aside class="control-panel">
+          <div class="panel-section">
+            <label class="file-drop" for="fileInput" id="dropZone">
+              <span class="file-icon">+</span>
+              <span>Upload ultrasound files</span>
+              <small>PNG/JPEG/WebP/GIF, large DICOM/DCOM, MP4/MOV/WebM</small>
+            </label>
+            <input
+              id="fileInput"
+              type="file"
+              multiple
+              accept="image/*,video/*,.dcm,.dicom,.dcom,.cine"
+            />
+          </div>
+
+          <div class="button-row">
+            <button id="sampleButton" type="button">Sample</button>
+            <button id="analyzeButton" type="button" class="primary">Analyze</button>
+            <button id="resetButton" type="button">Reset</button>
+          </div>
+
+          <div class="metric-grid" aria-label="Study metrics">
+            <div>
+              <span id="metricFiles">0</span>
+              <small>files/frames</small>
+            </div>
+            <div>
+              <span id="metricViews">0</span>
+              <small>views</small>
+            </div>
+            <div>
+              <span id="metricDiastole">0</span>
+              <small>diastole</small>
+            </div>
+            <div>
+              <span id="metricSystole">0</span>
+              <small>systole</small>
+            </div>
+          </div>
+
+          <div class="file-list" id="fileList" aria-live="polite"></div>
+        </aside>
+
+        <section class="preview-panel">
+          <canvas id="previewCanvas" width="512" height="384" aria-label="Ultrasound preview"></canvas>
+          <div class="filmstrip" id="filmstrip" aria-label="Loaded frames"></div>
+        </section>
+
+        <section class="report-panel" aria-live="polite">
+          <div class="diagnosis-block">
+            <p class="eyebrow">Teaching reference diagnosis</p>
+            <h2 id="diagnosisTitle">Awaiting input</h2>
+            <p id="confidenceText">Load files or run the sample study.</p>
+          </div>
+
+          <div class="report-section">
+            <h3>Report</h3>
+            <p id="reportText">
+              The online demo runs browser-side feature extraction and the PC
+              rule fallback. Full offline Gemma4 4B inference runs through
+              local GGUF files in the Windows PC V5 application.
+            </p>
+          </div>
+
+          <div class="report-section">
+            <h3>Feature Summary</h3>
+            <pre id="featureText">No features yet.</pre>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./demo.js"></script>
+  </body>
+</html>

@@ -2,13 +2,19 @@
 
 CardioConsult PC V5 是本项目的 Windows 参考实现。项目服务于医学教学、心脏超声入门训练和基层医疗点参考场景，核心目标是在本地离线环境中导入脱敏心脏超声文件，完成边缘特征提取、动态 B-mode 校准和本地 Gemma4 4B 报告生成，并输出一段中文教学参考诊断文本。
 
-统一提交入口、在线演示、技术报告、数据来源披露和所有平台仓库链接见主仓库：
+本仓库现在作为项目唯一提交入口：代码、部署说明、在线演示静态页面、技术报告、数据来源披露、验证材料和演示视频脚本都集中在这里。
 
-[Track-C-gdc-project-shanghai-Total-Repository](https://github.com/Timmy-zhu12/Track-C-gdc-project-shanghai-Total-Repository)
+在线演示静态页面位于：
 
-在线演示：
+```text
+docs/index.html
+```
 
-[CardioConsult 在线演示](https://timmy-zhu12.github.io/Track-C-gdc-project-shanghai-Total-Repository/)
+若 GitHub Pages 从 `/docs` 启用，公开地址通常为：
+
+```text
+https://timmy-zhu12.github.io/gdc-shanghai-project/
+```
 
 > 医学安全边界：本项目不是医疗器械，仅用于医学教学、算法演示和基层参考。它不能替代正式心脏超声报告、医师诊断、治疗决策、急诊分诊或医嘱。
 
@@ -41,7 +47,7 @@ V5 技术报告：
 | 边缘计算价值 | B-mode 与 Color Doppler 分支先在本地提取结构化特征，再交给模型或规则层生成报告 |
 | 动态心超增强 | EchoNet-Dynamic 校准层用于 EF / 左室收缩功能减低教学识别 |
 | 演示稳定性 | GGUF 不存在或模型调用失败时，自动切换到可审计的本地规则后备 |
-| 数据透明 | 主仓库提供数据集来源、验证报告、许可证和模型/数据不随仓库分发的说明 |
+| 数据透明 | 本仓库提供数据集来源、验证报告、许可证和模型/数据不随仓库分发的说明 |
 
 ## 支持输入与输出
 
@@ -206,18 +212,20 @@ EchoNet-Dynamic 校准层 held-out 摘要：
 | 低 EF AUC | 0.764 |
 | 低 EF F1 | 0.496 |
 
-这些结果只代表小样本教学参考验证，不是临床性能声明。完整报告和数据披露见主仓库。
+这些结果只代表小样本教学参考验证，不是临床性能声明。完整报告和数据披露见本仓库的 `submission/`、`docs/`、`validation/` 与 `DATASETS.md`。
 
-## 仓库边界
+## 提交材料
 
-本仓库只保存 Windows PC 可运行实现。主仓库负责保存：
+本仓库已集中保存提交所需材料：
 
-- 在线演示链接
-- APA 格式技术报告
-- 数据来源说明
-- 验证报告
-- 5 分钟演示视频脚本
-- Android、Linux、Apple、HarmonyOS 仓库链接
+- [SUBMISSION.md](SUBMISSION.md)：提交检查表和评审入口。
+- [DEMO_VIDEO_SCRIPT.md](DEMO_VIDEO_SCRIPT.md)：5 分钟内演示视频脚本。
+- [DATASETS.md](DATASETS.md)：数据集来源、用途和再分发边界。
+- [submission/technical_report](submission/technical_report)：APA 技术报告 DOCX/PDF/Markdown、图表和测试结果。
+- [docs/index.html](docs/index.html)：在线演示静态页面源码。
+- [docs/V5_TECHNICAL_STATUS.md](docs/V5_TECHNICAL_STATUS.md)：V5 技术状态摘要。
+- [validation/reports](validation/reports)：数据集验证报告。
+- [shared](shared)：诊断契约、标签 schema 和 prompt 模板。
 
 ## 许可证
 

@@ -1,0 +1,18 @@
+﻿dataset,scope,availability,n,metrics,interpretation
+CAMUS,下载完整性,已完成,500 patients / 6000 NIfTI media / 7501 remote files matched,"3,833,308,612 bytes; missing=0; abnormal .part=0; errors=0",可作为当前主要外部验证证据；遵守 CC BY-NC-SA 4.0 非商业研究约束。
+CAMUS,第一阶段：B-mode / GLDM 分类,可用,250 case-level rows,"Accuracy=0.672; macro-F1=0.642; AUC=0.681; confusion matrix=[[120,50],[32,48]]",纹理与质量特征具备中等判别力，但尚未达到临床诊断模型水平。
+CAMUS,第一阶段：EF 回归相关,可用,250,"RMSE=13.532; MAE=10.746; Pearson r=0.231, p=.000227; Spearman r=0.270, p=1.53e-05",相关性达到统计显著，但效应量偏弱，提示需要更强的分割、时序与校准模块。
+CAMUS,第一阶段：特征显著性,可用,250,PSNR、SNR、bmode_10、bmode_13、bmode_11 等 Bonferroni 校正后仍显著,图像质量与灰度/纹理分布变量对低收缩功能代理标签有贡献。
+CAMUS,第三阶段：端到端,可用,250,Coarse accuracy=0.744; macro-F1=0.636; mean runtime=1041.6 ms; median runtime=953.0 ms; mean quality=0.682,端到端报告生成可运行且速度适合教学演示；疾病标签仍需更细粒度金标准评估。
+local_smoke,本地冒烟：输入兼容与流程,可用,12 synthetic media / 34 feature rows / 12 E2E rows,errors=0,验证管线可本地跑通；不构成外部泛化证据。
+local_smoke,第一阶段：B-mode / GLDM 分类,可用,9,"Accuracy=0.333; macro-F1=0.333; confusion matrix=[[0,3,0],[3,0,0],[0,0,3]]",小样本合成集上类别映射不稳定，主要用于发现流程错误。
+local_smoke,第一阶段：EF 回归相关,可用,9,"RMSE=14.753; MAE=12.965; Pearson r=-0.426, p=.253; Spearman r=-0.274, p=.476",无统计显著性；样本数不足且合成数据分布过窄。
+local_smoke,第三阶段：端到端,可用,12,Coarse accuracy=0.500; macro-F1=0.375; mean runtime=461.7 ms; median runtime=382.9 ms; mean quality=0.484,可用于回归测试，不可用于性能宣称。
+EchoNet-Dynamic,计划验证：B-mode 与端到端视频,未下载,0,No feature CSV; No end-to-end CSV,需接受 Stanford/AIMI research-use terms 后放入授权视频与元数据。
+HMC-QU,计划验证：B-mode 与端到端,未下载,0,No feature CSV; No end-to-end CSV,需配置 Kaggle 凭据或手动导入授权数据。
+EchoXFlow,计划验证：Color Doppler / vector flow,未下载,0,No public direct bulk download confirmed,适合未来验证速度场误差、涡度与 Q 判据，但当前没有可运行数据。
+MR Ultrasound Images,计划验证：Color Doppler / MR grading,未下载,0,No standardized open bulk package confirmed,需机构授权或手动导入二尖瓣反流彩色多普勒图像与标签。
+MIMIC-IV-ECHO / ECHOVIEW,计划验证：报告关联、体位分类与广义疾病标签,未下载,0,Credentialed PhysioNet access required,适合未来扩展结构化报告一致性、体位识别和多疾病层级标签；本仓库不重新分发。
+CACTUS,计划验证：初学者图像质量与体位指导,未下载,0,Public torrent/paper source identified,适合强化基层/初学者补扫建议、图像质量分级和体位引导；当前仅作为路线来源。
+PC accuracy improvement,改进版前后对比,可用,CAMUS E2E 250,Accuracy 0.320 -> 0.744; macro-F1 0.242 -> 0.636; low-EF sensitivity 0.000 -> 0.947; normal specificity 1.000 -> 0.312,改进显著提高低收缩功能检出率，但牺牲正常特异性，符合教学/基层筛查需高敏感度的定位。
+Platform packaging,跨平台与在线演示,可用,"PC, Android, Apple, HarmonyOS, Linux, GitHub Pages demo",在线演示支持 PNG、DICOM/DCOM 大文件切片读取；PC/Linux 保留 GGUF/Gemma 4 4B 接口；Android 改为 MediaPipe Tasks / LiteRT 路线,当前最成熟版本为 PC；Android 更贴近 Track C 移动端部署要求；在线演示用于展示同一输入输出逻辑。

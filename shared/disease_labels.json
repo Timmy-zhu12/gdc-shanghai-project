@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "labels": [
+    {
+      "id": "normal_or_no_clear_abnormality",
+      "zh": "未见明确心脏超声异常"
+    },
+    {
+      "id": "insufficient_evidence",
+      "zh": "图像证据不足，倾向未见明确异常"
+    },
+    {
+      "id": "mild_mitral_regurgitation",
+      "zh": "轻度二尖瓣反流"
+    },
+    {
+      "id": "moderate_mitral_regurgitation",
+      "zh": "中度二尖瓣反流"
+    },
+    {
+      "id": "mild_tricuspid_regurgitation",
+      "zh": "轻度三尖瓣反流"
+    },
+    {
+      "id": "moderate_tricuspid_regurgitation",
+      "zh": "中度三尖瓣反流"
+    },
+    {
+      "id": "mild_aortic_stenosis_tendency",
+      "zh": "主动脉瓣轻度狭窄倾向"
+    },
+    {
+      "id": "mild_aortic_regurgitation",
+      "zh": "轻度主动脉瓣反流"
+    },
+    {
+      "id": "mild_pulmonary_regurgitation",
+      "zh": "肺动脉瓣轻度反流"
+    },
+    {
+      "id": "reduced_lv_systolic_function",
+      "zh": "左心室收缩功能减低"
+    },
+    {
+      "id": "regional_wall_motion_abnormality",
+      "zh": "节段性室壁运动异常"
+    }
+  ]
+}

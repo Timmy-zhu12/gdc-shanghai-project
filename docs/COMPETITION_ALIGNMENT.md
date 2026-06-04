@@ -26,7 +26,7 @@ The judging criteria are:
 
 | Requirement pressure | Repository change |
 |---|---|
-| Runnable code repository | V4 code synchronized into this PC repo; legacy launchers route to V4 |
+| Runnable code repository | V5 code synchronized into this PC repo; legacy launchers remain for compatibility |
 | Offline edge model | Added portable `config.example.json`, bundled llama.cpp runtime, and persistent `llama-server` launcher |
 | Completeness | Added rule-only smoke test via `app.py --self-test-rule-only` |
 | Presentation quality | Rewrote README with deployment steps, model placement, validation snapshot, and safety boundary |
@@ -36,7 +36,5 @@ The judging criteria are:
 ## Remaining Manual Submission Items
 
 - Record or upload the final 5-minute demo video and put that link in the competition form.
-- Keep the main repository as the public entry point:
-  <https://github.com/Timmy-zhu12/Track-C-gdc-project-shanghai-Total-Repository>
-- Keep this repository focused on the Windows PC reference app:
+- Keep this PC repository as the public submission entry point:
   <https://github.com/Timmy-zhu12/gdc-shanghai-project>

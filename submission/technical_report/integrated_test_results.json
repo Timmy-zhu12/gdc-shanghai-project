@@ -1,0 +1,138 @@
+[
+  {
+    "dataset": "CAMUS",
+    "scope": "下载完整性",
+    "availability": "已完成",
+    "n": "500 patients / 6000 NIfTI media / 7501 remote files matched",
+    "metrics": "3,833,308,612 bytes; missing=0; abnormal .part=0; errors=0",
+    "interpretation": "可作为当前主要外部验证证据；遵守 CC BY-NC-SA 4.0 非商业研究约束。"
+  },
+  {
+    "dataset": "CAMUS",
+    "scope": "第一阶段：B-mode / GLDM 分类",
+    "availability": "可用",
+    "n": "250 case-level rows",
+    "metrics": "Accuracy=0.672; macro-F1=0.642; AUC=0.681; confusion matrix=[[120,50],[32,48]]",
+    "interpretation": "纹理与质量特征具备中等判别力，但尚未达到临床诊断模型水平。"
+  },
+  {
+    "dataset": "CAMUS",
+    "scope": "第一阶段：EF 回归相关",
+    "availability": "可用",
+    "n": "250",
+    "metrics": "RMSE=13.532; MAE=10.746; Pearson r=0.231, p=.000227; Spearman r=0.270, p=1.53e-05",
+    "interpretation": "相关性达到统计显著，但效应量偏弱，提示需要更强的分割、时序与校准模块。"
+  },
+  {
+    "dataset": "CAMUS",
+    "scope": "第一阶段：特征显著性",
+    "availability": "可用",
+    "n": "250",
+    "metrics": "PSNR、SNR、bmode_10、bmode_13、bmode_11 等 Bonferroni 校正后仍显著",
+    "interpretation": "图像质量与灰度/纹理分布变量对低收缩功能代理标签有贡献。"
+  },
+  {
+    "dataset": "CAMUS",
+    "scope": "第三阶段：端到端",
+    "availability": "可用",
+    "n": "250",
+    "metrics": "Coarse accuracy=0.744; macro-F1=0.636; mean runtime=1041.6 ms; median runtime=953.0 ms; mean quality=0.682",
+    "interpretation": "端到端报告生成可运行且速度适合教学演示；疾病标签仍需更细粒度金标准评估。"
+  },
+  {
+    "dataset": "local_smoke",
+    "scope": "本地冒烟：输入兼容与流程",
+    "availability": "可用",
+    "n": "12 synthetic media / 34 feature rows / 12 E2E rows",
+    "metrics": "errors=0",
+    "interpretation": "验证管线可本地跑通；不构成外部泛化证据。"
+  },
+  {
+    "dataset": "local_smoke",
+    "scope": "第一阶段：B-mode / GLDM 分类",
+    "availability": "可用",
+    "n": "9",
+    "metrics": "Accuracy=0.333; macro-F1=0.333; confusion matrix=[[0,3,0],[3,0,0],[0,0,3]]",
+    "interpretation": "小样本合成集上类别映射不稳定，主要用于发现流程错误。"
+  },
+  {
+    "dataset": "local_smoke",
+    "scope": "第一阶段：EF 回归相关",
+    "availability": "可用",
+    "n": "9",
+    "metrics": "RMSE=14.753; MAE=12.965; Pearson r=-0.426, p=.253; Spearman r=-0.274, p=.476",
+    "interpretation": "无统计显著性；样本数不足且合成数据分布过窄。"
+  },
+  {
+    "dataset": "local_smoke",
+    "scope": "第三阶段：端到端",
+    "availability": "可用",
+    "n": "12",
+    "metrics": "Coarse accuracy=0.500; macro-F1=0.375; mean runtime=461.7 ms; median runtime=382.9 ms; mean quality=0.484",
+    "interpretation": "可用于回归测试，不可用于性能宣称。"
+  },
+  {
+    "dataset": "EchoNet-Dynamic",
+    "scope": "计划验证：B-mode 与端到端视频",
+    "availability": "未下载",
+    "n": "0",
+    "metrics": "No feature CSV; No end-to-end CSV",
+    "interpretation": "需接受 Stanford/AIMI research-use terms 后放入授权视频与元数据。"
+  },
+  {
+    "dataset": "HMC-QU",
+    "scope": "计划验证：B-mode 与端到端",
+    "availability": "未下载",
+    "n": "0",
+    "metrics": "No feature CSV; No end-to-end CSV",
+    "interpretation": "需配置 Kaggle 凭据或手动导入授权数据。"
+  },
+  {
+    "dataset": "EchoXFlow",
+    "scope": "计划验证：Color Doppler / vector flow",
+    "availability": "未下载",
+    "n": "0",
+    "metrics": "No public direct bulk download confirmed",
+    "interpretation": "适合未来验证速度场误差、涡度与 Q 判据，但当前没有可运行数据。"
+  },
+  {
+    "dataset": "MR Ultrasound Images",
+    "scope": "计划验证：Color Doppler / MR grading",
+    "availability": "未下载",
+    "n": "0",
+    "metrics": "No standardized open bulk package confirmed",
+    "interpretation": "需机构授权或手动导入二尖瓣反流彩色多普勒图像与标签。"
+  },
+  {
+    "dataset": "MIMIC-IV-ECHO / ECHOVIEW",
+    "scope": "计划验证：报告关联、体位分类与广义疾病标签",
+    "availability": "未下载",
+    "n": "0",
+    "metrics": "Credentialed PhysioNet access required",
+    "interpretation": "适合未来扩展结构化报告一致性、体位识别和多疾病层级标签；本仓库不重新分发。"
+  },
+  {
+    "dataset": "CACTUS",
+    "scope": "计划验证：初学者图像质量与体位指导",
+    "availability": "未下载",
+    "n": "0",
+    "metrics": "Public torrent/paper source identified",
+    "interpretation": "适合强化基层/初学者补扫建议、图像质量分级和体位引导；当前仅作为路线来源。"
+  },
+  {
+    "dataset": "PC accuracy improvement",
+    "scope": "改进版前后对比",
+    "availability": "可用",
+    "n": "CAMUS E2E 250",
+    "metrics": "Accuracy 0.320 -> 0.744; macro-F1 0.242 -> 0.636; low-EF sensitivity 0.000 -> 0.947; normal specificity 1.000 -> 0.312",
+    "interpretation": "改进显著提高低收缩功能检出率，但牺牲正常特异性，符合教学/基层筛查需高敏感度的定位。"
+  },
+  {
+    "dataset": "Platform packaging",
+    "scope": "跨平台与在线演示",
+    "availability": "可用",
+    "n": "PC, Android, Apple, HarmonyOS, Linux, GitHub Pages demo",
+    "metrics": "在线演示支持 PNG、DICOM/DCOM 大文件切片读取；PC/Linux 保留 GGUF/Gemma 4 4B 接口；Android 改为 MediaPipe Tasks / LiteRT 路线",
+    "interpretation": "当前最成熟版本为 PC；Android 更贴近 Track C 移动端部署要求；在线演示用于展示同一输入输出逻辑。"
+  }
+]

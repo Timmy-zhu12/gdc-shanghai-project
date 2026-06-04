@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "bmode_features": [
+    "mean_enhanced_intensity",
+    "variance_enhanced_intensity",
+    "mean_abs_dx",
+    "mean_abs_dy",
+    "mean_gradient",
+    "edge_density",
+    "texture_entropy",
+    "dog_mean",
+    "dog_high_response_ratio",
+    "chamber_area_proxy",
+    "speckle_residual",
+    "contrast_gain",
+    "directional_anisotropy",
+    "symmetry_proxy"
+  ],
+  "doppler_features": [
+    "towards_ratio",
+    "away_ratio",
+    "mean_speed_proxy",
+    "signed_direction_proxy",
+    "active_ratio",
+    "turbulence_proxy",
+    "gradient_energy",
+    "divergence_proxy",
+    "vorticity_proxy",
+    "doppler_confidence",
+    "largest_component_ratio",
+    "jet_width_proxy",
+    "bidirectional_ratio",
+    "directional_coherence"
+  ],
+  "study_features": [
+    "view_count",
+    "input_count",
+    "systole_count",
+    "diastole_count",
+    "contractility_proxy",
+    "contractility_fraction_proxy",
+    "quality_score"
+  ]
+}
