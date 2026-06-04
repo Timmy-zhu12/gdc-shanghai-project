@@ -1,11 +1,9 @@
-﻿# CardioConsult PC Accuracy V2 MR/TR Work Folder
+# V4 Workspace Notice
 
-This folder is an isolated V2 workspace created on 2026-06-02.
+This folder is no longer a V2 workspace. It is the isolated PC V4 competition backup created under:
 
-Rules:
-- Do not mix these V2 changes back into `D:\cardioconsult_PC_accuracy_improved_runbook`.
-- The 2026-06-01 `accuracy_improved` folder is the stable yesterday version.
-- MR/TR severity and dual-regurgitation fixes should be developed and tested here.
+```text
+D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/05_pc_v4
+```
 
-Launch:
-`run_cardio_pc_accuracy_v2_hierarchical.bat`
+Historical V2 text is kept only as lineage context in older folders. Use `run_cardio_pc_v4.bat` for this build.

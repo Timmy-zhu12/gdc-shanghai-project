@@ -2,7 +2,7 @@
   "name": "CAMUS_BMODE_LOW_EF_PROXY_V1",
   "target": "low_contractility_proxy",
   "intended_use": "offline teaching support; flags reduced left-ventricular systolic function when B-mode features resemble EF<50 CAMUS cases",
-  "source_features_csv": "D:/cardioconsult_dense_validation/results/CAMUS/features.csv",
+  "source_features_csv": "provenance: CAMUS feature table generated during earlier dense validation; runtime uses this JSON only",
   "training_unit": "case_level_mean_features",
   "positive_definition": "CAMUS EF < 50 -> low_contractility_proxy",
   "features": [
@@ -70,7 +70,7 @@
     1.0054161135064559
   ],
   "intercept": 0.30681757902460743,
-  "threshold": 0.27,
+  "threshold": 0.25,
   "cross_validation": {
     "n": 250,
     "cv": "StratifiedGroupKFold(n_splits=5, groups=patient_id)",

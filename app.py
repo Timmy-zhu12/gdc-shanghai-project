@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from cardio_pc.diagnosis import load_config, run_diagnosis
+from cardio_pc.diagnosis import ModelConfig, load_config, run_diagnosis
 from cardio_pc.features import analyze_loaded_images
 from cardio_pc.imaging import LoadedImage
 from cardio_pc.ui import CardioConsultPCApp
@@ -15,14 +15,19 @@ from cardio_pc.ui import CardioConsultPCApp
 def main() -> None:
     parser = argparse.ArgumentParser(description="CardioConsult PC")
     parser.add_argument("--self-test", action="store_true", help="Run a non-GUI processing self-test.")
+    parser.add_argument(
+        "--self-test-rule-only",
+        action="store_true",
+        help="Run the self-test with the auditable rule backend only, without invoking GGUF.",
+    )
     args = parser.parse_args()
-    if args.self_test:
-        self_test()
+    if args.self_test or args.self_test_rule_only:
+        self_test(rule_only=args.self_test_rule_only)
     else:
         CardioConsultPCApp().mainloop()
 
 
-def self_test() -> None:
+def self_test(rule_only: bool = False) -> None:
     sample_dir = Path(__file__).resolve().parent / "samples"
     sample_dir.mkdir(parents=True, exist_ok=True)
     diastole = synthetic_echo(chamber_radius=62, doppler=False)
@@ -37,7 +42,10 @@ def self_test() -> None:
         LoadedImage(sys_path, 0, systole, "synthetic", {}),
     ]
     study = analyze_loaded_images(loaded)
-    report, status = run_diagnosis(study, load_config())
+    config = ModelConfig(llama_exe="", model_path="", use_server=False) if rule_only else load_config()
+    report, status = run_diagnosis(study, config)
+    if "教学参考病症判断：" not in report or "最小病症：" not in report or "逻辑链：" not in report:
+        raise RuntimeError("Self-test failed: required diagnosis fields are missing.")
     print("SELF TEST OK")
     print(study.compact_feature_text())
     print(status)

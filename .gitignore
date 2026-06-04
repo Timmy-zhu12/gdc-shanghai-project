@@ -11,6 +11,10 @@ models/*
 !models/README.md
 !models/.gitkeep
 
+# Source releases are preferred for third-party runtime archives; the extracted
+# Windows llama.cpp runtime used by the demo is kept under tools/.
+tools/llama_cpp/*.zip
+
 # Generated reports and local test outputs.
 exports/*
 !exports/.gitkeep

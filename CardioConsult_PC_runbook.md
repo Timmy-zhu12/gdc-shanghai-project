@@ -1,38 +1,67 @@
-# CardioConsult PC Accuracy Improved Runbook
+# CardioConsult PC V4 Runbook
 
-Project path:
+## Location
 
-```text
-D:\cardioconsult_PC_runbook
-```
-
-Run:
-
-```bat
-D:\cardioconsult_PC_runbook\run_cardio_pc_accuracy_improved.bat
-```
-
-Self-test:
-
-```bat
-cd /d D:\cardioconsult_PC_runbook
-.venv\Scripts\python.exe app.py --self-test
-```
-
-Supported inputs keep the original PC format and add cine/video formats:
-
-- Static images: `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp`, `.heic`, `.heif`
-- Animated images: `.gif`, `.apng`, animated WebP when Pillow can decode it
-- DICOM/DCOM: `.dcm`, `.dicom`, `.dcom`, including multi-frame when pydicom can decode pixel data
-- Video: `.mp4`, `.m4v`, `.mov`, `.avi`, `.mkv`, `.webm`, `.wmv`, `.mpg`, `.mpeg`, `.ts`, `.mts`, `.m2ts`, `.3gp`, `.cine`
-- Multiple files at once
-- Intended maximum: standard 12 echocardiography views
-- Intended minimum: any one view with systolic and diastolic frames
-
-Default reused Gemma4 4B model path:
+Project folder:
 
 ```text
-D:\cardioconsult_PC_runbook\models\gemma-4-4b-it-Q4_K_M.gguf
+D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/05_pc_v4
 ```
 
-The current PC edition integrates the original PC workflow, the mathematical improvement layer, the primary-care guidance layer, cine/video sampling, and the CAMUS B-mode low-EF calibration. It keeps the same final output style and remains a research/teaching prototype rather than a clinical diagnostic device.
+Start command:
+
+```bat
+D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/05_pc_v4/run_cardio_pc_v4.bat
+```
+
+## Input
+
+The UI accepts multiple files at once:
+
+- PNG/JPG/BMP/TIFF/WebP/HEIC
+- DICOM/DCOM/DICOM
+- GIF/APNG
+- MP4/MOV/AVI/MKV/WebM/WMV and related video files
+
+The expected cardiac ultrasound input is one to twelve standard views, or at minimum systolic and diastolic frames from one view. Multi-frame DICOM is sampled automatically.
+
+## Output
+
+The report begins with:
+
+```text
+教学参考病症判断：<最小病症>（<大方向> > <中方向>）。
+最小病症：<最小病症>。
+逻辑链：<evidence> → <rule> → <大方向> → <中方向> → <最小病症>。
+```
+
+## Offline Gemma4 4B
+
+V4 uses the local `llama-cli.exe` copied into this folder. The only external dependency allowed by design is the already downloaded GGUF pair in the earliest PC model folder:
+
+```text
+D:/cardioconsult_PC_runbook/models/gemma-4-4b-it-Q4_K_M.gguf
+D:/cardioconsult_PC_runbook/models/gemma-4-4b-mmproj-Q4_0.gguf
+```
+
+The smoke test output is stored in:
+
+```text
+D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/00_audit/gguf_smoke_output.txt
+```
+
+## Validation Data
+
+The newtraining DICOM archives were extracted into:
+
+```text
+D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/02_newtraining_archived/extracted
+```
+
+Mapping and metrics are in:
+
+```text
+D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/03_mapping
+D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/04_validation/v4_rule_retuned
+D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/06_reports
+```

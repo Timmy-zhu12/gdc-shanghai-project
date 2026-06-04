@@ -1,7 +1,16 @@
 {
-  "llama_exe": "",
-  "model_path": "D:/cardioconsult_PC_runbook/models/gemma-4-4b-it-Q4_K_M.gguf",
-  "mmproj_path": "D:/cardioconsult_PC_runbook/models/gemma-4-4b-mmproj-Q4_0.gguf",
-  "max_tokens": 720,
-  "temperature": 0.12
+  "llama_exe": "tools/llama_cpp/llama-b9469-bin-win-cpu-x64/llama-cli.exe",
+  "model_path": "models/gemma-4-4b-it-Q4_K_M.gguf",
+  "mmproj_path": "models/gemma-4-4b-mmproj-Q4_0.gguf",
+  "max_tokens": 320,
+  "temperature": 0.12,
+  "threads": 0,
+  "threads_batch": 0,
+  "ctx_size": 4096,
+  "batch_size": 1024,
+  "ubatch_size": 256,
+  "prompt_token_budget": 1800,
+  "use_server": true,
+  "server_url": "http://127.0.0.1:8088",
+  "server_timeout": 900
 }

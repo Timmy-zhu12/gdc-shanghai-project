@@ -3,6 +3,12 @@ Copyright 2026 Timmy-zhu12
 
 This product includes software developed for the CardioConsult/GDC Shanghai project.
 
+Third-party runtime notice:
+The Windows llama.cpp runtime under tools/llama_cpp is redistributed only to make
+the offline Gemma4 GGUF demo easier to run. llama.cpp is a third-party project
+maintained at https://github.com/ggml-org/llama.cpp and is governed by its own
+license. See THIRD_PARTY_NOTICES.md.
+
 License scope:
 The Apache License 2.0 in this repository applies to original source code, scripts,
 UI code, documentation, and project configuration authored for this repository.

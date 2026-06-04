@@ -16,8 +16,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Train the CAMUS B-mode low-EF calibration used by CardioConsult.")
     parser.add_argument(
         "--features-csv",
-        default="D:/cardioconsult_dense_validation/results/CAMUS/features.csv",
-        help="Feature table produced by the dense validation workbench.",
+        default="D:/CardioConsult_Gemma4_TrackC_Final_V4_20260604/04_validation/CAMUS/features.csv",
+        help="Optional V4-local CAMUS feature table. Runtime does not require this file.",
     )
     parser.add_argument(
         "--out",

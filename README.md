@@ -1,69 +1,176 @@
-# CardioConsult PC 精度二次改良版
+# CardioConsult PC V4
 
-这是 CardioConsult PC 版的第二次精度改良目录，基于 `D:\cardioconsult_PC_runbook` 复制而来，新增了数据库驱动的层级标签制度。
+CardioConsult PC V4 is the Windows reference implementation for the Gemma 4 Hackathon / GDG Track C submission. It is designed for medical education, ultrasound training, and primary-care reference workflows where privacy and offline execution matter.
 
-本版本仍保持原版输入输出合同：
+This repository contains the runnable PC app code. The unified submission portal, online demo, technical report, dataset disclosure, and links to every platform repository are maintained in the main repository:
 
-- 输入：一个或多个 PNG、DICOM/DCOM、动图、视频或多帧超声文件。
-- 输出：一段中文疑似诊断/医学教学参考文本。
-- 模型：可离线调用本地 Gemma4 4B GGUF；模型不可用时使用本地规则后备。
-- 目录：`D:\cardioconsult_PC_accuracy_v2_hierarchical_runbook`
+[Track-C-gdc-project-shanghai-Total-Repository](https://github.com/Timmy-zhu12/Track-C-gdc-project-shanghai-Total-Repository)
 
-## 新增能力
+Public online demo:
 
-1. 新增 `大方向 → 中方向 → 小方向/具体问题 → 分级 → 证据充分度` 的层级标签输出。
-2. 根据公开/可申请心脏超声数据库扩展标签：
-   - CAMUS：左心室收缩功能、ED/ES、EF/容积代理。
-   - EchoNet-Dynamic：A4C 视频、EF、EDV、ESV、LV tracing。
-   - EchoNet-LVH：PLAX、室壁厚度、左室肥厚。
-   - TMED-2：PLAX/PSAX/A2C/A4C/Other、主动脉瓣狭窄 none/early/significant。
-   - HMC-QU：A4C/A2C、MI/non-MI、节段性室壁运动异常。
-3. `教学参考病症判断` 字段本身始终先写具体病症，再用括号给出“大方向 > 中方向”，例如“轻度二尖瓣反流（瓣膜性心脏病 > 二尖瓣疾病）”。信息不足时，小方向写“证据不足，无法进一步细分”或“待排”。
-4. 修复旧版部分中文输出编码损坏问题。
-5. 新增 `prompts/hierarchical_system_prompt.txt`，并在 `run_diagnosis()` 返回前做层级字段后处理；即使 Gemma4 4B 或旧规则输出旧格式，也会被改写为层级格式。
-6. System prompt 现在强制前三句为：层级诊断、最小病症、逻辑链。规则后备也会输出这三个字段。
+[CardioConsult Track C Online Demo](https://timmy-zhu12.github.io/Track-C-gdc-project-shanghai-Total-Repository/)
 
-## 启动
+> Safety boundary: this project is not a medical device. It is for medical teaching, algorithm demonstration, and grassroots reference only. It must not replace formal echocardiography, clinician diagnosis, treatment decisions, emergency triage, or medical orders.
 
-双击：
+## Why This Fits Track C
+
+The official Gemma 4 Hackathon 2026 page defines Track C as Edge AI with fully offline deployment on phones, Raspberry Pi, or embedded hardware and a real-device demo requirement. It also requires a code repository, demo video within 5 minutes, technical report, online demo URL, and disclosure of training data sources.
+
+CardioConsult PC V4 maps to those points as follows:
+
+| Track C need | PC V4 implementation |
+|---|---|
+| Offline Gemma 4 use | Local Gemma4 4B GGUF through llama.cpp `llama-cli` or persistent `llama-server` |
+| Runnable demo | Windows desktop UI, batch launchers, bundled sample ultrasound-like files, rule-only smoke test |
+| Edge AI value | B-mode and Color Doppler features are computed locally before report generation |
+| Robustness | If the GGUF model is absent, the same input/output contract falls back to the auditable local rule engine |
+| Data transparency | Dataset and model policies are linked from the main repository; raw patient data and model weights are not committed |
+
+## Inputs And Output
+
+Supported inputs:
+
+- PNG, JPG, BMP, TIFF, WebP, HEIC/HEIF
+- DICOM, DCM, DCOM
+- GIF/APNG and multi-frame TIFF
+- MP4/MOV/AVI/MKV/WebM/WMV and common ultrasound cine/video containers
+- One file or many files at once
+
+Expected clinical-teaching scope:
+
+- Up to the standard 12 echocardiographic views.
+- Minimum usable input: one view with systolic and diastolic frames. If phase labels are missing, the app estimates systole/diastole from chamber-area proxies.
+
+Output:
+
+- One Chinese teaching-reference diagnostic paragraph.
+- The first visible field is forced to include a broad-to-specific disease hierarchy.
+- The app always includes a smallest disease label, logic chain, confidence/evidence level, image-quality notes, and safety warning.
+
+Example field shape:
 
 ```text
+教学参考病症判断：轻度二尖瓣反流（瓣膜性心脏病 > 二尖瓣疾病）。
+最小病症：轻度二尖瓣反流。
+逻辑链：体位覆盖... + B-mode... + Doppler... -> 规则... -> 瓣膜性心脏病 -> 二尖瓣疾病 -> 轻度二尖瓣反流。
+```
+
+## Quick Start
+
+Install Python 3.10+ on Windows, then double-click:
+
+```bat
+run_cardio_pc_v4.bat
+```
+
+The launcher will:
+
+1. Create `.venv` if needed.
+2. Install Python dependencies from `requirements.txt`.
+3. Create `config.json` from `config.example.json` if missing.
+4. Start the desktop UI.
+
+For the fastest offline Gemma4 demonstration, use:
+
+```bat
+run_cardio_pc_v4_fast_server.bat
+```
+
+This starts a persistent local `llama-server` at `http://127.0.0.1:8088` and then opens the UI. The first load still takes time, but later diagnoses reuse the already loaded GGUF model.
+
+Manual server controls:
+
+```bat
+start_llama_server_v4.bat
+stop_llama_server_v4.bat
+```
+
+Legacy launchers are kept as compatibility aliases and now route to V4:
+
+```bat
+run_cardio_pc.bat
+run_cardio_pc_accuracy_improved.bat
 run_cardio_pc_accuracy_v2_hierarchical.bat
+run_cardio_pc_cine.bat
 ```
 
-或命令行：
+## Offline Model Setup
 
-```powershell
-Set-Location D:\cardioconsult_PC_accuracy_v2_hierarchical_runbook
-.\run_cardio_pc_accuracy_v2_hierarchical.bat
-```
-
-自检：
-
-```powershell
-Set-Location D:\cardioconsult_PC_accuracy_v2_hierarchical_runbook
-D:\cardioconsult_PC_runbook\.venv\Scripts\python.exe app.py --self-test
-```
-
-## 重要文件
+The repository includes the Windows llama.cpp runtime under:
 
 ```text
-cardio_pc/label_hierarchy.py
-cardio_pc/diagnosis.py
-cardio_pc/guidance.py
-cardio_pc/calibration.py
-cardio_pc/features.py
-PRECISION_V2_HIERARCHICAL_LABELS.md
+tools/llama_cpp/llama-b9469-bin-win-cpu-x64/
 ```
 
-## 详细说明
-
-请阅读：
+Gemma4 GGUF weights are not committed. Put the model here:
 
 ```text
-D:\cardioconsult_PC_accuracy_v2_hierarchical_runbook\PRECISION_V2_HIERARCHICAL_LABELS.md
+models/gemma-4-4b-it-Q4_K_M.gguf
 ```
 
-## 安全声明
+Optional multimodal projection file:
 
-本项目仅用于医学教学、比赛演示和基层参考，不是医疗器械，不作为正式临床诊断、治疗建议或医嘱。所有输出必须由有资质医师结合完整标准切面、DICOM 标尺、连续动态帧、病史、体征和正式报告复核。
+```text
+models/gemma-4-4b-mmproj-Q4_0.gguf
+```
+
+Then copy or edit:
+
+```text
+config.example.json -> config.json
+```
+
+The default `config.example.json` already points to the bundled `llama-cli.exe` and the `models/` folder.
+
+## Smoke Tests
+
+Fast rule-only smoke test, suitable before judging or GitHub Actions:
+
+```powershell
+.\install_deps.bat
+.\.venv\Scripts\python.exe app.py --self-test-rule-only
+```
+
+Full configured self-test:
+
+```powershell
+.\.venv\Scripts\python.exe app.py --self-test
+```
+
+The full self-test may invoke Gemma4 if `config.json` points to a valid local GGUF. On CPU-only machines this can take several minutes. The rule-only test verifies the image-loading, feature-extraction, hierarchical-label, and output-format pipeline without loading the model.
+
+## Technical Pipeline
+
+- B-mode branch: robust normalization, log compression, SRAD-inspired speckle suppression, CLAHE-like local contrast enhancement, DoG edge response, chamber-area proxy, texture and GLDM-style statistics.
+- Color Doppler branch: HSV blood-flow vectorization, connected-component filtering, jet-width proxy, direction consistency, turbulence/divergence/vorticity proxies.
+- Cine branch: representative frame sampling, temporal differencing, systole/diastole inference, STI-style chamber strain proxy, and Lucas-Kanade-style optical-flow proxy.
+- Label branch: hierarchical disease taxonomy with broad direction, middle category, smallest disease, severity, evidence sufficiency, and source notes.
+- Gemma4 branch: compact structured prompt with mandatory first sentence, minimum disease, and logic chain; persistent server mode is preferred for repeated runs.
+
+## Validation Snapshot
+
+The V4 reference validation on the authorized local 60-case DICOM set reported:
+
+| Target | V4 F1 |
+|---|---:|
+| Mitral regurgitation proxy | 96.4% |
+| Tricuspid regurgitation proxy | 100.0% |
+| Aortic regurgitation proxy | 70.0% |
+| Low-EF proxy | 85.7% |
+
+These are small-dataset teaching-reference validation results, not clinical performance claims. Full reports and dataset disclosures are maintained in the main repository.
+
+## Repository Boundary
+
+This PC repository is the runnable Windows implementation. The main repository is the official submission entry and contains:
+
+- online demo link
+- APA-style technical report
+- dataset disclosure
+- validation reports
+- demo video script
+- links to Android, Linux, Apple, and HarmonyOS repositories
+
+## License
+
+Original source code and documentation in this repository are released under Apache License 2.0. Third-party model weights, medical datasets, ultrasound software, SDKs, and patient/teaching data are excluded and remain governed by their own licenses, terms, or institutional approvals.

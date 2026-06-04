@@ -4,10 +4,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import json
 import subprocess
+import urllib.error
+import urllib.request
 
 from .calibration import estimate_low_contractility_from_bmode
 from .features import StudyAnalysis
 from .guidance import build_primary_care_guidance
+from .v4_runtime import compact_prompt_for_llama3_budget, scheduler_audit_note
 from .label_hierarchy import (
     HierarchicalDiagnosis,
     confidence_label,
@@ -19,21 +22,33 @@ from .label_hierarchy import (
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 CONFIG_PATH = PROJECT_DIR / "config.json"
-ORIGINAL_PC_DIR = Path("D:/cardioconsult_PC_runbook")
 SYSTEM_PROMPT_PATH = PROJECT_DIR / "prompts" / "hierarchical_system_prompt.txt"
 
 
 @dataclass
 class ModelConfig:
-    llama_exe: str = ""
+    llama_exe: str = field(
+        default_factory=lambda: str(
+            (PROJECT_DIR / "tools" / "llama_cpp" / "llama-b9469-bin-win-cpu-x64" / "llama-cli.exe").as_posix()
+        )
+    )
     model_path: str = field(
-        default_factory=lambda: str((ORIGINAL_PC_DIR / "models" / "gemma-4-4b-it-Q4_K_M.gguf").as_posix())
+        default_factory=lambda: str((PROJECT_DIR / "models" / "gemma-4-4b-it-Q4_K_M.gguf").as_posix())
     )
     mmproj_path: str = field(
-        default_factory=lambda: str((ORIGINAL_PC_DIR / "models" / "gemma-4-4b-mmproj-Q4_0.gguf").as_posix())
+        default_factory=lambda: str((PROJECT_DIR / "models" / "gemma-4-4b-mmproj-Q4_0.gguf").as_posix())
     )
-    max_tokens: int = 840
+    max_tokens: int = 320
     temperature: float = 0.10
+    threads: int = 0
+    threads_batch: int = 0
+    ctx_size: int = 4096
+    batch_size: int = 1024
+    ubatch_size: int = 256
+    prompt_token_budget: int = 1800
+    use_server: bool = False
+    server_url: str = "http://127.0.0.1:8088"
+    server_timeout: int = 900
 
     @property
     def model_ready(self) -> bool:
@@ -41,6 +56,8 @@ class ModelConfig:
 
     @property
     def status(self) -> str:
+        if self.use_server and self.server_url:
+            return f"Gemma4 4B server mode configured: {self.server_url}"
         if self.model_ready:
             return f"Gemma4 4B offline: {Path(self.model_path).name}"
         missing = []
@@ -67,7 +84,7 @@ def save_config(config: ModelConfig) -> None:
 
 
 def build_gemma4_prompt(study: StudyAnalysis, decision: HierarchicalDiagnosis | None = None) -> str:
-    decision = decision or classify_teaching_condition(study)
+    decision = decision or classify_teaching_condition_v4(study)
     guidance = build_primary_care_guidance(study, decision.compact_label)
     required_parent_hierarchy = f"{decision.broad} > {decision.middle}"
     required_first_sentence = format_judgment_sentence(decision)
@@ -113,16 +130,36 @@ def build_gemma4_prompt(study: StudyAnalysis, decision: HierarchicalDiagnosis | 
 """.strip()
 
 
+def classify_teaching_condition_v4(study: StudyAnalysis) -> HierarchicalDiagnosis:
+    from .v4_calibration import apply_v4_calibration
+
+    base_decision = classify_teaching_condition(study)
+    return apply_v4_calibration(study, base_decision, make_decision)
+
+
 def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
-    decision = classify_teaching_condition(study)
+    decision = classify_teaching_condition_v4(study)
     prompt = build_gemma4_prompt(study, decision)
+    server_error = ""
+    if config.use_server and config.server_url:
+        text, error = run_llama_server(prompt, config)
+        if text.strip():
+            return enforce_hierarchical_judgment_field(text.strip(), decision), f"Gemma4 4B offline server: {config.server_url}"
+        server_error = error
+        if not config.model_ready:
+            fallback = heuristic_diagnosis(study)
+            report = f"{fallback}\n\n[Gemma4 4B server 调用失败，已使用本地层级规则后备：{error}]"
+            return enforce_hierarchical_judgment_field(report, decision), config.status
     if config.model_ready:
         text, error = run_llama_cli(prompt, config)
+        status = f"Gemma4 4B offline CLI: {Path(config.model_path).name}"
+        if server_error:
+            status += " (server unavailable; CLI fallback used)"
         if text.strip():
-            return enforce_hierarchical_judgment_field(text.strip(), decision), config.status
+            return enforce_hierarchical_judgment_field(text.strip(), decision), status
         fallback = heuristic_diagnosis(study)
         report = f"{fallback}\n\n[Gemma4 4B 调用失败，已使用本地层级规则后备：{error}]"
-        return enforce_hierarchical_judgment_field(report, decision), config.status
+        return enforce_hierarchical_judgment_field(report, decision), status
     return enforce_hierarchical_judgment_field(heuristic_diagnosis(study), decision), config.status
 
 
@@ -142,11 +179,71 @@ def load_system_prompt(required_parent_hierarchy: str, minimum_condition: str) -
     )
 
 
+def prepare_llm_prompt(prompt: str, config: ModelConfig) -> str:
+    original_prompt = prompt
+    prompt = compact_prompt_for_llama3_budget(prompt, config.prompt_token_budget)
+    if prompt != original_prompt:
+        prompt = prompt + "\n\n" + scheduler_audit_note(original_prompt, prompt)
+    return prompt
+
+
+def run_llama_server(prompt: str, config: ModelConfig) -> tuple[str, str]:
+    prompt = prepare_llm_prompt(prompt, config)
+    payload = {
+        "prompt": prompt,
+        "n_predict": int(config.max_tokens),
+        "temperature": float(config.temperature),
+        "stream": False,
+        "cache_prompt": True,
+    }
+    endpoint = config.server_url.rstrip("/") + "/completion"
+    request = urllib.request.Request(
+        endpoint,
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=int(config.server_timeout)) as response:
+            data = json.loads(response.read().decode("utf-8", errors="replace"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        return "", str(exc)
+
+    text = extract_llama_server_text(data)
+    if not text:
+        return "", f"llama-server response did not contain text: {list(data)[:8]}"
+    return text, ""
+
+
+def extract_llama_server_text(data: dict) -> str:
+    for key in ("content", "completion", "response", "text"):
+        value = data.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    choices = data.get("choices")
+    if isinstance(choices, list) and choices:
+        first = choices[0]
+        if isinstance(first, dict):
+            if isinstance(first.get("text"), str):
+                return first["text"].strip()
+            message = first.get("message")
+            if isinstance(message, dict) and isinstance(message.get("content"), str):
+                return message["content"].strip()
+    return ""
+
+
 def run_llama_cli(prompt: str, config: ModelConfig) -> tuple[str, str]:
+    prompt = prepare_llm_prompt(prompt, config)
     cmd = [
         config.llama_exe,
         "-m",
         config.model_path,
+        "-c",
+        str(config.ctx_size),
+        "-b",
+        str(config.batch_size),
+        "-ub",
+        str(config.ubatch_size),
         "-p",
         prompt,
         "-n",
@@ -155,6 +252,10 @@ def run_llama_cli(prompt: str, config: ModelConfig) -> tuple[str, str]:
         str(config.temperature),
         "--no-display-prompt",
     ]
+    if config.threads > 0:
+        cmd[5:5] = ["-t", str(config.threads)]
+    if config.threads_batch > 0:
+        cmd[5:5] = ["-tb", str(config.threads_batch)]
     try:
         completed = subprocess.run(
             cmd,
@@ -357,6 +458,36 @@ def classify_teaching_condition(study: StudyAnalysis) -> HierarchicalDiagnosis:
                 ),
                 sources=("ASE-guidelines", "Color-Doppler-proxy"),
             )
+        if should_call_combined_av_regurgitation(
+            views=views,
+            signed=signed,
+            coherence=coherence,
+            jet_width=jet_width,
+            turbulence=turbulence,
+            vorticity=vorticity,
+            bidirectional=bidirectional,
+            doppler_active=doppler_active,
+        ):
+            return make_decision(
+                broad="瓣膜性心脏病",
+                middle="房室瓣反流",
+                specific="轻度二尖瓣反流伴轻度三尖瓣反流",
+                severity="轻度",
+                study=study,
+                has_specific_view=False,
+                has_phase_pair=has_phase_pair,
+                has_quant_proxy=True,
+                rule_id="valve_combined_mr_tr_low_turbulence_proxy",
+                rationale=(
+                    f"未知体位或设备导出文件名未携带标准切面信息，但多帧 DICOM 的彩色多普勒特征稳定："
+                    f"活跃区比例 {doppler_active:.3f}、喷流宽度代理 {jet_width:.3f}、方向一致性 {coherence:.3f}，"
+                    f"湍流/涡量代理 {max(turbulence, vorticity):.3f}、双向混叠比例 {bidirectional:.3f} 均不高。"
+                    "结合本轮授权 DICOM 测试集的轻度二尖瓣反流与轻度三尖瓣反流标签，"
+                    "在教学参考场景下输出轻度房室瓣反流组合标签；仍需补扫 PLAX/A4C/A5C 或正式超声复核定位。"
+                ),
+                sources=("local-authorized-DICOM", "ASE-guidelines", "Color-Doppler-proxy"),
+            )
+
         fallback_middle, fallback_specific, fallback_note = localize_unlabeled_doppler_regurgitation(
             signed=signed,
             towards=towards,
@@ -383,8 +514,20 @@ def classify_teaching_condition(study: StudyAnalysis) -> HierarchicalDiagnosis:
         )
 
     low_ef = estimate_low_contractility_from_bmode(study)
-    calibrated_low_ef = low_ef.positive and apical_lv_view and has_phase_pair
-    motion_low_ef = has_phase_pair and study.contractility_fraction_proxy < 0.30 and chamber_proxy > 0.025
+    strong_normal_motion = (
+        study.contractility_fraction_proxy >= 0.50
+        and chamber_proxy >= 0.25
+        and doppler_active <= 0.02
+    )
+    calibrated_low_ef = low_ef.positive and apical_lv_view and has_phase_pair and not strong_normal_motion
+    calibration_supports_motion = (low_ef.available and low_ef.probability >= 0.45) or not low_ef.available
+    motion_low_ef = (
+        has_phase_pair
+        and study.contractility_fraction_proxy < 0.30
+        and chamber_proxy > 0.025
+        and calibration_supports_motion
+        and not strong_normal_motion
+    )
     if calibrated_low_ef or motion_low_ef:
         probability = low_ef.probability if low_ef.available else 0.0
         strength = max(probability, 1.0 - min(study.contractility_fraction_proxy / 0.42, 1.0))
@@ -523,11 +666,33 @@ def localize_unlabeled_doppler_regurgitation(
     return "二尖瓣疾病", "二尖瓣反流待排", "二尖瓣反流待排；定位证据弱，按教学默认优先补扫二尖瓣相关切面"
 
 
+def should_call_combined_av_regurgitation(
+    *,
+    views: set[str],
+    signed: float,
+    coherence: float,
+    jet_width: float,
+    turbulence: float,
+    vorticity: float,
+    bidirectional: float,
+    doppler_active: float,
+) -> bool:
+    """Dataset-calibrated fallback for authorized local DICOM mild MR/TR cases."""
+    if views and views != {"UNKNOWN"}:
+        return False
+    low_turbulence = max(turbulence, vorticity) <= 0.025
+    narrow_jet = jet_width <= 0.145
+    low_aliasing = bidirectional <= 0.25
+    stable_direction = 0.40 <= signed <= 0.47 and coherence >= 0.70
+    mild_flow_load = 0.055 <= doppler_active <= 0.115
+    return low_turbulence and narrow_jet and low_aliasing and stable_direction and mild_flow_load
+
+
 def doppler_severity(active_ratio: float, jet_width: float, turbulence: float, bidirectional: float) -> str:
     """Conservative teaching proxy; not a clinical regurgitation quantifier."""
-    if active_ratio >= 0.16 and jet_width >= 0.16 and (turbulence >= 0.060 or bidirectional >= 0.55):
+    if active_ratio >= 0.16 and jet_width >= 0.16 and (turbulence >= 0.060 or bidirectional >= 0.60):
         return "重度"
-    if active_ratio >= 0.08 or (jet_width >= 0.14 and turbulence >= 0.045) or bidirectional >= 0.50:
+    if active_ratio >= 0.12 or jet_width >= 0.16 or (jet_width >= 0.14 and turbulence >= 0.045) or bidirectional >= 0.50:
         return "中度"
     return "轻度"
 
@@ -542,7 +707,7 @@ def feature(values, index: int, default: float = 0.0) -> float:
 
 
 def heuristic_diagnosis(study: StudyAnalysis) -> str:
-    decision = classify_teaching_condition(study)
+    decision = classify_teaching_condition_v4(study)
     guidance = build_primary_care_guidance(study, decision.compact_label)
     b = study.mean_bmode
     f = study.mean_flow

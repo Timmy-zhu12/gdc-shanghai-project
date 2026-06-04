@@ -238,7 +238,7 @@ class CardioConsultPCApp(tk.Tk):
         if not self.last_report:
             messagebox.showwarning("没有报告", "请先完成一次分析。")
             return
-        default = Path("D:/cardioconsult_PC_math_improved_runbook/exports/cardio_consult_pc_math_improved_report.txt")
+        default = Path(__file__).resolve().parents[1] / "exports" / "cardio_consult_pc_v4_report.txt"
         default.parent.mkdir(parents=True, exist_ok=True)
         selected = filedialog.asksaveasfilename(
             title="保存疑似诊断文本",
