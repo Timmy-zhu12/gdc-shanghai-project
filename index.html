@@ -396,6 +396,22 @@
           </div>
         </section>
       </section>
+
+      <section class="panel" aria-label="本地服务验证" style="margin-top: 18px;">
+        <div class="report-section">
+          <h3>本地常驻服务验证</h3>
+          <p class="hint">
+            PC V5 已完成普通本地服务 smoke：`llama-server.exe` 常驻加载 Gemma4 4B GGUF，
+            通过 `http://127.0.0.1:8088/completion` 连续两次返回 OK；EchoBench 第 1 例、12 文件服务诊断链路输出
+            “教学参考病症判断 / 最小病症 / 逻辑链”三个必需字段，并生成多智能体审计 JSON。
+          </p>
+          <p class="hint">
+            详细记录见仓库文档 <code>docs/service_validation.md</code>，
+            结果文件位于 <code>validation_speedopt/server_smoke_general_20260604.json</code>
+            和 <code>validation_speedopt/server_pipeline_case1_240tok_20260604.json</code>。
+          </p>
+        </div>
+      </section>
     </main>
 
     <script>
