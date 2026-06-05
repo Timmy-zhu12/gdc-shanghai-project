@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import math
+import multiprocessing as mp
 import os
 from pathlib import Path
+import time
 from typing import Any
 
 import numpy as np
@@ -54,6 +58,20 @@ MIN_PARALLEL_LOAD_FILES = 4
 MAX_LOAD_WORKERS = max(1, min(8, (os.cpu_count() or 4) - 1))
 FAST_CINE_MODE_ENV = "CARDIO_FAST_CINE_MODE"
 FAST_CINE_AUTO_MAX_FRAMES = 24
+DEFAULT_FILE_DECODE_TIMEOUT_SECONDS = 20
+DEFAULT_MAX_LOADED_FRAMES_PER_CASE = 96
+TIMEOUT_PROTECTED_EXTENSIONS = DICOM_EXTENSIONS | VIDEO_EXTENSIONS | ANIMATED_IMAGE_EXTENSIONS | {
+    ".tif",
+    ".tiff",
+    ".heic",
+    ".heif",
+    ".webp",
+}
+MAX_DICOM_ESTIMATED_PIXELS = 1_500_000_000
+
+
+class AnalysisCancelled(RuntimeError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -74,33 +92,137 @@ def is_supported(path: str | Path) -> bool:
     return Path(path).suffix.lower() in SUPPORTED_EXTENSIONS
 
 
-def load_files(paths: list[str | Path]) -> list[LoadedImage]:
+def load_files(
+    paths: list[str | Path],
+    file_decode_timeout_seconds: int | float | None = None,
+    max_loaded_frames: int | None = None,
+    progress_callback: Callable[[str], None] | None = None,
+    error_callback: Callable[[str], None] | None = None,
+    cancel_event: Any | None = None,
+    deadline_monotonic: float | None = None,
+) -> list[LoadedImage]:
     loaded: list[LoadedImage] = []
     errors: list[str] = []
 
     raw_paths = [Path(raw_path) for raw_path in paths]
-    if len(raw_paths) >= MIN_PARALLEL_LOAD_FILES and MAX_LOAD_WORKERS > 1:
-        workers = min(MAX_LOAD_WORKERS, len(raw_paths))
-        with ThreadPoolExecutor(max_workers=workers) as executor:
-            results = list(executor.map(load_one_path, raw_paths))
-    else:
-        results = [load_one_path(path) for path in raw_paths]
+    if not raw_paths:
+        return []
 
-    for frames, error in results:
+    timeout = DEFAULT_FILE_DECODE_TIMEOUT_SECONDS if file_decode_timeout_seconds is None else file_decode_timeout_seconds
+    frame_limit = max(1, int(max_loaded_frames or DEFAULT_MAX_LOADED_FRAMES_PER_CASE))
+    per_file_limit = max(1, int(math.ceil(frame_limit / max(1, len(raw_paths)))))
+
+    for index, path in enumerate(raw_paths, start=1):
+        if is_cancelled(cancel_event):
+            raise AnalysisCancelled("用户已取消分析。")
+        if deadline_monotonic is not None and time.monotonic() >= deadline_monotonic:
+            message = "本例达到总时间预算，已停止继续读取后续文件。"
+            errors.append(message)
+            if error_callback:
+                error_callback(message)
+            break
+        if progress_callback:
+            progress_callback(f"正在读取文件 {index}/{len(raw_paths)}：{path.name}")
+        per_file_timeout = timeout
+        if deadline_monotonic is not None:
+            per_file_timeout = max(0.1, min(float(timeout), deadline_monotonic - time.monotonic()))
+        frames, error = load_one_path_safe(path, per_file_timeout, cancel_event)
         if frames:
-            loaded.extend(frames)
+            loaded.extend(sample_loaded_frames(frames, per_file_limit))
+            loaded = sample_loaded_frames(loaded, frame_limit)
         if error:
             errors.append(error)
+            if error_callback:
+                error_callback(error)
 
     if errors and not loaded:
         raise RuntimeError("\n".join(errors))
     return loaded
 
 
+def load_one_path_safe(
+    path: Path,
+    file_decode_timeout_seconds: int | float | None = None,
+    cancel_event: Any | None = None,
+) -> tuple[list[LoadedImage], str]:
+    timeout = DEFAULT_FILE_DECODE_TIMEOUT_SECONDS if file_decode_timeout_seconds is None else float(file_decode_timeout_seconds)
+    if timeout <= 0 or path.suffix.lower() not in TIMEOUT_PROTECTED_EXTENSIONS:
+        return load_one_path(path)
+    return load_one_path_in_subprocess(path, timeout, cancel_event)
+
+
+def load_one_path_in_subprocess(
+    path: Path,
+    timeout_seconds: float,
+    cancel_event: Any | None = None,
+) -> tuple[list[LoadedImage], str]:
+    ctx = mp.get_context("spawn")
+    parent_conn, child_conn = ctx.Pipe(duplex=False)
+    process = ctx.Process(target=_load_one_path_child, args=(str(path), child_conn))
+    process.start()
+    child_conn.close()
+    deadline = time.monotonic() + max(0.1, float(timeout_seconds))
+    try:
+        while True:
+            if is_cancelled(cancel_event):
+                terminate_process(process)
+                return [], f"{path.name}: 用户取消，已终止解码。"
+            if parent_conn.poll(0.1):
+                tag, frames, error = parent_conn.recv()
+                process.join(timeout=1)
+                if tag == "ok":
+                    return frames, error
+                return [], error or f"{path.name}: decoder failed"
+            if not process.is_alive():
+                process.join(timeout=0.2)
+                if parent_conn.poll():
+                    tag, frames, error = parent_conn.recv()
+                    if tag == "ok":
+                        return frames, error
+                    return [], error or f"{path.name}: decoder failed"
+                return [], f"{path.name}: decoder exited without returning frames"
+            if time.monotonic() >= deadline:
+                terminate_process(process)
+                return [], f"{path.name}: decoding timed out after {timeout_seconds:.1f}s and was skipped."
+    finally:
+        parent_conn.close()
+
+
+def _load_one_path_child(path_text: str, conn: Any) -> None:
+    try:
+        frames, error = load_one_path(Path(path_text))
+        conn.send(("ok", frames, error))
+    except BaseException as exc:  # noqa: BLE001 - child process must report all decoder failures.
+        conn.send(("error", [], f"{Path(path_text).name}: load failed: {exc}"))
+    finally:
+        conn.close()
+
+
+def terminate_process(process: mp.Process) -> None:
+    if not process.is_alive():
+        return
+    process.terminate()
+    process.join(timeout=2)
+    if process.is_alive() and hasattr(process, "kill"):
+        process.kill()
+        process.join(timeout=2)
+
+
+def is_cancelled(cancel_event: Any | None) -> bool:
+    return bool(cancel_event is not None and getattr(cancel_event, "is_set", lambda: False)())
+
+
+def sample_loaded_frames(frames: list[LoadedImage], max_frames: int) -> list[LoadedImage]:
+    if len(frames) <= max_frames:
+        return frames
+    return [frames[index] for index in sample_indices(len(frames), max_frames)]
+
+
 def load_one_path(path: Path) -> tuple[list[LoadedImage], str]:
     if not path.exists():
         return [], f"{path}: file not found"
     try:
+        maybe_sleep_for_decode_test(path)
         suffix = path.suffix.lower()
         if suffix in DICOM_EXTENSIONS:
             return load_dicom(path), ""
@@ -111,6 +233,18 @@ def load_one_path(path: Path) -> tuple[list[LoadedImage], str]:
         return load_unknown_by_probe(path), ""
     except Exception as exc:  # noqa: BLE001 - UI needs concrete messages.
         return [], f"{path.name}: load failed: {exc}"
+
+
+def maybe_sleep_for_decode_test(path: Path) -> None:
+    raw = os.environ.get("CARDIO_TEST_DECODE_SLEEP_SECONDS", "").strip()
+    if not raw or "anti_hang" not in path.name:
+        return
+    try:
+        seconds = float(raw)
+    except ValueError:
+        return
+    if seconds > 0:
+        time.sleep(seconds)
 
 
 def load_pillow_image_or_animation(path: Path) -> list[LoadedImage]:
@@ -274,6 +408,18 @@ def load_dicom(path: Path) -> list[LoadedImage]:
         import pydicom
     except ModuleNotFoundError as exc:
         raise RuntimeError("pydicom is not installed. Run install_deps.bat first.") from exc
+
+    meta = pydicom.dcmread(str(path), force=True, stop_before_pixels=True)
+    frame_count = int(getattr(meta, "NumberOfFrames", 1) or 1)
+    rows = int(getattr(meta, "Rows", 0) or 0)
+    columns = int(getattr(meta, "Columns", 0) or 0)
+    samples = int(getattr(meta, "SamplesPerPixel", 1) or 1)
+    estimated_pixels = max(1, frame_count) * max(1, rows) * max(1, columns) * max(1, samples)
+    if estimated_pixels > MAX_DICOM_ESTIMATED_PIXELS:
+        raise RuntimeError(
+            f"DICOM pixel payload is too large for safe local decoding "
+            f"({frame_count} frames, {rows}x{columns}x{samples})."
+        )
 
     dataset = pydicom.dcmread(str(path), force=True)
     if not hasattr(dataset, "pixel_array"):

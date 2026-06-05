@@ -113,7 +113,9 @@ run_cardio_pc_v5.bat
 3. 如果缺少 `config.json`，从 `config.example.json` 创建。
 4. 启动桌面 UI。
 
-离线 Gemma4 可直接由应用按 `config.json` 调用。需要做服务性能复现时，可在 PowerShell 中手动启动本地常驻 `llama-server`，地址为：
+默认 UI 使用“规则极速模式”，不会等待 GGUF，因此真实导入超大 DICOM、视频或动图时不会因为模型推理长时间卡住。需要展示离线 Gemma4 4B 时，可在 UI 的“推理模式”中切换到 `Gemma4 server 增强` 或 `Gemma4 CLI 增强`；这两个增强路径也有硬超时，失败后会自动回到可审计规则报告。
+
+需要做服务性能复现时，可在 PowerShell 中手动启动本地常驻 `llama-server`，地址为：
 
 ```text
 http://127.0.0.1:8088
@@ -127,6 +129,15 @@ powershell -ExecutionPolicy Bypass -File .\start_llama_server_v4.ps1
 ```
 
 第一次启动仍需要加载 GGUF 模型，但后续诊断会复用已加载模型，避免每次重新加载 5GB 级模型文件。
+
+防卡保护默认值：
+
+| 项目 | 默认值 |
+|---|---:|
+| 整例总预算 | 90 s |
+| Gemma4 调用预算 | 60 s |
+| 单文件解码预算 | 20 s |
+| 每例最大代表帧 | 96 |
 
 本地常驻服务验证文档：
 
@@ -186,6 +197,12 @@ config.example.json -> config.json
 .\.venv\Scripts\python.exe tools\submission_preflight.py
 ```
 
+防卡 smoke 单独运行：
+
+```powershell
+.\.venv\Scripts\python.exe tools\anti_hang_smoke.py
+```
+
 生成中文 LaTeX 报告源和注释式图表：
 
 ```powershell
@@ -212,7 +229,7 @@ config.example.json -> config.json
 - Color Doppler 分支：HSV 血流向量化、连通域过滤、喷流宽度代理、方向一致性、湍流/散度/涡量代理，并在体位证据不足时输出 MR/TR/AR/PR 瓣膜定位评分。
 - 动图/视频分支：代表帧采样、时间差分、收缩/舒张推断、STI 风格腔室应变代理和 Lucas-Kanade 风格光流代理。
 - 标签分支：大方向、中方向、最小病症、严重程度、证据充分度和来源说明。
-- Gemma4 分支：默认结构化 JSON 短提示词，强制首句、最小病症和逻辑链；重复演示优先使用常驻 `llama-server`。
+- Gemma4 分支：作为可选增强路径，使用结构化 JSON 短提示词，强制首句、最小病症和逻辑链；重复演示优先使用常驻 `llama-server`，但默认规则极速模式不会等待模型。
 
 ## V5 验证摘要
 

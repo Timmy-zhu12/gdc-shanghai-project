@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import threading
+import time
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -10,7 +12,15 @@ from PIL import Image, ImageTk
 from .diagnosis import ModelConfig, load_config, run_diagnosis, save_config
 from .features import StudyAnalysis, analyze_loaded_images
 from .guidance import build_primary_care_guidance
-from .imaging import SUPPORTED_EXTENSIONS, LoadedImage, load_files
+from .imaging import AnalysisCancelled, SUPPORTED_EXTENSIONS, LoadedImage, load_files
+
+
+INFERENCE_MODE_LABELS = {
+    "规则极速模式": "rule_only",
+    "Gemma4 server 增强": "gemma4_server",
+    "Gemma4 CLI 增强": "gemma4_cli",
+}
+INFERENCE_MODE_NAMES = {value: key for key, value in INFERENCE_MODE_LABELS.items()}
 
 
 class CardioConsultPCApp(tk.Tk):
@@ -26,6 +36,10 @@ class CardioConsultPCApp(tk.Tk):
         self.study: StudyAnalysis | None = None
         self.last_report = ""
         self.preview_image: ImageTk.PhotoImage | None = None
+        self.cancel_event: threading.Event | None = None
+        self.analysis_token = 0
+        self.analysis_running = False
+        self.decode_warnings: list[str] = []
 
         self._build_ui()
         self._refresh_model_status()
@@ -59,7 +73,19 @@ class CardioConsultPCApp(tk.Tk):
         model_box.pack(fill=tk.X, pady=(12, 0))
         self.model_var = tk.StringVar(value=self.config_model.model_path)
         self.llama_var = tk.StringVar(value=self.config_model.llama_exe)
+        self.mode_var = tk.StringVar(
+            value=INFERENCE_MODE_NAMES.get(self.config_model.normalized_inference_mode, "规则极速模式")
+        )
         self.status_var = tk.StringVar(value="")
+
+        ttk.Label(model_box, text="推理模式").pack(anchor=tk.W)
+        self.mode_combo = ttk.Combobox(
+            model_box,
+            textvariable=self.mode_var,
+            values=list(INFERENCE_MODE_LABELS),
+            state="readonly",
+        )
+        self.mode_combo.pack(fill=tk.X, pady=(2, 6))
 
         ttk.Label(model_box, text="GGUF 模型").pack(anchor=tk.W)
         model_row = ttk.Frame(model_box)
@@ -77,7 +103,10 @@ class CardioConsultPCApp(tk.Tk):
 
         run_row = ttk.Frame(right)
         run_row.pack(fill=tk.X)
-        ttk.Button(run_row, text="开始离线分析", command=self.start_analysis).pack(side=tk.LEFT)
+        self.run_button = ttk.Button(run_row, text="开始离线分析", command=self.start_analysis)
+        self.run_button.pack(side=tk.LEFT)
+        self.cancel_button = ttk.Button(run_row, text="取消分析", command=self.cancel_analysis, state=tk.DISABLED)
+        self.cancel_button.pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(run_row, text="保存诊断文本", command=self.save_report).pack(side=tk.LEFT, padx=(8, 0))
         self.progress = ttk.Progressbar(run_row, mode="indeterminate")
         self.progress.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(16, 0))
@@ -155,6 +184,8 @@ class CardioConsultPCApp(tk.Tk):
     def save_model_settings(self) -> None:
         self.config_model.model_path = self.model_var.get().strip()
         self.config_model.llama_exe = self.llama_var.get().strip()
+        self.config_model.inference_mode = INFERENCE_MODE_LABELS.get(self.mode_var.get(), "rule_only")
+        self.config_model.use_server = self.config_model.normalized_inference_mode == "gemma4_server"
         save_config(self.config_model)
         self._refresh_model_status()
 
@@ -165,23 +196,136 @@ class CardioConsultPCApp(tk.Tk):
         if not self.file_paths:
             messagebox.showwarning("缺少输入", "请先添加 PNG、DICOM 或 DCOM 文件。")
             return
+        if self.analysis_running:
+            return
         self.save_model_settings()
+        self.analysis_token += 1
+        token = self.analysis_token
+        self.cancel_event = threading.Event()
+        self.decode_warnings = []
+        self.analysis_running = True
+        self.run_button.configure(state=tk.DISABLED)
+        self.cancel_button.configure(state=tk.NORMAL)
         self.progress.start(12)
-        self.summary_var.set("正在本地读取文件并运行边缘计算...")
-        worker = threading.Thread(target=self._analysis_worker, daemon=True)
+        self.summary_var.set("阶段 1/4：正在本地读取文件...")
+        worker = threading.Thread(target=self._analysis_worker, args=(token, self.cancel_event), daemon=True)
         worker.start()
 
-    def _analysis_worker(self) -> None:
+    def cancel_analysis(self) -> None:
+        if self.cancel_event:
+            self.cancel_event.set()
+        self.analysis_token += 1
+        self.analysis_running = False
+        self.progress.stop()
+        self.run_button.configure(state=tk.NORMAL)
+        self.cancel_button.configure(state=tk.DISABLED)
+        self.summary_var.set("已取消本次分析。后台慢任务若稍后返回，将被自动忽略。")
+
+    def _analysis_worker(self, token: int, cancel_event: threading.Event) -> None:
+        started = time.monotonic()
+        deadline = started + max(5, int(self.config_model.case_timeout_seconds or 90))
         try:
-            loaded = load_files(self.file_paths)
+            loaded = load_files(
+                self.file_paths,
+                file_decode_timeout_seconds=self.config_model.file_decode_timeout_seconds,
+                max_loaded_frames=self.config_model.max_loaded_frames_per_case,
+                progress_callback=lambda message: self._post_stage(token, f"阶段 1/4：{message}"),
+                error_callback=lambda message: self.decode_warnings.append(message),
+                cancel_event=cancel_event,
+                deadline_monotonic=deadline,
+            )
+            self._raise_if_cancelled(cancel_event)
+            self._post_stage(token, f"阶段 2/4：正在提取 {len(loaded)} 个代表帧的 B-mode / Doppler 特征...")
             study = analyze_loaded_images(loaded)
-            report, model_status = run_diagnosis(study, self.config_model)
-            self.after(0, lambda: self._show_result(loaded, study, report, model_status))
+            self._raise_if_cancelled(cancel_event)
+            runtime_config = replace(self.config_model)
+            remaining = int(deadline - time.monotonic())
+            case_timeout_note = ""
+            if remaining <= 0:
+                budget = int(self.config_model.case_timeout_seconds or 90)
+                case_timeout_note = f"本例达到 {budget} 秒总预算，已跳过 Gemma4 并使用本地层级规则后备。"
+            if runtime_config.normalized_inference_mode != "rule_only" and remaining <= 0:
+                runtime_config.inference_mode = "rule_only"
+                runtime_config.use_server = False
+            elif runtime_config.normalized_inference_mode != "rule_only":
+                runtime_config.llm_timeout_seconds = max(1, min(int(runtime_config.llm_timeout_seconds or 60), remaining))
+            mode_text = "规则诊断" if runtime_config.normalized_inference_mode == "rule_only" else "可选 Gemma4 增强诊断"
+            self._post_stage(token, f"阶段 3/4：正在运行{mode_text}...")
+            report, model_status = run_diagnosis(study, runtime_config)
+            if case_timeout_note:
+                report = f"{report.rstrip()}\n\n[防卡保护：{case_timeout_note}]"
+            if self.decode_warnings:
+                report = self._append_decode_warnings(report)
+            self._raise_if_cancelled(cancel_event)
+            self._post_stage(token, "阶段 4/4：正在生成 UI 报告...")
+            self.after(0, lambda: self._show_result_if_current(token, loaded, study, report, model_status))
+        except AnalysisCancelled:
+            self.after(0, lambda: self._show_cancelled_if_current(token))
+        except TimeoutError as exc:
+            message = str(exc)
+            self.after(0, lambda message=message: self._show_error_if_current(token, message))
         except Exception as exc:  # noqa: BLE001
-            self.after(0, lambda: self._show_error(str(exc)))
+            message = str(exc)
+            self.after(0, lambda message=message: self._show_error_if_current(token, message))
+
+    def _post_stage(self, token: int, message: str) -> None:
+        self.after(0, lambda: self._set_stage_if_current(token, message))
+
+    def _set_stage_if_current(self, token: int, message: str) -> None:
+        if token == self.analysis_token:
+            self.summary_var.set(message)
+
+    @staticmethod
+    def _raise_if_cancelled(cancel_event: threading.Event) -> None:
+        if cancel_event.is_set():
+            raise AnalysisCancelled("用户已取消分析。")
+
+    @staticmethod
+    def _raise_if_timed_out(deadline: float, stage: str) -> None:
+        if time.monotonic() > deadline:
+            raise TimeoutError(f"本例达到总时间预算，已在{stage}阶段停止。请减少输入文件或启用规则极速模式。")
+
+    def _append_decode_warnings(self, report: str) -> str:
+        unique = []
+        for warning in self.decode_warnings:
+            if warning not in unique:
+                unique.append(warning)
+        warning_text = "；".join(unique[:6])
+        if len(unique) > 6:
+            warning_text += f"；另有 {len(unique) - 6} 条解码提示"
+        return f"{report.rstrip()}\n\n[防卡保护：部分文件解码失败或超时，已跳过并继续分析可用帧：{warning_text}]"
+
+    def _show_result_if_current(
+        self,
+        token: int,
+        loaded: list[LoadedImage],
+        study: StudyAnalysis,
+        report: str,
+        model_status: str,
+    ) -> None:
+        if token != self.analysis_token:
+            return
+        self._show_result(loaded, study, report, model_status)
+
+    def _show_error_if_current(self, token: int, message: str) -> None:
+        if token != self.analysis_token:
+            return
+        self._show_error(message)
+
+    def _show_cancelled_if_current(self, token: int) -> None:
+        if token != self.analysis_token:
+            return
+        self.progress.stop()
+        self.analysis_running = False
+        self.run_button.configure(state=tk.NORMAL)
+        self.cancel_button.configure(state=tk.DISABLED)
+        self.summary_var.set("已取消本次分析。")
 
     def _show_result(self, loaded: list[LoadedImage], study: StudyAnalysis, report: str, model_status: str) -> None:
         self.progress.stop()
+        self.analysis_running = False
+        self.run_button.configure(state=tk.NORMAL)
+        self.cancel_button.configure(state=tk.DISABLED)
         self.loaded_images = loaded
         self.study = study
         self.last_report = report
@@ -204,6 +348,9 @@ class CardioConsultPCApp(tk.Tk):
 
     def _show_error(self, message: str) -> None:
         self.progress.stop()
+        self.analysis_running = False
+        self.run_button.configure(state=tk.NORMAL)
+        self.cancel_button.configure(state=tk.DISABLED)
         self.summary_var.set("分析失败。")
         messagebox.showerror("分析失败", message)
 

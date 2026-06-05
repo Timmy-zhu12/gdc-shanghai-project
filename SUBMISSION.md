@@ -18,7 +18,7 @@
 | 技术亮点说明 | [docs/competitive_edge.md](docs/competitive_edge.md) | 已准备 |
 | Gemma4 运行契约 | [docs/gemma4_runtime_contract.md](docs/gemma4_runtime_contract.md)，说明模型输入、规则层兜底、报告保护和审计字段 | 已准备 |
 | 本地服务验证 | [docs/service_validation.md](docs/service_validation.md)，包含 `llama-server` 端口、`/completion` smoke、项目诊断链路和多智能体审计检查 | 已通过 |
-| 提交前程序预检 | `python tools/submission_preflight.py`，检查关键材料、仓库卫生、规则自检、旧模型词和乱码标记 | 已准备 |
+| 提交前程序预检 | `python tools/submission_preflight.py`，检查关键材料、仓库卫生、规则自检、防卡 smoke、旧模型词和乱码标记 | 已准备 |
 | 许可证 | [Apache License 2.0](LICENSE) 与 [NOTICE](NOTICE) | 已准备 |
 
 ## 仓库范围
@@ -42,13 +42,13 @@
 1. 打开 `docs/index.html` 或启用 GitHub Pages 后的在线演示链接。
 2. 克隆或打开本仓库，运行 `run_cardio_pc_v5.bat`。
 3. 演示 PC V5 从超声机器/工作站导出目录读取 PNG、DICOM、DCOM、cine/视频输入，以及一致的诊断输出合同。
-4. 多次本地 Gemma4 演示时，可按 `docs/service_validation.md` 手动复用已加载的 `llama-server`。
+4. 默认使用“规则极速模式”保证真实演示不卡；多次本地 Gemma4 演示时，可在 UI 切换到增强模式，并按 `docs/service_validation.md` 手动复用已加载的 `llama-server`。
 5. 展示 [docs/service_validation.md](docs/service_validation.md) 中的普通本地服务测试：`/completion` 两次短请求均成功，EchoBench 第 1 例服务诊断输出包含 `教学参考病症判断：`、`最小病症：` 和 `逻辑链：`。
 6. 说明模型权重和原始数据因许可证与隐私原因不随仓库分发，然后展示验证摘要和安全边界。
 
 ## 技术强项
 
-- 真实离线路径：PC V5 使用本地 Gemma4 4B GGUF，可通过 `llama-cli` 或常驻 `llama-server` 调用，并定位为超声设备旁的离线分析终端。
+- 真实离线路径：PC V5 默认用规则极速模式稳定运行；本地 Gemma4 4B GGUF 可通过 `llama-cli` 或常驻 `llama-server` 作为增强路径调用，并定位为超声设备旁的离线分析终端。
 - 模型贡献可审计：Gemma4 接收的是超声特征、层级候选、质量分和安全约束；默认输出 JSON 并由本地诊断合同渲染，多智能体审计会记录最终报告来自 `gemma4_structured`、`gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 还是 `rule_template`。
 - 动态心超增强：EchoNet-Dynamic 特征增强 EF / 左室收缩功能减低识别，同时保留可审计的瓣膜反流规则。
 - 轻量多智能体：InputAgent、FeatureAgent、DiagnosisAgent、ReportAgent 和 SafetyAuditAgent 在本地串联，不额外调用云服务。
@@ -67,6 +67,7 @@ git clone https://github.com/Timmy-zhu12/gdc-shanghai-project.git
 Set-Location gdc-shanghai-project
 .\install_deps.bat
 .\.venv\Scripts\python.exe app.py --self-test-rule-only
+.\.venv\Scripts\python.exe tools\anti_hang_smoke.py
 .\.venv\Scripts\python.exe tools\submission_preflight.py
 .\run_cardio_pc_v5.bat
 ```

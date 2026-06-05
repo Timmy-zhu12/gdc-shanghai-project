@@ -20,6 +20,7 @@ REQUIRED_PATHS = [
     "config.example.json",
     "run_cardio_pc_v5.bat",
     "stop_llama_server.bat",
+    "tools/anti_hang_smoke.py",
     "docs/index.html",
     "docs/gemma4_runtime_contract.md",
     "docs/service_validation.md",
@@ -202,6 +203,18 @@ def run_rule_self_test(enabled: bool) -> dict[str, object]:
     }
 
 
+def run_anti_hang_smoke(enabled: bool) -> dict[str, object]:
+    if not enabled:
+        return {"id": "anti_hang_smoke", "ok": True, "detail": "skipped by flag"}
+    code, out, err = run([sys.executable, "tools/anti_hang_smoke.py"], timeout=45)
+    ok = code == 0 and '"anti_hang_smoke": "ok"' in out
+    return {
+        "id": "anti_hang_smoke",
+        "ok": ok,
+        "detail": (out or err)[-1200:],
+    }
+
+
 def render_markdown(results: list[dict[str, object]], generated_at: str) -> str:
     ok_count = sum(1 for item in results if item["ok"])
     total = len(results)
@@ -233,6 +246,7 @@ def main() -> int:
 
     parser = argparse.ArgumentParser(description="Run a lightweight submission preflight for CardioConsult PC V5.")
     parser.add_argument("--skip-self-test", action="store_true", help="Skip app.py --self-test-rule-only.")
+    parser.add_argument("--skip-anti-hang", action="store_true", help="Skip tools/anti_hang_smoke.py.")
     parser.add_argument("--out-dir", default=str(OUT_DIR), help="Directory for JSON/Markdown preflight reports.")
     args = parser.parse_args()
 
@@ -243,6 +257,7 @@ def main() -> int:
     results.extend(check_git_hygiene())
     results.extend(check_forbidden_text())
     results.append(run_rule_self_test(enabled=not args.skip_self_test))
+    results.append(run_anti_hang_smoke(enabled=not args.skip_anti_hang))
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

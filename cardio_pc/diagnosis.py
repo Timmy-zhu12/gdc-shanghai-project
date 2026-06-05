@@ -74,9 +74,14 @@ class ModelConfig:
     batch_size: int = 1024
     ubatch_size: int = 256
     prompt_token_budget: int = 1800
+    inference_mode: str = "rule_only"
     use_server: bool = False
     server_url: str = "http://127.0.0.1:8088"
     server_timeout: int = 900
+    case_timeout_seconds: int = 90
+    llm_timeout_seconds: int = 60
+    file_decode_timeout_seconds: int = 20
+    max_loaded_frames_per_case: int = 96
     structured_llm_output: bool = True
     use_multi_agent: bool = True
     write_agent_audit: bool = True
@@ -87,10 +92,30 @@ class ModelConfig:
         return bool(self.llama_exe) and Path(self.llama_exe).exists() and Path(self.model_path).exists()
 
     @property
+    def normalized_inference_mode(self) -> str:
+        raw = (self.inference_mode or "").strip().lower().replace("-", "_")
+        aliases = {
+            "rule": "rule_only",
+            "rules": "rule_only",
+            "rule_only": "rule_only",
+            "fast": "rule_only",
+            "server": "gemma4_server",
+            "llama_server": "gemma4_server",
+            "gemma4_server": "gemma4_server",
+            "cli": "gemma4_cli",
+            "llama_cli": "gemma4_cli",
+            "gemma4_cli": "gemma4_cli",
+        }
+        return aliases.get(raw, "rule_only")
+
+    @property
     def status(self) -> str:
-        if self.use_server and self.server_url:
+        mode = self.normalized_inference_mode
+        if mode == "rule_only":
+            return "Rule-only fast mode; Gemma4 GGUF is skipped by default"
+        if mode == "gemma4_server" and self.server_url:
             return f"Gemma4 4B offline server: {self.server_url}"
-        if self.model_ready:
+        if mode == "gemma4_cli" and self.model_ready:
             return f"Gemma4 4B offline: {Path(self.model_path).name}"
         missing = []
         if not self.llama_exe or not Path(self.llama_exe).exists():
@@ -112,7 +137,19 @@ def load_config() -> ModelConfig:
             continue
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-            return ModelConfig(**{**ModelConfig().__dict__, **data})
+            defaults = ModelConfig().__dict__
+            merged = {**defaults, **data}
+            if "inference_mode" not in data:
+                if bool(data.get("use_server")) and data.get("server_url"):
+                    merged["inference_mode"] = "gemma4_server"
+                elif data.get("llama_exe") and data.get("model_path"):
+                    merged["inference_mode"] = "gemma4_cli"
+                else:
+                    merged["inference_mode"] = "rule_only"
+            config = ModelConfig(**merged)
+            config.use_server = config.normalized_inference_mode == "gemma4_server"
+            config.inference_mode = config.normalized_inference_mode
+            return config
         except Exception:
             continue
     return ModelConfig()
@@ -120,6 +157,7 @@ def load_config() -> ModelConfig:
 
 def save_config(config: ModelConfig) -> None:
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    config.use_server = config.normalized_inference_mode == "gemma4_server"
     CONFIG_PATH.write_text(json.dumps(config.__dict__, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
@@ -232,7 +270,12 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
     else:
         decision = classify_teaching_condition_v4(study)
 
-    def finish(report: str, status: str, llm_output_received: bool = False) -> tuple[str, str]:
+    def finish(
+        report: str,
+        status: str,
+        llm_output_received: bool = False,
+        degrade_reason: str = "",
+    ) -> tuple[str, str]:
         sanitized = sanitize_diagnosis_report(report, decision, study)
         if llm_output_received:
             if sanitized.action == "structured":
@@ -249,20 +292,28 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
         report = enforce_hierarchical_judgment_field(report, decision)
         if orchestrator and agent_state:
             report, _audit = orchestrator.finalize_report(agent_state, report, status)
+        if degrade_reason:
+            report = append_runtime_degrade_note(report, degrade_reason)
         return report, status
 
     prompt = build_gemma4_prompt(study, decision, structured_output=bool(config.structured_llm_output))
+    mode = config.normalized_inference_mode
+    if mode == "rule_only":
+        return finish(heuristic_diagnosis(study, decision), config.status)
+
     server_error = ""
-    if config.use_server and config.server_url:
+    if mode == "gemma4_server" and config.server_url:
         text, error = run_llama_server(prompt, config)
         if text.strip():
             return finish(text.strip(), f"Gemma4 4B offline server: {config.server_url}", llm_output_received=True)
         server_error = error
-        if not config.model_ready:
-            fallback = heuristic_diagnosis(study, decision)
-            report = f"{fallback}\n\n[Gemma4 4B server 调用失败，已使用本地层级规则后备：{error}]"
-            return finish(report, config.status)
-    if config.model_ready:
+        fallback = heuristic_diagnosis(study, decision)
+        return finish(
+            fallback,
+            config.status,
+            degrade_reason=f"Gemma4 4B server 调用失败或超时，已使用本地层级规则后备：{error}",
+        )
+    if mode == "gemma4_cli" and config.model_ready:
         text, error = run_llama_cli(prompt, config)
         status = f"Gemma4 4B offline CLI: {Path(config.model_path).name}"
         if server_error:
@@ -270,9 +321,16 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
         if text.strip():
             return finish(text.strip(), status, llm_output_received=True)
         fallback = heuristic_diagnosis(study, decision)
-        report = f"{fallback}\n\n[Gemma4 4B 调用失败，已使用本地层级规则后备：{error}]"
-        return finish(report, status)
-    return finish(heuristic_diagnosis(study, decision), config.status)
+        return finish(
+            fallback,
+            status,
+            degrade_reason=f"Gemma4 4B CLI 调用失败或超时，已使用本地层级规则后备：{error}",
+        )
+    return finish(
+        heuristic_diagnosis(study, decision),
+        config.status,
+        degrade_reason=f"当前模式为 {mode}，但 Gemma4 运行条件不完整，已使用本地层级规则后备。",
+    )
 
 
 def load_system_prompt(required_parent_hierarchy: str, minimum_condition: str) -> str:
@@ -315,8 +373,9 @@ def run_llama_server(prompt: str, config: ModelConfig) -> tuple[str, str]:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
+    timeout = max(1, int(config.llm_timeout_seconds or config.server_timeout or 60))
     try:
-        with urllib.request.urlopen(request, timeout=int(config.server_timeout)) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             data = json.loads(response.read().decode("utf-8", errors="replace"))
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
         return "", str(exc)
@@ -586,6 +645,13 @@ def compact_sentence(text: str, max_chars: int) -> str:
     return text[: max_chars - 1].rstrip("，；、 ") + "。"
 
 
+def append_runtime_degrade_note(report: str, reason: str) -> str:
+    reason = re.sub(r"\s+", " ", str(reason or "")).strip()
+    if not reason:
+        return report
+    return f"{report.rstrip()}\n\n[防卡保护：{reason}]"
+
+
 def run_llama_cli(prompt: str, config: ModelConfig) -> tuple[str, str]:
     prompt = prepare_llm_prompt(prompt, config)
     cmd = [
@@ -610,21 +676,31 @@ def run_llama_cli(prompt: str, config: ModelConfig) -> tuple[str, str]:
         cmd[5:5] = ["-t", str(config.threads)]
     if config.threads_batch > 0:
         cmd[5:5] = ["-tb", str(config.threads_batch)]
+    timeout = max(1, int(config.llm_timeout_seconds or 60))
     try:
-        completed = subprocess.run(
+        process = subprocess.Popen(
             cmd,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             encoding="utf-8",
             errors="replace",
-            timeout=900,
             cwd=str(Path(config.llama_exe).parent),
         )
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            try:
+                stdout, stderr = process.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                stdout, stderr = "", "llama-cli did not terminate within 5s after kill."
+            return stdout.strip(), f"llama-cli timed out after {timeout}s; process was terminated. {stderr.strip()}"
     except Exception as exc:
         return "", str(exc)
-    if completed.returncode != 0:
-        return completed.stdout.strip(), completed.stderr.strip() or f"return code {completed.returncode}"
-    return completed.stdout.strip(), ""
+    if process.returncode != 0:
+        return stdout.strip(), stderr.strip() or f"return code {process.returncode}"
+    return stdout.strip(), ""
 
 
 def enforce_hierarchical_judgment_field(text: str, decision: HierarchicalDiagnosis) -> str:
