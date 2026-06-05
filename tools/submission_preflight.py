@@ -19,6 +19,7 @@ REQUIRED_PATHS = [
     "NOTICE",
     "config.example.json",
     "run_cardio_pc_v5.bat",
+    "stop_llama_server.bat",
     "docs/index.html",
     "docs/gemma4_runtime_contract.md",
     "docs/service_validation.md",

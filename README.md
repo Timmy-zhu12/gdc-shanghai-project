@@ -119,6 +119,13 @@ run_cardio_pc_v5.bat
 http://127.0.0.1:8088
 ```
 
+常驻服务可用下面两个入口管理：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start_llama_server_v4.ps1
+.\stop_llama_server.bat
+```
+
 第一次启动仍需要加载 GGUF 模型，但后续诊断会复用已加载模型，避免每次重新加载 5GB 级模型文件。
 
 本地常驻服务验证文档：
