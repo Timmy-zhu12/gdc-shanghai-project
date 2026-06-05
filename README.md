@@ -100,18 +100,26 @@ PC V5 的设计不是把原始图像直接丢给大模型。应用会先在本�
 
 ## 快速启动
 
-在 Windows 上安装 Python 3.10 或更高版本，然后双击：
+在 Windows 上安装 Python 3.10 或更高版本。首次使用先双击：
+
+```bat
+install_deps.bat
+```
+
+依赖安装完成后，日常启动双击：
 
 ```bat
 run_cardio_pc_v5.bat
 ```
 
-脚本会自动：
+启动脚本会：
 
 1. 创建 `.venv` 虚拟环境。
-2. 安装 `requirements.txt` 中的依赖。
-3. 如果缺少 `config.json`，从 `config.example.json` 创建。
+2. 如果缺少 `config.json`，从 `config.example.json` 创建。
+3. 快速检查依赖是否已安装。
 4. 启动桌面 UI。
+
+`run_cardio_pc_v5.bat` 不会在后台静默运行 `pip install`，避免网络或镜像源变慢时看起来像卡死。缺少依赖时它会明确提示先运行 `install_deps.bat`。
 
 默认 UI 使用“规则极速模式”，不会等待 GGUF，因此真实导入超大 DICOM、视频或动图时不会因为模型推理长时间卡住。需要展示离线 Gemma4 4B 时，可在 UI 的“推理模式”中切换到 `Gemma4 server 增强` 或 `Gemma4 CLI 增强`；这两个增强路径也有硬超时，失败后会自动回到可审计规则报告。
 

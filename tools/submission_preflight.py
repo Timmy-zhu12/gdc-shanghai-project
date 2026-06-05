@@ -215,6 +215,23 @@ def run_anti_hang_smoke(enabled: bool) -> dict[str, object]:
     }
 
 
+def check_launcher_anti_hang() -> list[dict[str, object]]:
+    run_bat = (ROOT / "run_cardio_pc_v5.bat").read_text(encoding="utf-8", errors="replace").lower()
+    install_bat = (ROOT / "install_deps.bat").read_text(encoding="utf-8", errors="replace").lower()
+    return [
+        {
+            "id": "launcher_no_silent_pip_install",
+            "ok": "pip install" not in run_bat and "checking installed dependencies" in run_bat,
+            "detail": "run launcher checks deps without silent pip install",
+        },
+        {
+            "id": "install_deps_bounded_pip_waits",
+            "ok": "--timeout 60" in install_bat and "--retries 2" in install_bat,
+            "detail": "install_deps.bat uses bounded pip network waits",
+        },
+    ]
+
+
 def render_markdown(results: list[dict[str, object]], generated_at: str) -> str:
     ok_count = sum(1 for item in results if item["ok"])
     total = len(results)
@@ -256,6 +273,7 @@ def main() -> int:
     results.extend(check_text_markers())
     results.extend(check_git_hygiene())
     results.extend(check_forbidden_text())
+    results.extend(check_launcher_anti_hang())
     results.append(run_rule_self_test(enabled=not args.skip_self_test))
     results.append(run_anti_hang_smoke(enabled=not args.skip_anti_hang))
 
