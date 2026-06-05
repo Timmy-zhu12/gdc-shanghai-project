@@ -33,6 +33,8 @@ V5 在 V4 的 B-mode、Color Doppler、动图代表帧、层级病症标签和 G
 - `tools/run_echobench_v1.py`：EchoBench v1 基准测试入口。
 - `docs/v5_benchmark/`：V5 技术报告、DOCX 报告、图表和生成脚本。
 - `docs/gemma4_runtime_contract.md`：Gemma4、规则层、报告保护和多智能体审计的运行契约。
+- `tools/submission_preflight.py`：提交前程序预检，检查关键材料、仓库卫生、旧模型词、乱码和规则自检。
+- `submission/technical_report/build_latex_report.py`：中文 LaTeX 技术文章生成脚本，附注释式可视化图表。
 - `run_cardio_pc_v5.bat`：V5 桌面 UI 启动入口。
 
 V5 技术报告：
@@ -40,6 +42,7 @@ V5 技术报告：
 - [Markdown 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.md)
 - [Word DOCX 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.docx)
 - [PDF 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.pdf)
+- [中文 LaTeX 报告源](submission/technical_report/CardioConsult_Chinese_LaTeX_Report.tex)
 - [V5 EchoNet 增强说明](docs/v5_benchmark/V5_EchoNet_DL_Enhancement_Report.md)
 
 ## 与端侧/边缘 AI 要求的对应关系
@@ -168,6 +171,24 @@ config.example.json -> config.json
 ```powershell
 .\install_deps.bat
 .\.venv\Scripts\python.exe app.py --self-test-rule-only
+```
+
+提交前程序预检：
+
+```powershell
+.\.venv\Scripts\python.exe tools\submission_preflight.py
+```
+
+生成中文 LaTeX 报告源和注释式图表：
+
+```powershell
+.\.venv\Scripts\python.exe submission\technical_report\build_latex_report.py
+```
+
+如果本机安装了 TeX Live 或 MiKTeX 的 `xelatex`，可使用：
+
+```powershell
+.\.venv\Scripts\python.exe submission\technical_report\build_latex_report.py --compile
 ```
 
 完整配置自检：

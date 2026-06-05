@@ -22,6 +22,14 @@ validation_speedopt/**/newtraining_cases.csv
 validation_speedopt/**/logs/
 submission/technical_report/rendered/
 submission/technical_report/figures/*.jpg
+submission/technical_report/*.aux
+submission/technical_report/*.log
+submission/technical_report/*.out
+submission/technical_report/*.toc
+submission/technical_report/*.fls
+submission/technical_report/*.fdb_latexmk
+submission/technical_report/*.synctex.gz
+submission/preflight/current_preflight.*
 
 # Local OS/editor noise.
 .DS_Store

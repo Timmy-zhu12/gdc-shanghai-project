@@ -12,12 +12,13 @@
 |---|---|---|
 | 代码仓库 | 本仓库：`https://github.com/Timmy-zhu12/gdc-shanghai-project` | 已准备 |
 | 5 分钟内演示视频 | 视频上传后，将公开视频链接填入提交表单 | 待最终上传 |
-| 技术报告 | [DOCX](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx)、[PDF](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf)、[Markdown](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md) | 已准备 |
+| 技术报告 | [DOCX](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx)、[PDF](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf)、[Markdown](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md)、[中文 LaTeX 源](submission/technical_report/CardioConsult_Chinese_LaTeX_Report.tex) | 已准备 |
 | 在线演示链接 | 单文件规则匹配网页已发布：`https://timmy-zhu12.github.io/gdc-shanghai-project/`；源码位于 [docs/index.html](docs/index.html) | 已上线 |
 | 训练/验证数据来源披露 | [DATASETS.md](DATASETS.md) 和 [docs/data_and_model_policy.md](docs/data_and_model_policy.md) | 已准备 |
 | 技术亮点说明 | [docs/competitive_edge.md](docs/competitive_edge.md) | 已准备 |
 | Gemma4 运行契约 | [docs/gemma4_runtime_contract.md](docs/gemma4_runtime_contract.md)，说明模型输入、规则层兜底、报告保护和审计字段 | 已准备 |
 | 本地服务验证 | [docs/service_validation.md](docs/service_validation.md)，包含 `llama-server` 端口、`/completion` smoke、项目诊断链路和多智能体审计检查 | 已通过 |
+| 提交前程序预检 | `python tools/submission_preflight.py`，检查关键材料、仓库卫生、规则自检、旧模型词和乱码标记 | 已准备 |
 | 许可证 | [Apache License 2.0](LICENSE) 与 [NOTICE](NOTICE) | 已准备 |
 
 ## 仓库范围
@@ -53,6 +54,7 @@
 - 轻量多智能体：InputAgent、FeatureAgent、DiagnosisAgent、ReportAgent 和 SafetyAuditAgent 在本地串联，不额外调用云服务。
 - 超声专用预处理：B-mode 与 Color Doppler 分支分别提取边缘、纹理、血流方向、喷流宽度、涡量等代理特征。
 - 层级医学输出：报告必须包含大方向、中方向、最小病症、分级、证据充分度和逻辑链。
+- 可视化与文章材料：技术报告保留 DOCX/PDF/Markdown，同时新增中文 LaTeX 源和注释式新闻图表，便于重新排版为论文或展示稿。
 - 演示稳定性：即使现场没有大模型权重，规则后备仍能保持同样的输入输出合同。
 - 数据透明：所有公开数据集和文献来源均列于 `DATASETS.md`；原始数据、病人图像和模型权重不再分发。
 
@@ -65,6 +67,7 @@ git clone https://github.com/Timmy-zhu12/gdc-shanghai-project.git
 Set-Location gdc-shanghai-project
 .\install_deps.bat
 .\.venv\Scripts\python.exe app.py --self-test-rule-only
+.\.venv\Scripts\python.exe tools\submission_preflight.py
 .\run_cardio_pc_v5.bat
 ```
 
