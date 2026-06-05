@@ -77,6 +77,7 @@ class ModelConfig:
     use_server: bool = False
     server_url: str = "http://127.0.0.1:8088"
     server_timeout: int = 900
+    structured_llm_output: bool = True
     use_multi_agent: bool = True
     write_agent_audit: bool = True
     agent_audit_dir: str = field(default_factory=lambda: str((PROJECT_DIR / "exports" / "agent_audit").as_posix()))
@@ -122,13 +123,57 @@ def save_config(config: ModelConfig) -> None:
     CONFIG_PATH.write_text(json.dumps(config.__dict__, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def build_gemma4_prompt(study: StudyAnalysis, decision: HierarchicalDiagnosis | None = None) -> str:
+def build_gemma4_prompt(
+    study: StudyAnalysis,
+    decision: HierarchicalDiagnosis | None = None,
+    structured_output: bool = True,
+) -> str:
     decision = decision or classify_teaching_condition_v4(study)
     guidance = build_primary_care_guidance(study, decision.compact_label)
     required_parent_hierarchy = f"{decision.broad} > {decision.middle}"
     required_first_sentence = format_judgment_sentence(decision)
     system_prompt = load_system_prompt(required_parent_hierarchy, decision.compact_label)
     required_logic_chain = build_logic_chain(decision, study)
+    context_block = f"""
+层级候选：
+{decision.structured_text()}
+
+候选规则依据：
+{decision.rationale}
+
+数据库/标签体系来源摘要：
+{source_summary()}
+
+基层辅助提示：
+{guidance.compact_text}
+
+特征摘要：
+{study.feature_summary}
+
+紧凑数值特征：
+{study.compact_feature_text()}
+""".strip()
+    if structured_output:
+        return f"""
+### System
+{system_prompt}
+
+### User task
+请只输出一个 JSON object，不要输出 markdown、代码块、标题或格式说明。JSON 必须使用中文值，并且必须服从下列本地候选诊断；不要把“{decision.compact_label}”改写成更模糊的“异常血流”。
+
+必填字段：
+{{
+  "教学参考病症判断": "{required_first_sentence}",
+  "最小病症": "{decision.compact_label}",
+  "逻辑链": "{required_logic_chain}",
+  "证据摘要": ["B-mode 关键证据", "Color Doppler 关键证据", "体位/相位覆盖证据"],
+  "置信度说明": "一句话说明证据充分度",
+  "基层补扫建议": "一句话说明下一步补扫或复核",
+  "安全边界": "仅用于医学教学和算法演示，不作为临床最终诊断、治疗建议或医嘱"
+}}
+
+{context_block}
+""".strip()
     return f"""
 ### System
 {system_prompt}
@@ -190,7 +235,9 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
     def finish(report: str, status: str, llm_output_received: bool = False) -> tuple[str, str]:
         sanitized = sanitize_diagnosis_report(report, decision, study)
         if llm_output_received:
-            if sanitized.action == "preserved":
+            if sanitized.action == "structured":
+                status += " (Gemma4 structured JSON rendered through local report contract)"
+            elif sanitized.action == "preserved":
                 status += " (Gemma4 output preserved after report guard check)"
             elif sanitized.action == "repaired":
                 status += " (Gemma4 output received; report guard repaired required fields)"
@@ -204,7 +251,7 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
             report, _audit = orchestrator.finalize_report(agent_state, report, status)
         return report, status
 
-    prompt = build_gemma4_prompt(study, decision)
+    prompt = build_gemma4_prompt(study, decision, structured_output=bool(config.structured_llm_output))
     server_error = ""
     if config.use_server and config.server_url:
         text, error = run_llama_server(prompt, config)
@@ -297,8 +344,97 @@ def extract_llama_server_text(data: dict) -> str:
     return ""
 
 
+def extract_first_json_object(text: str) -> dict | None:
+    body = (text or "").strip()
+    if not body:
+        return None
+    if body.startswith("```"):
+        body = re.sub(r"^```(?:json)?", "", body, flags=re.IGNORECASE).strip()
+        body = re.sub(r"```$", "", body).strip()
+
+    for start, char in enumerate(body):
+        if char != "{":
+            continue
+        depth = 0
+        in_string = False
+        escape = False
+        for index in range(start, len(body)):
+            current = body[index]
+            if in_string:
+                if escape:
+                    escape = False
+                elif current == "\\":
+                    escape = True
+                elif current == '"':
+                    in_string = False
+                continue
+            if current == '"':
+                in_string = True
+            elif current == "{":
+                depth += 1
+            elif current == "}":
+                depth -= 1
+                if depth == 0:
+                    candidate = body[start : index + 1]
+                    try:
+                        parsed = json.loads(candidate)
+                    except json.JSONDecodeError:
+                        break
+                    return parsed if isinstance(parsed, dict) else None
+    return None
+
+
+def structured_text_value(data: dict, key: str, default: str = "") -> str:
+    value = data.get(key)
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (int, float)):
+        return str(value)
+    return default
+
+
+def structured_text_list(data: dict, key: str, limit: int = 4) -> list[str]:
+    value = data.get(key)
+    if isinstance(value, list):
+        return [str(item).strip() for item in value[:limit] if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
+def render_structured_llm_report(data: dict, decision: HierarchicalDiagnosis, study: StudyAnalysis) -> str:
+    report = compose_teaching_report(study, decision)
+    additions: list[str] = []
+
+    evidence = structured_text_list(data, "证据摘要", limit=4)
+    if evidence:
+        additions.append("模型结构化证据摘要：" + "；".join(evidence))
+
+    confidence = structured_text_value(data, "置信度说明")
+    if confidence:
+        additions.append("结构化置信度说明：" + confidence)
+
+    primary_care = structured_text_value(data, "基层补扫建议")
+    if primary_care:
+        additions.append("结构化补扫建议：" + primary_care)
+
+    safety = structured_text_value(data, "安全边界")
+    if safety and "不作为" in safety:
+        additions.append("结构化安全边界：" + safety)
+
+    if additions:
+        report += "\nGemma4 结构化补充：" + "。".join(additions[:4]).rstrip("。") + "。"
+    return report
+
+
 def sanitize_diagnosis_report(text: str, decision: HierarchicalDiagnosis, study: StudyAnalysis) -> SanitizedReport:
     raw = text or ""
+    structured = extract_first_json_object(raw)
+    if structured:
+        rendered = render_structured_llm_report(structured, decision, study)
+        if report_is_usable(rendered):
+            return SanitizedReport(rendered, "structured")
+
     if report_has_prompt_artifacts(raw):
         return SanitizedReport(compose_teaching_report(study, decision), "templated")
 
@@ -571,6 +707,18 @@ def classify_teaching_condition(study: StudyAnalysis) -> HierarchicalDiagnosis:
     jet_width = feature(f, 11)
     bidirectional = feature(f, 12)
     coherence = feature(f, 13)
+    valve_scores = doppler_valve_localization_scores(
+        views=views,
+        signed=signed,
+        towards=towards,
+        away=away,
+        coherence=coherence,
+        jet_width=jet_width,
+        turbulence=turbulence,
+        vorticity=vorticity,
+        bidirectional=bidirectional,
+        doppler_active=doppler_active,
+    )
 
     has_phase_pair = study.systole_count >= 1 and study.diastole_count >= 1
     has_a4c = "A4C" in views
@@ -711,7 +859,9 @@ def classify_teaching_condition(study: StudyAnalysis) -> HierarchicalDiagnosis:
             towards=towards,
             away=away,
             coherence=coherence,
+            valve_scores=valve_scores,
         )
+        localization_scores = format_doppler_valve_scores(valve_scores)
         return make_decision(
             broad="瓣膜性心脏病",
             middle=fallback_middle,
@@ -724,7 +874,7 @@ def classify_teaching_condition(study: StudyAnalysis) -> HierarchicalDiagnosis:
             rule_id="valve_unlocalized_doppler_regurgitation",
             rationale=(
                 f"检测到可靠彩色多普勒异常血流，但体位证据不足；系统仍需输出病症级教学标签，"
-                f"因此依据方向代理给出{fallback_note}。活跃区比例 {doppler_active:.3f}，"
+                f"因此依据方向代理和定位评分给出{fallback_note}。定位评分 {localization_scores}；活跃区比例 {doppler_active:.3f}，"
                 f"连通域占比 {component_ratio:.3f}，signed={signed:.3f}，towards={towards:.3f}，away={away:.3f}。"
                 "该分支必须补扫 PLAX/A4C/A5C 后复核瓣膜定位。"
             ),
@@ -869,14 +1019,82 @@ def make_decision(
     )
 
 
+def clamp01(value: float) -> float:
+    return max(0.0, min(1.0, float(value)))
+
+
+def doppler_valve_localization_scores(
+    *,
+    views: set[str],
+    signed: float,
+    towards: float,
+    away: float,
+    coherence: float,
+    jet_width: float,
+    turbulence: float,
+    vorticity: float,
+    bidirectional: float,
+    doppler_active: float,
+) -> dict[str, float]:
+    """Heuristic localization score for abnormal Doppler when exported view labels are weak."""
+    known_views = {view for view in views if view and view != "UNKNOWN"}
+    unknown_view = not known_views
+    flow_load = clamp01((doppler_active - 0.025) / 0.14)
+    jet_load = clamp01(jet_width / 0.18)
+    disorder = clamp01(max(turbulence, vorticity) / 0.065)
+    coherent_flow = clamp01(coherence)
+    mixed_flow = clamp01(bidirectional)
+    rightward = clamp01((signed - 0.46) / 0.18)
+    leftward = clamp01((0.54 - signed) / 0.18)
+    towards_bias = clamp01((towards - away + 0.12) / 0.24)
+    away_bias = clamp01((away - towards + 0.12) / 0.24)
+
+    view_mr = 0.28 if unknown_view else 0.0
+    view_tr = 0.22 if unknown_view else 0.0
+    view_ar = 0.08 if unknown_view else 0.0
+    view_pr = 0.05 if unknown_view else 0.0
+    if {"PLAX", "A2C", "A3C"} & known_views:
+        view_mr += 0.38
+    if "A4C" in known_views:
+        view_mr += 0.18
+        view_tr += 0.34
+    if {"A5C", "PSAX-AV"} & known_views:
+        view_ar += 0.36
+    if "PSAX-AV" in known_views:
+        view_pr += 0.30
+
+    scores = {
+        "MR": view_mr + 0.26 * flow_load + 0.18 * away_bias + 0.12 * leftward + 0.08 * jet_load,
+        "TR": view_tr + 0.26 * flow_load + 0.18 * towards_bias + 0.12 * rightward + 0.08 * mixed_flow,
+        "AR": view_ar + 0.23 * flow_load + 0.16 * away_bias + 0.13 * coherent_flow + 0.08 * disorder,
+        "PR": view_pr + 0.20 * flow_load + 0.13 * towards_bias + 0.12 * coherent_flow + 0.06 * disorder,
+    }
+    return {key: round(clamp01(value), 3) for key, value in scores.items()}
+
+
+def format_doppler_valve_scores(scores: dict[str, float]) -> str:
+    return ", ".join(f"{key}={scores.get(key, 0.0):.2f}" for key in ("MR", "TR", "AR", "PR"))
+
+
 def localize_unlabeled_doppler_regurgitation(
     *,
     signed: float,
     towards: float,
     away: float,
     coherence: float,
+    valve_scores: dict[str, float] | None = None,
 ) -> tuple[str, str, str]:
     """Return a disease-level teaching label when Doppler is abnormal but view labels are weak."""
+    if valve_scores:
+        best_label, best_score = max(valve_scores.items(), key=lambda item: item[1])
+        if best_label == "TR" and best_score >= 0.58:
+            return "三尖瓣疾病", "三尖瓣反流待排", f"三尖瓣反流待排（定位评分 {best_score:.2f}）"
+        if best_label == "MR" and best_score >= 0.58:
+            return "二尖瓣疾病", "二尖瓣反流待排", f"二尖瓣反流待排（定位评分 {best_score:.2f}）"
+        if best_label == "AR" and best_score >= 0.68:
+            return "主动脉瓣疾病", "主动脉瓣反流待排", f"主动脉瓣反流待排（定位评分 {best_score:.2f}）"
+        if best_label == "PR" and best_score >= 0.70:
+            return "肺动脉瓣疾病", "肺动脉瓣反流待排", f"肺动脉瓣反流待排（定位评分 {best_score:.2f}）"
     if signed >= 0.56 or (towards > away + 0.10 and coherence >= 0.55):
         return "三尖瓣疾病", "三尖瓣反流待排", "三尖瓣反流待排"
     if signed <= 0.44 or away > towards + 0.10:

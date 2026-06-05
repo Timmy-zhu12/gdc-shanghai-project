@@ -27,6 +27,7 @@ V5 在 V4 的 B-mode、Color Doppler、动图代表帧、层级病症标签和 G
 本仓库已同步：
 
 - `cardio_pc/v5_echonet.py`：EchoNet-Dynamic 特征与 V5 校准运行时。
+- `cardio_pc/diagnosis.py`：结构化 Gemma4 JSON 输出合同、Doppler 瓣膜定位评分和本地报告重渲染。
 - `cardio_pc/agents.py`：轻量离线多智能体编排与审计链。
 - `tools/train_echonet_v5.py`：本地 EchoNet-Dynamic 训练脚本。
 - `tools/run_echobench_v1.py`：EchoBench v1 基准测试入口。
@@ -51,6 +52,7 @@ V5 技术报告：
 | 超声设备直连 | PC V5 可接入超声机器、无线超声软件、DICOM 工作站或局域网导出目录，作为检查旁离线分析终端使用 |
 | 可运行演示 | 提供 Windows 桌面 UI、批处理启动脚本、示例输入和规则路径自检 |
 | 边缘计算价值 | B-mode 与 Color Doppler 分支先在本地提取结构化特征，再交给模型或规则层生成报告 |
+| 报告合同保护 | 默认要求 Gemma4 输出 JSON，再由本地守卫重渲染为固定中文诊断字段 |
 | 轻量多智能体 | `InputAgent -> FeatureAgent -> DiagnosisAgent -> ReportAgent -> SafetyAuditAgent` 在本地串联运行，并把审计 JSON 写入 `exports/agent_audit/` |
 | 动态心超增强 | EchoNet-Dynamic 校准层用于 EF / 左室收缩功能减低教学识别 |
 | 演示稳定性 | GGUF 不存在或模型调用失败时，自动切换到可审计的本地规则后备 |
@@ -58,9 +60,9 @@ V5 技术报告：
 
 ## Gemma4 与规则层分工
 
-PC V5 的设计不是把原始图像直接丢给大模型。应用会先在本机完成 B-mode、Color Doppler、动图代表帧、相位估计和层级标签候选提取，再把结构化证据交给离线 Gemma4 4B GGUF 生成中文教学报告。
+PC V5 的设计不是把原始图像直接丢给大模型。应用会先在本机完成 B-mode、Color Doppler、动图代表帧、相位估计和层级标签候选提取，再把结构化证据交给离线 Gemma4 4B GGUF 生成中文教学报告。默认配置 `structured_llm_output=true`，要求 Gemma4 先输出 JSON object；本地报告守卫再把 JSON 重渲染为固定中文诊断字段，避免模型把“二尖瓣反流”等最小病症改写成过宽泛的异常描述。
 
-规则层负责医学安全边界和确定性兜底：当模型文件不存在、模型调用失败、输出缺少 `教学参考病症判断：` / `最小病症：` / `逻辑链：`，或报告未包含必要安全声明时，报告保护会先尝试补齐必需字段；若文本明显截断、带提示词痕迹或仍不可用，才改写为本地教学模板。启用多智能体审计时，`ReportAgent` 会记录 `model_text_received`、`report_guard_repaired`、`report_guard_rewritten` 和 `report_source`，从而区分 `gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 和 `rule_template` 四种路径。
+规则层负责医学安全边界和确定性兜底：当模型文件不存在、模型调用失败、输出缺少 `教学参考病症判断：` / `最小病症：` / `逻辑链：`，或报告未包含必要安全声明时，报告保护会先尝试按 JSON 合同重渲染或补齐必需字段；若文本明显截断、带提示词痕迹或仍不可用，才改写为本地教学模板。启用多智能体审计时，`ReportAgent` 会记录 `model_text_received`、`report_guard_structured`、`report_guard_repaired`、`report_guard_rewritten` 和 `report_source`，从而区分 `gemma4_structured`、`gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 和 `rule_template` 五种路径。
 
 详细说明见 [docs/gemma4_runtime_contract.md](docs/gemma4_runtime_contract.md)。
 
@@ -127,7 +129,7 @@ http://127.0.0.1:8088
 | `/completion` 第一次短请求 | 1.327 s |
 | `/completion` 第二次短请求 | 0.522 s |
 | EchoBench 第 1 例 12 文件服务诊断 | 69.168 s |
-| 必需字段/安全边界/多智能体审计检查 | 通过，`report_source=gemma4_repaired` |
+| 必需字段/安全边界/多智能体审计检查 | 通过，旧服务证据为 `report_source=gemma4_repaired`；当前默认新增 `gemma4_structured` 路径 |
 
 正式服务演示建议先启动常驻 `llama-server`，再运行 PC V5 UI。当前 CPU 环境下完整 Gemma4 服务诊断可能需要 1 分钟以上；现场展示可先用规则自检和在线 demo 证明输入输出合同，再展示本地服务 JSON 证据。
 
@@ -179,10 +181,10 @@ config.example.json -> config.json
 ## 技术流程
 
 - B-mode 分支：鲁棒归一化、对数压缩、SRAD-inspired 散斑抑制、CLAHE-like 局部增强、DoG 边缘响应、腔室面积代理、纹理与 GLDM 风格统计。
-- Color Doppler 分支：HSV 血流向量化、连通域过滤、喷流宽度代理、方向一致性、湍流/散度/涡量代理。
+- Color Doppler 分支：HSV 血流向量化、连通域过滤、喷流宽度代理、方向一致性、湍流/散度/涡量代理，并在体位证据不足时输出 MR/TR/AR/PR 瓣膜定位评分。
 - 动图/视频分支：代表帧采样、时间差分、收缩/舒张推断、STI 风格腔室应变代理和 Lucas-Kanade 风格光流代理。
 - 标签分支：大方向、中方向、最小病症、严重程度、证据充分度和来源说明。
-- Gemma4 分支：结构化短提示词，强制首句、最小病症和逻辑链；重复演示优先使用常驻 `llama-server`。
+- Gemma4 分支：默认结构化 JSON 短提示词，强制首句、最小病症和逻辑链；重复演示优先使用常驻 `llama-server`。
 
 ## V5 验证摘要
 

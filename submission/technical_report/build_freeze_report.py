@@ -260,9 +260,9 @@ def report_markdown(data: dict) -> str:
 
 ## 摘要
 
-CardioConsult PC V5 解决的问题是：在缺少心脏超声专科医生、网络条件有限或需要保护教学/脱敏病例数据的场景中，如何让超声初学者和基层医疗点从 PNG、DICOM/DCOM、cine/视频等文件中获得一份可解释、可审计、不会冒充正式诊断的心脏超声教学参考结果。系统把 PC 定义为接在超声机器、无线超声软件、DICOM 工作站或局域网导出目录旁的离线分析终端；所有图像预处理、特征提取、层级标签、轻量多智能体审计和 Gemma4 4B GGUF 文本生成都在本机完成。
+CardioConsult PC V5 解决的问题是：在缺少心脏超声专科医生、网络条件有限或需要保护教学/脱敏病例数据的场景中，如何让超声初学者和基层医疗点从 PNG、DICOM/DCOM、cine/视频等文件中获得一份可解释、可审计、不会冒充正式诊断的心脏超声教学参考结果。系统把 PC 定义为接在超声机器、无线超声软件、DICOM 工作站或局域网导出目录旁的离线分析终端；所有图像预处理、特征提取、层级标签、Doppler 瓣膜定位评分、轻量多智能体审计和 Gemma4 4B GGUF 结构化报告生成都在本机完成。
 
-冻结前检查显示，当前仓库可以完成三类任务：第一，规则路径 `app.py --self-test-rule-only` 通过，输出包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：` 和安全边界；第二，授权本地 60 例 EchoBench 完整证据场景 60/60 成功，平均 {full_lat['mean']:.3f} 秒/例，MR F1={fmt(full_mr['f1'])}、AR F1={fmt(full_ar['f1'])}、低 EF F1={fmt(full_low['f1'])}；第三，12 帧代表输入场景 60/60 成功，warm-cache 平均 {rep_lat['mean']:.3f} 秒/例，MR F1={fmt(rep_mr['f1'])}、AR F1={fmt(rep_ar['f1'])}、低 EF F1={fmt(rep_low['f1'])}。本地 `llama-server` 项目链路第 1 例服务模式诊断耗时 {server['diagnosis_seconds']:.3f} 秒，报告保护层记录 `{server['status']}`，最终输出 `has_prompt_leakage=false`、`report_source={server.get('report_source', '')}`。
+冻结前检查显示，当前仓库可以完成三类任务：第一，规则路径 `app.py --self-test-rule-only` 通过，输出包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：` 和安全边界；第二，授权本地 60 例 EchoBench 完整证据场景 60/60 成功，平均 {full_lat['mean']:.3f} 秒/例，MR F1={fmt(full_mr['f1'])}、AR F1={fmt(full_ar['f1'])}、低 EF F1={fmt(full_low['f1'])}；第三，12 帧代表输入场景 60/60 成功，warm-cache 平均 {rep_lat['mean']:.3f} 秒/例，MR F1={fmt(rep_mr['f1'])}、AR F1={fmt(rep_ar['f1'])}、低 EF F1={fmt(rep_low['f1'])}。本地 `llama-server` 项目链路第 1 例服务模式诊断耗时 {server['diagnosis_seconds']:.3f} 秒，报告保护层记录 `{server['status']}`，最终输出 `has_prompt_leakage=false`、`report_source={server.get('report_source', '')}`；当前默认提示词进一步新增 `gemma4_structured` JSON 渲染路径。
 
 从评委视角看，V5 的强项不是单一公开排行榜最高分，而是低成本可运行、输入格式兼容、输出合同明确、审计链完整、隐私边界清楚。它的主要风险也清楚：AR、RWMA、左房扩大和严重程度分级在 12 帧输入下仍受切面覆盖影响；当前 60 例报告链接标签不是多专家盲评金标准；系统不能作为临床诊断或治疗建议。这个边界在 UI、README、技术报告和诊断输出中均需保留。
 
@@ -274,7 +274,7 @@ CardioConsult PC V5 解决的问题是：在缺少心脏超声专科医生、网
 
 ## 2. 系统方案
 
-系统分为五层：输入层读取 PNG/JPG、DICOM/DCOM、多帧 TIFF、GIF、MP4/MOV/AVI 等文件；B-mode 分支计算 SRAD/CLAHE 风格预处理、边缘密度、纹理熵、散斑残差、腔室面积代理和收缩舒张差；Color Doppler 分支将 HSV 血流颜色转为活跃区、连通域、喷流宽度、方向一致性、湍流和涡量代理；校准层用 V4 shared-EK/coupled-EK 与 V5 EchoNet-Dynamic 校准增强 EF / 左室收缩功能减低；报告层用规则或 Gemma4 4B GGUF 生成中文教学摘要，并由报告保护层清除提示词泄漏、截断和 AI 口吻。
+系统分为五层：输入层读取 PNG/JPG、DICOM/DCOM、多帧 TIFF、GIF、MP4/MOV/AVI 等文件；B-mode 分支计算 SRAD/CLAHE 风格预处理、边缘密度、纹理熵、散斑残差、腔室面积代理和收缩舒张差；Color Doppler 分支将 HSV 血流颜色转为活跃区、连通域、喷流宽度、方向一致性、湍流、涡量代理和 MR/TR/AR/PR 瓣膜定位评分；校准层用 V4 shared-EK/coupled-EK 与 V5 EchoNet-Dynamic 校准增强 EF / 左室收缩功能减低；报告层默认要求 Gemma4 4B GGUF 输出 JSON object，再由报告保护层按本地诊断合同重渲染为中文教学摘要，并清除提示词泄漏、截断和 AI 口吻。
 
 EchoNet-Dynamic 是公开心超视频数据集，包含心尖四腔视频和 EF/ESV/EDV/左室追踪标注，适合用于心功能任务（Ouyang et al., 2020）。CAMUS 则适合 2D 心超分割和腔室结构评估（Leclerc et al., 2019）。瓣膜反流和腔室定量的正式临床判断仍应遵循 ASE/EACVI 指南，而不能只依赖本项目的颜色代理特征（Lang et al., 2015; Zoghbi et al., 2017）。
 
@@ -328,7 +328,7 @@ SpeedOpt 前 12 帧基线平均 {old_mean:.3f} 秒/例；SpeedOpt 冷缓存平�
 
 ![图5：llama-server 热启动复用](figures/fig5_server_smoke_hot_reuse.png)
 
-项目级服务链路使用 EchoBench 第 1 例、12 个文件、`max_tokens=240`：文件加载 {server['load_seconds']:.3f} 秒，特征提取 {server['feature_seconds']:.3f} 秒，Gemma4 服务诊断 {server['diagnosis_seconds']:.3f} 秒；报告保护层启用，最终 `has_prompt_leakage=false`、`report_source={server.get('report_source', '')}`，并保留医学安全边界。
+项目级服务链路使用 EchoBench 第 1 例、12 个文件、`max_tokens=240`：文件加载 {server['load_seconds']:.3f} 秒，特征提取 {server['feature_seconds']:.3f} 秒，Gemma4 服务诊断 {server['diagnosis_seconds']:.3f} 秒；报告保护层启用，最终 `has_prompt_leakage=false`、`report_source={server.get('report_source', '')}`，并保留医学安全边界。该服务证据来自结构化 JSON 默认启用前的旧服务复现；当前代码默认新增 `structured_llm_output=true`，下一次模型服务复现可记录 `report_source=gemma4_structured`。
 
 ### 4.4 EchoNet-Dynamic 校准层
 
@@ -346,7 +346,7 @@ V5 的 EchoNet-Dynamic 校准层用于补强 EF 和左室收缩功能减低识�
 
 EchoNet-Dynamic 和 CAMUS 这类公开方案的优势是任务定义清晰、数据结构规范、适合学术复现；限制是通常聚焦 EF、容积或分割，不直接覆盖基层教学场景中的 DICOM/DCOM 兼容、Color Doppler 代理、中文层级病症报告和离线本地部署（Leclerc et al., 2019; Ouyang et al., 2020）。云端多模态模型可能具备更强的自然语言解释能力，但会引入病例上传、网络、费用、审计和服务可用性问题。
 
-CardioConsult V5 的差异化是：输入侧兼容真实超声导出文件；算法侧融合 B-mode、Color Doppler、动图差分和 EchoNet 校准；输出侧强制最小病症、逻辑链和安全边界；运行侧采用本地规则、小模型与 GGUF LLM，边际调用成本接近 0。代价是部分细粒度病症在缺切面时准确率下降，需要明确补扫和复核。
+CardioConsult V5 的差异化是：输入侧兼容真实超声导出文件；算法侧融合 B-mode、Color Doppler、Doppler 瓣膜定位评分、动图差分和 EchoNet 校准；输出侧强制最小病症、逻辑链和安全边界，并用 JSON 合同限制 Gemma4 自由漂移；运行侧采用本地规则、小模型与 GGUF LLM，边际调用成本接近 0。代价是部分细粒度病症在缺切面时准确率下降，需要明确补扫和复核。
 
 ## 7. 成本模型与取舍
 
@@ -548,13 +548,23 @@ def build_docx(markdown: str) -> None:
             i += 1
             continue
         if line.startswith("# "):
-            p = doc.add_paragraph(style="Heading 1")
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(12)
+            p.paragraph_format.space_after = Pt(8)
             r = p.add_run(line[2:].strip())
             set_run_font(r, size=19, bold=True, color=DARK)
         elif line.startswith("## "):
-            doc.add_paragraph(line[3:].strip(), style="Heading 2")
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(12)
+            p.paragraph_format.space_after = Pt(6)
+            r = p.add_run(line[3:].strip())
+            set_run_font(r, size=13.5, bold=True, color=DARK)
         elif line.startswith("### "):
-            doc.add_paragraph(line[4:].strip(), style="Heading 3")
+            p = doc.add_paragraph()
+            p.paragraph_format.space_before = Pt(8)
+            p.paragraph_format.space_after = Pt(5)
+            r = p.add_run(line[4:].strip())
+            set_run_font(r, size=11.2, bold=True, color=MUTED)
         elif line.startswith("!["):
             start = line.find("(")
             end = line.find(")", start)
@@ -643,7 +653,7 @@ def write_freeze_audit(data: dict) -> None:
 
 - 清理过时 BAT：仓库根目录只保留 `install_deps.bat` 和 `run_cardio_pc_v5.bat`。
 - 诊断链报告保护层已上线：提示词泄漏、markdown 模板、AI 口吻和截断输出会回退到本地自然化教学报告。
-- 已新增当前服务验证 JSON：`validation_speedopt/server_pipeline_case1_current_20260604.json` 记录 `has_prompt_leakage=false`、`has_required_fields=true` 和 `report_source=gemma4_repaired`。
+- 已新增当前服务验证 JSON：`validation_speedopt/server_pipeline_case1_current_20260604.json` 记录 `has_prompt_leakage=false`、`has_required_fields=true` 和旧服务证据 `report_source=gemma4_repaired`；当前默认代码新增结构化 JSON 守卫，可在下一轮服务复现中记录 `report_source=gemma4_structured`。
 - 冻结前 EchoBench 完整证据 60/60 通过，平均 {data['full_latency']['runtime_seconds']['mean']:.3f}s/例。
 - 冻结前 EchoBench 12 帧 60/60 通过，warm-cache 平均 {data['rep12_latency']['runtime_seconds']['mean']:.3f}s/例。
 - 本地 `llama-server` smoke 连续两次 OK，第二次 completion {data['server_smoke']['second_completion']['elapsed_seconds']:.3f}s。

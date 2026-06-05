@@ -7,6 +7,8 @@ CardioConsult PC V5 是当前 Windows 参考版本，也被设计为超声机器
 ## V5 相比 V4 的新增内容
 
 - EchoNet-Dynamic 动态 B-mode 校准，用于 EF / 左室收缩功能减低识别。
+- 结构化 Gemma4 JSON 输出合同：默认由模型输出 JSON，再由本地报告守卫渲染为固定中文诊断字段。
+- Doppler 瓣膜定位评分：在体位证据不足但彩色血流异常可靠时，给出 MR/TR/AR/PR 候选定位分数。
 - `cardio_pc/agents.py` 轻量离线多智能体编排：InputAgent、FeatureAgent、DiagnosisAgent、ReportAgent 和 SafetyAuditAgent 生成可审计 JSON 链路。
 - `cardio_pc/v5_echonet.py` 运行时层，并保留 V4 规则后备。
 - `tools/train_echonet_v5.py` 本地训练入口。
@@ -16,14 +18,15 @@ CardioConsult PC V5 是当前 Windows 参考版本，也被设计为超声机器
 
 ## Gemma4 与安全报告保护
 
-Gemma4 4B GGUF 接收的是本机提取后的结构化超声证据、层级候选、质量分和安全约束，不直接接收原始病人图像，也不上传数据到云端。报告保护层会检查模型输出是否包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：` 和医学安全边界。
+Gemma4 4B GGUF 接收的是本机提取后的结构化超声证据、层级候选、质量分和安全约束，不直接接收原始病人图像，也不上传数据到云端。默认提示词要求模型输出 JSON object；报告保护层会优先提取合法 JSON 并重渲染为固定中文报告，然后检查最终输出是否包含 `教学参考病症判断：`、`最小病症：`、`逻辑链：` 和医学安全边界。
 
 多智能体审计中的 `ReportAgent` 会记录：
 
 - `model_text_received`：是否实际收到 Gemma4 文本。
+- `report_guard_structured`：模型文本是否被识别为结构化 JSON 并由本地合同渲染。
 - `report_guard_repaired`：模型文本是否被补齐必需字段或安全边界。
 - `report_guard_rewritten`：模型文本是否因不完整或不安全被模板改写。
-- `report_source`：最终报告来源，取值为 `gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 或 `rule_template`。
+- `report_source`：最终报告来源，取值为 `gemma4_structured`、`gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 或 `rule_template`。
 
 详细说明见 [gemma4_runtime_contract.md](gemma4_runtime_contract.md)。
 
@@ -76,7 +79,7 @@ SpeedOpt 后的本地常驻服务补充验证：
 | EchoBench 第 1 例 12 文件服务诊断 | 69.168 s |
 | 必需字段/安全边界/提示词泄漏检查 | 通过 |
 
-服务验证文档：[service_validation.md](service_validation.md)。本次测试确认 `llama-server.exe` 常驻服务可通过 `127.0.0.1:8088/completion` 完成普通请求，并能被项目诊断链路调用；项目级输出包含 `教学参考病症判断：`、`最小病症：` 和 `逻辑链：` 三个必需字段，审计记录为 `report_source=gemma4_repaired`。
+服务验证文档：[service_validation.md](service_validation.md)。本次测试确认 `llama-server.exe` 常驻服务可通过 `127.0.0.1:8088/completion` 完成普通请求，并能被项目诊断链路调用；项目级输出包含 `教学参考病症判断：`、`最小病症：` 和 `逻辑链：` 三个必需字段，旧服务证据审计记录为 `report_source=gemma4_repaired`。当前默认提示词新增结构化 JSON 路径，下一次服务复现时可记录为 `report_source=gemma4_structured`。
 
 ## 报告材料
 

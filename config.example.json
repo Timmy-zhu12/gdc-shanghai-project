@@ -13,6 +13,7 @@
   "use_server": true,
   "server_url": "http://127.0.0.1:8088",
   "server_timeout": 900,
+  "structured_llm_output": true,
   "use_multi_agent": true,
   "write_agent_audit": true,
   "agent_audit_dir": "exports/agent_audit"

@@ -29,7 +29,7 @@
 | 评审维度 | 权重 | 建议检查内容 |
 |---|---:|---|
 | 真实影响 | 30% | 医学教学与基层心脏超声参考流程；PC 可部署在超声设备旁直接读取导出资料；README 和 UI 中的安全边界；脱敏本地处理流程 |
-| 技术能力 | 25% | B-mode GLDM/纹理代理、SRAD/CLAHE 预处理、Color Doppler HSV/向量代理、动图/DICOM 支持、EchoNet-Dynamic EF 校准、本地 Gemma4 4B |
+| 技术能力 | 25% | B-mode GLDM/纹理代理、SRAD/CLAHE 预处理、Color Doppler HSV/向量代理、Doppler 瓣膜定位评分、动图/DICOM 支持、EchoNet-Dynamic EF 校准、本地 Gemma4 4B |
 | 完整性 | 20% | 可运行 PC V5 仓库、在线规则演示、示例文件、验证报告、启动脚本、技术报告、规则自检、多智能体审计 JSON |
 | 创新性 | 15% | 边缘特征 + Gemma4 报告生成、层级病症标签、离线优先医学教学流程 |
 | 展示质量 | 10% | APA 技术报告、验证材料包、README 部署说明、单文件在线演示 |
@@ -48,7 +48,7 @@
 ## 技术强项
 
 - 真实离线路径：PC V5 使用本地 Gemma4 4B GGUF，可通过 `llama-cli` 或常驻 `llama-server` 调用，并定位为超声设备旁的离线分析终端。
-- 模型贡献可审计：Gemma4 接收的是超声特征、层级候选、质量分和安全约束；多智能体审计会记录最终报告来自 `gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 还是 `rule_template`。
+- 模型贡献可审计：Gemma4 接收的是超声特征、层级候选、质量分和安全约束；默认输出 JSON 并由本地诊断合同渲染，多智能体审计会记录最终报告来自 `gemma4_structured`、`gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 还是 `rule_template`。
 - 动态心超增强：EchoNet-Dynamic 特征增强 EF / 左室收缩功能减低识别，同时保留可审计的瓣膜反流规则。
 - 轻量多智能体：InputAgent、FeatureAgent、DiagnosisAgent、ReportAgent 和 SafetyAuditAgent 在本地串联，不额外调用云服务。
 - 超声专用预处理：B-mode 与 Color Doppler 分支分别提取边缘、纹理、血流方向、喷流宽度、涡量等代理特征。
