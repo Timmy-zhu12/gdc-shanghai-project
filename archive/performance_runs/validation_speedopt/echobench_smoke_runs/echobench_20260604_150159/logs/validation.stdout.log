@@ -1,0 +1,24 @@
+[1/1] 8632 done
+{
+  "cases_attempted": 1,
+  "cases_ok": 1,
+  "total_runtime_seconds": 0.958,
+  "mean_case_runtime_seconds": 0.948,
+  "use_gguf": false,
+  "v4": true,
+  "gguf_limit": 0
+}
+         label  positive_gold  positive_pred  accuracy  sensitivity  specificity  f1
+     valve_any              1              1       1.0          1.0          0.0 1.0
+            mr              1              1       1.0          1.0          0.0 1.0
+            tr              1              1       1.0          1.0          0.0 1.0
+            ar              1              0       0.0          0.0          0.0 0.0
+            pr              0              0       1.0          0.0          1.0 0.0
+          mild              1              1       1.0          1.0          0.0 1.0
+      moderate              0              0       1.0          0.0          1.0 0.0
+        severe              0              0       1.0          0.0          1.0 0.0
+        low_ef              0              0       1.0          0.0          1.0 0.0
+          rwma              0              0       1.0          0.0          1.0 0.0
+       lvh_hcm              0              0       1.0          0.0          1.0 0.0
+la_enlargement              0              0       1.0          0.0          1.0 0.0
+   bradycardia              1              0       0.0          0.0          0.0 0.0

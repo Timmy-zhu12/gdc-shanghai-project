@@ -93,12 +93,10 @@ GGUF / llama.cpp smoke：
 
 ## 报告材料
 
-- `docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.md`
-- `docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.docx`
-- `docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.pdf`
-- `docs/v5_benchmark/V5_EchoNet_DL_Enhancement_Report.md`
-- `docs/v5_benchmark/figures/`
-- `submission/technical_report/`
+- 正式技术报告入口：`REPORTS.md`
+- 正式 APA 技术报告：`submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md`
+- 正式 DOCX/PDF：`submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx`、`submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf`
+- 旧 V5 benchmark 副本和生成图表：`archive/technical_report_sources/v5_benchmark/`
 
 ## 安全边界
 

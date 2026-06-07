@@ -40,7 +40,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\start_llama_server_v4.ps1
 ```powershell
 .\.venv\Scripts\python.exe tools\benchmark_server_smoke.py `
   --url http://127.0.0.1:8088 `
-  --out validation_speedopt\server_smoke_general_20260604.json `
+  --out archive\performance_runs\validation_speedopt\server_smoke_general_20260604.json `
   --wait-timeout 900 `
   --request-timeout 900 `
   --n-predict 8
@@ -61,7 +61,7 @@ Get-CimInstance Win32_Process |
 结果文件：
 
 ```text
-validation_speedopt/server_smoke_general_current_20260604.json
+archive/performance_runs/validation_speedopt/server_smoke_general_current_20260604.json
 ```
 
 | 请求 | 端到端耗时 | prompt tok/s | predicted tok/s | 输出 |
@@ -76,7 +76,7 @@ validation_speedopt/server_smoke_general_current_20260604.json
 结果文件：
 
 ```text
-validation_speedopt/server_pipeline_case1_current_20260604.json
+archive/performance_runs/validation_speedopt/server_pipeline_case1_current_20260604.json
 ```
 
 | 项目 | 结果 |
@@ -112,7 +112,7 @@ Gemma4 4B offline server: http://127.0.0.1:8088 (Gemma4 output received; report 
 多智能体审计链已生成：
 
 ```text
-validation_speedopt/agent_audit_server_pipeline_case1_current_20260604.json
+archive/performance_runs/validation_speedopt/agent_audit_server_pipeline_case1_current_20260604.json
 ```
 
 当前代码会在 `ReportAgent` 中记录以下字段：

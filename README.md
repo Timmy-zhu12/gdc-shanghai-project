@@ -85,13 +85,15 @@ V5 在原有 B-mode、Color Doppler、层级病症标签和 Gemma4 4B GGUF 本�
 - [本地服务验证](docs/service_validation.md)
 - [V5 技术状态](docs/V5_TECHNICAL_STATUS.md)
 
-技术报告：
+正式技术报告：
 
-- [Markdown 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.md)
-- [Word DOCX 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.docx)
-- [PDF 技术报告](docs/v5_benchmark/CardioConsult_PC_V5_EchoBench_Technical_Report_APA_20260604.pdf)
+- [报告入口说明](REPORTS.md)
+- [PDF 正式技术报告](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf)
+- [Word DOCX 正式技术报告](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx)
+- [Markdown 正式技术报告](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md)
 - [中文 LaTeX 报告源](submission/technical_report/CardioConsult_Chinese_LaTeX_Report.tex)
-- [V5 EchoNet 增强说明](docs/v5_benchmark/V5_EchoNet_DL_Enhancement_Report.md)
+
+历史 benchmark 副本、旧图表和阶段性报告没有删除，统一保存在 [archive](archive)。
 
 演示材料：
 
@@ -317,6 +319,7 @@ EchoNet-Dynamic 校准层留出集摘要：
 本仓库已集中保存提交所需材料：
 
 - [SUBMISSION.md](SUBMISSION.md)：提交检查表和评审入口。
+- [REPORTS.md](REPORTS.md)：唯一正式技术报告入口和归档说明。
 - [DATASETS.md](DATASETS.md)：数据集来源、用途和再分发边界。
 - [submission/technical_report](submission/technical_report)：APA 技术报告 DOCX/PDF/Markdown、图表和测试结果。
 - [submission/demo_video/demo.mp4](submission/demo_video/demo.mp4)：演示视频。

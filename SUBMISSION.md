@@ -31,7 +31,7 @@ CardioConsult 的主线不是“规则系统外加一个模型润色器”，而
 |---|---|---|
 | 代码仓库 | 本仓库：`https://github.com/Timmy-zhu12/gdc-shanghai-project` | 已准备 |
 | 5 分钟内演示视频 | [submission/demo_video/demo.mp4](submission/demo_video/demo.mp4)；录制脚本见 [submission/demo_video/CardioConsult_5min_demo_script_CN.md](submission/demo_video/CardioConsult_5min_demo_script_CN.md) 与 DOCX 版 | 已准备 |
-| 技术报告 | [DOCX](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx)、[PDF](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf)、[Markdown](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md)、[中文 LaTeX 源](submission/technical_report/CardioConsult_Chinese_LaTeX_Report.tex) | 已准备 |
+| 技术报告 | 唯一正式入口见 [REPORTS.md](REPORTS.md)；正式文件为 [DOCX](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx)、[PDF](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf)、[Markdown](submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md)、[中文 LaTeX 源](submission/technical_report/CardioConsult_Chinese_LaTeX_Report.tex) | 已准备 |
 | 在线演示链接 | 单文件规则匹配网页已发布：`https://timmy-zhu12.github.io/gdc-shanghai-project/`；源码位于 [docs/index.html](docs/index.html) | 已上线 |
 | 训练/验证数据来源披露 | [DATASETS.md](DATASETS.md) 和 [docs/data_and_model_policy.md](docs/data_and_model_policy.md) | 已准备 |
 | 技术亮点说明 | [docs/competitive_edge.md](docs/competitive_edge.md) | 已准备 |

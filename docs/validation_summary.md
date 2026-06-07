@@ -7,10 +7,11 @@
 仓库内主要验证材料：
 
 - `validation/reports/`
-- `validation/reports_docx/`
-- `validation_speedopt/`
+- `archive/validation_docx_reports/`
+- `archive/performance_runs/validation_speedopt/`
 - `docs/service_validation.md`
-- `docs/v5_benchmark/`
+- `submission/technical_report/`
+- `archive/technical_report_sources/v5_benchmark/`
 
 ## EchoBench v1 授权本地 60 例
 
@@ -60,9 +61,9 @@ EchoNet-Dynamic 校准层用于增强 EF / 左室收缩功能减低教学识别�
 
 验证产物：
 
-- `validation_speedopt/server_smoke_general_current_20260604.json`
-- `validation_speedopt/server_pipeline_case1_current_20260604.json`
-- `validation_speedopt/agent_audit_server_pipeline_case1_current_20260604.json`
+- `archive/performance_runs/validation_speedopt/server_smoke_general_current_20260604.json`
+- `archive/performance_runs/validation_speedopt/server_pipeline_case1_current_20260604.json`
+- `archive/performance_runs/validation_speedopt/agent_audit_server_pipeline_case1_current_20260604.json`
 
 ## Gemma4 报告路径审计
 
