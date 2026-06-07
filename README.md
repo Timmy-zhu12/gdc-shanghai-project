@@ -29,10 +29,12 @@ V5 在 V4 的 B-mode、Color Doppler、动图代表帧、层级病症标签和 G
 - `cardio_pc/v5_echonet.py`：EchoNet-Dynamic 特征与 V5 校准运行时。
 - `cardio_pc/diagnosis.py`：结构化 Gemma4 JSON 输出合同、Doppler 瓣膜定位评分和本地报告重渲染。
 - `cardio_pc/agents.py`：轻量离线多智能体编排与审计链。
+- `cardio_pc/function_calling.py`：Gemma4 内部函数调用白名单、tool manifest 和本地执行器。
 - `tools/train_echonet_v5.py`：本地 EchoNet-Dynamic 训练脚本。
 - `tools/run_echobench_v1.py`：EchoBench v1 基准测试入口。
 - `docs/v5_benchmark/`：V5 技术报告、DOCX 报告、图表和生成脚本。
 - `docs/gemma4_runtime_contract.md`：Gemma4、规则层、报告保护和多智能体审计的运行契约。
+- `docs/gemma4_function_calling_contract.md`：Gemma4 原生函数调用/Tool Calling 合同与 smoke 验证方式。
 - `tools/submission_preflight.py`：提交前程序预检，检查关键材料、仓库卫生、旧模型词、乱码和规则自检。
 - `submission/technical_report/build_latex_report.py`：中文 LaTeX 技术文章生成脚本，附注释式可视化图表。
 - `run_cardio_pc_v5.bat`：V5 桌面 UI 启动入口。
@@ -56,6 +58,7 @@ V5 技术报告：
 | 可运行演示 | 提供 Windows 桌面 UI、批处理启动脚本、示例输入和规则路径自检 |
 | 边缘计算价值 | B-mode 与 Color Doppler 分支先在本地提取结构化特征，再交给模型或规则层生成报告 |
 | 报告合同保护 | 默认要求 Gemma4 输出 JSON，再由本地守卫重渲染为固定中文诊断字段 |
+| 原生函数调用 | `cardio_pc/function_calling.py` 提供 `summarize_ultrasound_features`、`run_rule_diagnosis`、`safety_boundary_check` 三个白名单内部工具，供离线 Gemma4 增强路径按 JSON tool-call 合同调用 |
 | 轻量多智能体 | `InputAgent -> FeatureAgent -> DiagnosisAgent -> ReportAgent -> SafetyAuditAgent` 在本地串联运行，并把审计 JSON 写入 `exports/agent_audit/` |
 | 动态心超增强 | EchoNet-Dynamic 校准层用于 EF / 左室收缩功能减低教学识别 |
 | 演示稳定性 | GGUF 不存在或模型调用失败时，自动切换到可审计的本地规则后备 |
@@ -68,6 +71,14 @@ PC V5 的设计不是把原始图像直接丢给大模型。应用会先在本�
 规则层负责医学安全边界和确定性兜底：当模型文件不存在、模型调用失败、输出缺少 `教学参考病症判断：` / `最小病症：` / `逻辑链：`，或报告未包含必要安全声明时，报告保护会先尝试按 JSON 合同重渲染或补齐必需字段；若文本明显截断、带提示词痕迹或仍不可用，才改写为本地教学模板。启用多智能体审计时，`ReportAgent` 会记录 `model_text_received`、`report_guard_structured`、`report_guard_repaired`、`report_guard_rewritten` 和 `report_source`，从而区分 `gemma4_structured`、`gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 和 `rule_template` 五种路径。
 
 详细说明见 [docs/gemma4_runtime_contract.md](docs/gemma4_runtime_contract.md)。
+
+函数调用合同见 [docs/gemma4_function_calling_contract.md](docs/gemma4_function_calling_contract.md)。评审可运行：
+
+```powershell
+python tools\function_calling_smoke.py
+```
+
+该 smoke 验证 Gemma4 tool manifest、本地白名单执行和非法工具拒绝逻辑，不需要 GGUF，也不会访问网络。
 
 ## 支持输入与输出
 
@@ -89,6 +100,7 @@ PC V5 的设计不是把原始图像直接丢给大模型。应用会先在本�
 - 一段中文医学教学参考诊断。
 - 第一字段强制包含“大方向 > 中方向 > 最小病症”的层级诊断。
 - 必须给出最小病症、逻辑链、置信度/证据充分度、图像质量提示、补扫建议和安全声明。
+- 对于未携带 A4C/A2C/A3C 等标准切面名的 MP4 动态 B-mode 输入，若多帧腔室代理、低彩色多普勒干扰和 CAMUS 低 EF 校准共同支持低 EF，规则层会输出“左心室收缩功能减低”作为最小病症，而不是退回到“未见明确异常”。
 
 示例：
 
@@ -122,6 +134,8 @@ run_cardio_pc_v5.bat
 `run_cardio_pc_v5.bat` 不会在后台静默运行 `pip install`，避免网络或镜像源变慢时看起来像卡死。缺少依赖时它会明确提示先运行 `install_deps.bat`。
 
 默认 UI 使用“规则极速模式”，不会等待 GGUF，因此真实导入超大 DICOM、视频或动图时不会因为模型推理长时间卡住。需要展示离线 Gemma4 4B 时，可在 UI 的“推理模式”中切换到 `Gemma4 server 增强` 或 `Gemma4 CLI 增强`；这两个增强路径也有硬超时，失败后会自动回到可审计规则报告。
+
+教学演示时，如果现场曾经切到 Gemma4 增强路径，可以直接点击右侧操作区的“一键规则匹配”按钮。该按钮会立即切回 `rule_only`，停止当前慢任务等待，并把后续分析固定到本地层级规则路径，便于稳定展示“教学参考病症判断 / 最小病症 / 逻辑链”三个核心字段。
 
 需要做服务性能复现时，可在 PowerShell 中手动启动本地常驻 `llama-server`，地址为：
 

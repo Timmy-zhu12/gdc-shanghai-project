@@ -103,6 +103,8 @@ class CardioConsultPCApp(tk.Tk):
 
         run_row = ttk.Frame(right)
         run_row.pack(fill=tk.X)
+        self.rule_demo_button = ttk.Button(run_row, text="一键规则匹配", command=self.switch_to_rule_only_demo)
+        self.rule_demo_button.pack(side=tk.LEFT, padx=(0, 8))
         self.run_button = ttk.Button(run_row, text="开始离线分析", command=self.start_analysis)
         self.run_button.pack(side=tk.LEFT)
         self.cancel_button = ttk.Button(run_row, text="取消分析", command=self.cancel_analysis, state=tk.DISABLED)
@@ -191,6 +193,23 @@ class CardioConsultPCApp(tk.Tk):
 
     def _refresh_model_status(self) -> None:
         self.status_var.set(self.config_model.status)
+
+    def switch_to_rule_only_demo(self) -> None:
+        if self.analysis_running:
+            if self.cancel_event:
+                self.cancel_event.set()
+            self.analysis_token += 1
+            self.progress.stop()
+            self.analysis_running = False
+            self.run_button.configure(state=tk.NORMAL)
+            self.cancel_button.configure(state=tk.DISABLED)
+
+        self.mode_var.set(INFERENCE_MODE_NAMES["rule_only"])
+        self.config_model.inference_mode = "rule_only"
+        self.config_model.use_server = False
+        save_config(self.config_model)
+        self._refresh_model_status()
+        self.summary_var.set("已切换到规则极速模式。教学演示将跳过 Gemma4，使用本地层级规则直接生成诊断字段。")
 
     def start_analysis(self) -> None:
         if not self.file_paths:

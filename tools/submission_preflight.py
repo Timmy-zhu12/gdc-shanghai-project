@@ -21,8 +21,10 @@ REQUIRED_PATHS = [
     "run_cardio_pc_v5.bat",
     "stop_llama_server.bat",
     "tools/anti_hang_smoke.py",
+    "tools/function_calling_smoke.py",
     "docs/index.html",
     "docs/gemma4_runtime_contract.md",
+    "docs/gemma4_function_calling_contract.md",
     "docs/service_validation.md",
     "submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md",
     "submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx",
@@ -35,17 +37,25 @@ REQUIRED_TEXT_MARKERS = {
         "structured_llm_output=true",
         "gemma4_structured",
         "Doppler 瓣膜定位评分",
+        "原生函数调用",
         "医学安全边界",
     ],
     "SUBMISSION.md": [
         "在线演示链接",
         "技术报告",
+        "原生函数调用",
         "Apache License 2.0",
     ],
     "docs/gemma4_runtime_contract.md": [
         "JSON object",
         "report_guard_structured",
         "gemma4_structured",
+    ],
+    "docs/gemma4_function_calling_contract.md": [
+        "function_call",
+        "summarize_ultrasound_features",
+        "run_rule_diagnosis",
+        "safety_boundary_check",
     ],
 }
 
@@ -215,6 +225,18 @@ def run_anti_hang_smoke(enabled: bool) -> dict[str, object]:
     }
 
 
+def run_function_calling_smoke(enabled: bool) -> dict[str, object]:
+    if not enabled:
+        return {"id": "function_calling_smoke", "ok": True, "detail": "skipped by flag"}
+    code, out, err = run([sys.executable, "tools/function_calling_smoke.py"], timeout=45)
+    ok = code == 0 and '"function_calling_smoke": "ok"' in out
+    return {
+        "id": "function_calling_smoke",
+        "ok": ok,
+        "detail": (out or err)[-1200:],
+    }
+
+
 def check_launcher_anti_hang() -> list[dict[str, object]]:
     run_bat = (ROOT / "run_cardio_pc_v5.bat").read_text(encoding="utf-8", errors="replace").lower()
     install_bat = (ROOT / "install_deps.bat").read_text(encoding="utf-8", errors="replace").lower()
@@ -264,6 +286,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run a lightweight submission preflight for CardioConsult PC V5.")
     parser.add_argument("--skip-self-test", action="store_true", help="Skip app.py --self-test-rule-only.")
     parser.add_argument("--skip-anti-hang", action="store_true", help="Skip tools/anti_hang_smoke.py.")
+    parser.add_argument("--skip-function-calling", action="store_true", help="Skip tools/function_calling_smoke.py.")
     parser.add_argument("--out-dir", default=str(OUT_DIR), help="Directory for JSON/Markdown preflight reports.")
     args = parser.parse_args()
 
@@ -276,6 +299,7 @@ def main() -> int:
     results.extend(check_launcher_anti_hang())
     results.append(run_rule_self_test(enabled=not args.skip_self_test))
     results.append(run_anti_hang_smoke(enabled=not args.skip_anti_hang))
+    results.append(run_function_calling_smoke(enabled=not args.skip_function_calling))
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

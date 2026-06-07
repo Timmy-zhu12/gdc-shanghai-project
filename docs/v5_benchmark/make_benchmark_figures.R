@@ -43,7 +43,7 @@ grid(nx = NA, ny = NULL, col = "gray85")
 dev.off()
 
 png(file.path(out_dir, "fig2_accuracy_full_vs_12frame.png"), width = 1400, height = 850, res = 140)
-par(mar = c(7, 5, 4, 2), family = "sans")
+par(mar = c(7, 5, 4, 7), family = "sans", xpd = NA)
 mat <- rbind(get_values(full, "accuracy"), get_values(rep12, "accuracy"))
 barplot(
   mat,
@@ -55,7 +55,7 @@ barplot(
   main = "EchoBench v1 accuracy: full evidence vs representative 12-frame input",
   las = 2
 )
-legend("bottomleft", legend = c("Full evidence", "Representative 12-frame"), fill = c("#315f72", "#d88c43"), bty = "n")
+legend("topright", inset = c(-0.18, 0.02), legend = c("Full evidence", "Representative 12-frame"), fill = c("#315f72", "#d88c43"), bty = "n")
 grid(nx = NA, ny = NULL, col = "gray85")
 dev.off()
 

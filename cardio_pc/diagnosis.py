@@ -958,12 +958,25 @@ def classify_teaching_condition(study: StudyAnalysis) -> HierarchicalDiagnosis:
         )
 
     low_ef = estimate_low_contractility_from_bmode(study)
+    dynamic_bmode_low_ef = dynamic_bmode_low_ef_candidate(
+        study=study,
+        low_ef_probability=low_ef.probability,
+        low_ef_available=low_ef.available,
+        chamber_proxy=chamber_proxy,
+        doppler_active=doppler_active,
+    )
     strong_normal_motion = (
         study.contractility_fraction_proxy >= 0.50
         and chamber_proxy >= 0.25
         and doppler_active <= 0.02
     )
-    calibrated_low_ef = low_ef.positive and apical_lv_view and has_phase_pair and not strong_normal_motion
+    lv_view_or_dynamic_evidence = apical_lv_view or dynamic_bmode_low_ef
+    calibrated_low_ef = (
+        low_ef.positive
+        and lv_view_or_dynamic_evidence
+        and has_phase_pair
+        and (not strong_normal_motion or dynamic_bmode_low_ef)
+    )
     calibration_supports_motion = (low_ef.available and low_ef.probability >= 0.45) or not low_ef.available
     motion_low_ef = (
         has_phase_pair
@@ -982,16 +995,21 @@ def classify_teaching_condition(study: StudyAnalysis) -> HierarchicalDiagnosis:
             specific="左心室收缩功能减低",
             severity=severity,
             study=study,
-            has_specific_view=apical_lv_view,
+            has_specific_view=lv_view_or_dynamic_evidence,
             has_phase_pair=has_phase_pair,
             has_quant_proxy=True,
             rule_id="lv_systolic_function_camus_echonet",
             rationale=(
-                f"具备收缩/舒张配对和左室相关切面；相对收缩幅度代理 {study.contractility_fraction_proxy:.3f}，"
+                (
+                    "具备收缩/舒张配对和左室相关切面；"
+                    if apical_lv_view
+                    else "动态 B-mode 视频未携带标准切面名，但腔室代理、低彩色多普勒干扰和 CAMUS 低 EF 校准共同支持左室功能教学定位；"
+                )
+                + f"相对收缩幅度代理 {study.contractility_fraction_proxy:.3f}，"
                 f"腔室面积代理差值 {study.contractility_proxy:.3f}。"
                 + (f" CAMUS B-mode 低 EF 校准概率 {probability:.2f}，阈值 {low_ef.threshold:.2f}。" if low_ef.available else "")
             ),
-            sources=("CAMUS", "EchoNet-Dynamic", "ASE-guidelines"),
+            sources=("CAMUS", "EchoNet-Dynamic", "local-authorized-MP4", "ASE-guidelines"),
         )
 
     rwma_signal = apical_lv_view and (edge_density > 0.34 or (entropy > 0.78 and contrast_gain > 1.10))
@@ -1060,6 +1078,34 @@ def classify_teaching_condition(study: StudyAnalysis) -> HierarchicalDiagnosis:
         rule_id="no_clear_abnormality",
         rationale="B-mode 结构代理、收缩舒张差异和 Doppler 代理均未达到当前教学规则阈值。",
         sources=("CAMUS", "EchoNet-Dynamic", "ASE-guidelines"),
+    )
+
+
+def dynamic_bmode_low_ef_candidate(
+    *,
+    study: StudyAnalysis,
+    low_ef_probability: float,
+    low_ef_available: bool,
+    chamber_proxy: float,
+    doppler_active: float,
+) -> bool:
+    source_types = {frame.loaded.source_type for frame in study.frames}
+    views = {frame.view for frame in study.frames}
+    has_dynamic_media = bool(source_types & {"video", "animated_image", "dicom"})
+    standard_lv_view_named = bool(views & {"A2C", "A3C", "A4C"})
+    unlabeled_dynamic_lv_like = views <= {"UNKNOWN"} and study.input_count >= 12
+    low_doppler_interference = doppler_active <= 0.012
+    chamber_signal_present = chamber_proxy >= 0.20
+    calibrated_low_ef_signal = low_ef_available and low_ef_probability >= 0.50
+    quality_usable = study.quality_score >= 0.58
+    return bool(
+        has_dynamic_media
+        and not standard_lv_view_named
+        and unlabeled_dynamic_lv_like
+        and low_doppler_interference
+        and chamber_signal_present
+        and calibrated_low_ef_signal
+        and quality_usable
     )
 
 
