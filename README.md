@@ -47,6 +47,11 @@ V5 技术报告：
 - [中文 LaTeX 报告源](submission/technical_report/CardioConsult_Chinese_LaTeX_Report.tex)
 - [V5 EchoNet 增强说明](docs/v5_benchmark/V5_EchoNet_DL_Enhancement_Report.md)
 
+演示视频：
+
+- [demo.mp4](submission/demo_video/demo.mp4)，约 2 分 02 秒。
+- [5 分钟演示脚本](submission/demo_video/CardioConsult_5min_demo_script_CN.md)
+
 ## 与端侧/边缘 AI 要求的对应关系
 
 本项目强调端侧/边缘 AI、离线运行、真实设备演示和完整可审查材料。PC V5 的对应实现如下：

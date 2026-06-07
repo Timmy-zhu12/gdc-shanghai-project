@@ -29,6 +29,7 @@ REQUIRED_PATHS = [
     "submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md",
     "submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx",
     "submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf",
+    "submission/demo_video/demo.mp4",
     "DATASETS.md",
 ]
 
