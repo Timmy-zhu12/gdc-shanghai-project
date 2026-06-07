@@ -141,7 +141,7 @@
     "availability": "可用",
     "n": "60 local authorized DICOM/report-linked cases",
     "metrics": "cases_ok=60/60; mean_runtime=1.418s; MR F1=0.9636363636363636; AR F1=0.7; low EF F1=0.8571428571428571",
-    "interpretation": "当前冻结代码在完整证据场景保持 60/60 可运行；MR、TR、低 EF 表现稳定，AR 依赖切面覆盖。"
+    "interpretation": "当前冻结代码在完整证据场景保持 60/60 可运行；MR、低 EF 表现稳定，AR 依赖切面覆盖；TR 本批全阳性，不能解释为泛化特异性。"
   },
   {
     "dataset": "Freeze EchoBench",
@@ -149,7 +149,7 @@
     "availability": "可用",
     "n": "60 cases, max 12 files/frames per case",
     "metrics": "cases_ok=60/60; mean_runtime=0.711s warm-cache; MR F1=0.9357798165137615; AR F1=0.32558139534883723; low EF F1=0.6153846153846154",
-    "interpretation": "代表输入上限可快速运行；MR/TR 保持稳定，AR、RWMA、左房扩大仍是切面覆盖敏感项。"
+    "interpretation": "代表输入上限可快速运行；MR 保持稳定，TR 只说明本批全阳性样本内召回一致，AR、RWMA、左房扩大仍是切面覆盖敏感项。"
   },
   {
     "dataset": "Freeze service",

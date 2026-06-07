@@ -149,7 +149,7 @@ def figure_f1_story() -> Path:
     full, rep = metric_rows()
     labels = [
         ("mr", "二尖瓣反流 MR"),
-        ("tr", "三尖瓣反流 TR"),
+        ("tr", "三尖瓣反流 TR*"),
         ("ar", "主动脉瓣反流 AR"),
         ("low_ef", "低 EF / 收缩功能减低"),
         ("rwma", "节段性室壁运动异常"),
@@ -159,8 +159,8 @@ def figure_f1_story() -> Path:
     draw = ImageDraw.Draw(image)
     y = add_header(
         draw,
-        "12 帧输入最稳定的是 MR/TR，最敏感的是 AR",
-        "完整证据与 12 帧代表输入对比。横线越短，说明该标签在现场输入上越稳；AR 与左房扩大更依赖补齐切面。",
+        "MR 与低 EF 更可解释，AR 最依赖补齐切面",
+        "完整证据与 12 帧代表输入对比。TR* 在本批样本中全阳性，1.00 只能表示阳性样本内没有漏报。",
     )
 
     left, right = 430, 1350
@@ -187,12 +187,12 @@ def figure_f1_story() -> Path:
         text(draw, (x_full, y0 - 28), f"{full_f1:.2f}", fill=BLUE, font_obj=FONT_TINY, anchor="mm")
         text(draw, (x_rep, y0 + 53), f"{rep_f1:.2f}", fill=color, font_obj=FONT_TINY, anchor="mm")
 
-    draw.rounded_rectangle((900, 820, 1490, 955), radius=18, outline="#e5e7eb", width=2, fill="#fafafa")
+    draw.rounded_rectangle((850, 805, 1490, 970), radius=18, outline="#e5e7eb", width=2, fill="#fafafa")
     wrapped(
         draw,
-        (930, 846),
-        "解读：当前工程强项不是所有病症都满分，而是把“稳定项”和“切面敏感项”明确分开，报告会提示补扫和复核。",
-        width=520,
+        (880, 828),
+        "解读：TR* 缺少阴性对照，不能解读为真实特异性 100%。当前工程强项是把稳定项、切面敏感项和样本偏倚明确分开。",
+        width=570,
         fill=INK,
         font_obj=FONT_SMALL,
     )
