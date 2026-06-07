@@ -1,48 +1,55 @@
-﻿# 技术亮点
+# 技术亮点
 
-CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向真实的医学教学和基层心脏超声参考流程。项目不是简单模型封装，而是把超声专用边缘特征、确定性安全后备和 Gemma4 报告生成组合成一个可部署在超声设备旁的 Windows PC 离线分析终端。
+CardioConsult 被设计为离线 Gemma4 边缘 AI 应用，面向医学教学和基层心脏超声参考流程。项目不是简单模型封装，也不是纯规则演示，而是把超声专用边缘特征、Gemma4 4B 函数调用、结构化报告推理、确定性安全守卫和多智能体审计组合成一个可部署在超声设备旁的 Windows PC 离线分析终端。
 
 ## 为什么它不同
 
-1. 离线优先的医疗教育场景。
+1. Gemma4 是主智能层。
+
+   系统先把 B-mode、Color Doppler、动图、体位覆盖和图像质量转成结构化证据，再由本地 Gemma4 4B 负责函数调用、层级诊断组织、逻辑链解释和中文教学报告生成。规则路径不是主叙事的替代品，而是 Gemma4 可以调用、可以审计、也可以在模型不可用时接管的本地工具链。
+
+2. 离线优先的医疗教育场景。
 
    目标使用场景是医学教学和基层心脏超声参考。此类场景可能网络不稳定、缺少专科医生、且对隐私要求高。PC 可放在超声机器旁，通过设备导出目录、DICOM 工作站或局域网共享目录直接读取资料，应用本地运行，不要求原始病人数据离开现场设备。
 
-2. LLM 之前先做超声数学处理。
+3. LLM 之前先做超声数学处理。
 
-   B-mode 帧会经过鲁棒归一化、散斑抑制、局部对比增强、纹理/边缘代理和腔室面积相位估计。Color Doppler 帧会独立进行 HSV 向量化、连通域过滤、喷流宽度代理、方向一致性、湍流代理和涡量代理；当体位证据不足时，系统还会给出 MR/TR/AR/PR 瓣膜定位评分。Gemma4 接收的是结构化证据，而不是单纯图像描述。
+   B-mode 帧会经过鲁棒归一化、散斑抑制、局部对比增强、纹理/边缘代理和腔室面积相位估计。Color Doppler 帧会独立进行 HSV 向量化、连通域过滤、喷流宽度代理、方向一致性、湍流代理和涡量代理；当体位证据不足时，系统还会给出 MR/TR/AR/PR Doppler 瓣膜定位评分。Gemma4 接收的是结构化证据，而不是单纯图像描述。
 
-3. 稳定的输入输出合同。
+4. 原生函数调用可复现。
+
+   `cardio_pc/function_calling.py` 暴露 `summarize_ultrasound_features`、`run_rule_diagnosis` 和 `safety_boundary_check` 三个白名单内部工具。Gemma4 只能按 JSON tool-call 合同调用这些工具，不能读文件、联网或执行 shell。`tools/function_calling_smoke.py` 可在无 GGUF、无网络条件下验证工具清单、白名单执行和非法工具拒绝逻辑。
+
+5. 稳定的输入输出合同。
 
    PC V5 应用和浏览器演示保持同一个用户承诺：导入一个或多个来自超声设备导出的脱敏 PNG/JPG/DICOM/DCOM/cine 文件，输出一段中文教学参考诊断，其中包含最小病症、证据链、置信度和安全边界。
 
-4. 层级病症标签。
+6. 层级病症标签。
 
    报告从大方向开始，逐级收窄到中方向、最小具体问题、严重程度和证据充分度。如果证据不完整，系统仍会输出清晰的大方向，同时说明为什么无法定位到更具体瓣膜或病症。
 
-5. Gemma4 贡献可审计。
+7. Gemma4 贡献可审计。
 
-   Gemma4 接收的是本机提取后的结构化超声证据、层级候选、质量分和安全约束，负责生成中文教学报告和证据解释。默认路径要求 Gemma4 输出 JSON，再由本地守卫渲染为固定诊断字段。`ReportAgent` 会记录最终报告来源：`gemma4_structured` 表示模型 JSON 被本地合同渲染，`gemma4_preserved` 表示模型文本通过保护检查后被保留，`gemma4_repaired` 表示模型文本到达且只被补齐必需字段或安全边界，`gemma4_guarded_template` 表示模型文本到达但被安全模板接管，`rule_template` 表示未收到可用模型文本并走规则兜底。
+   Gemma4 接收的是本机提取后的结构化超声证据、层级候选、质量分和安全约束，默认输出 JSON object，再由本地守卫渲染为固定诊断字段。`ReportAgent` 会记录最终报告来源：`gemma4_structured` 表示模型 JSON 被本地合同渲染，`gemma4_preserved` 表示模型文本通过保护检查后被保留，`gemma4_repaired` 表示模型文本到达且只被补齐必需字段或安全边界，`gemma4_guarded_template` 表示模型文本到达但被安全模板接管，`rule_template` 表示未收到可用模型文本并走规则兜底。
 
-6. 演示稳定且不隐藏限制。
+8. 演示稳定且不隐藏限制。
 
-   当 Gemma4 模型文件缺失、不兼容或设备资源不足时，本地规则仍能保持演示可运行。UI 和报告会说明输出来自模型推理还是规则后备。
+   当 Gemma4 模型文件缺失、不兼容或设备资源不足时，本地规则仍能保持演示可运行。UI 和报告会说明输出来自模型推理还是规则后备。防卡机制包括整例总预算、单文件解码预算、Gemma4 调用预算、代表帧上限和取消按钮。
 
-7. 多智能体不是口号，而是本地审计链。
+9. 多智能体不是口号，而是本地审计链。
 
-   PC V5 新增轻量离线多智能体编排：InputAgent 核对输入，FeatureAgent 汇总 B-mode/Doppler 特征，DiagnosisAgent 生成层级病症决策，ReportAgent 记录报告后端，SafetyAuditAgent 检查医学安全边界。该链路不联网、不额外多次调用 Gemma4，主要开销是毫秒级字符串摘要和 JSON 审计写入。
+   PC V5 新增轻量离线多智能体编排：InputAgent 核对输入，FeatureAgent 汇总 B-mode/Doppler 特征，DiagnosisAgent 生成层级病症决策，ReportAgent 记录报告后端，SafetyAuditAgent 检查医学安全边界。该链路不联网，不额外多次调用 Gemma4，主要开销是毫秒级字符串摘要和 JSON 审计写入。
 
-8. 设备策略清晰。
+10. 数据结果有偏倚说明。
 
-   当前 Windows PC V5 参考实现发布在 `Timmy-zhu12/gdc-shanghai-project`，通过 `llama-cli` 或常驻 `llama-server` 使用本地 Gemma4 4B GGUF。它的设备角色是超声机器旁的离线分析终端，而不是远程云服务。V5 增加 EchoNet-Dynamic 动态 B-mode 校准，用于 EF / 左室收缩功能减低识别，同时保留可审计的瓣膜反流规则。后续移动端和其他桌面端可以复用同一诊断契约，但不是评估当前提交的必要条件。
-
-9. 证据包完整。
-
-   仓库包含 APA 技术报告、数据来源披露、验证报告、验证 DOCX 文件、在线演示源码、部署说明、安全策略、Apache 2.0 许可证和 Windows PC README。
+   技术报告明确把三尖瓣反流 TR* 的 1.000 F1 标为样本同质性结果，而不是真实世界准确率 100%。当前 60 例教学批次中 TR 全部为阳性，缺少阴性对照，因此不能解释为特异性或阴性排除能力。
 
 ## 演示重点
 
-- 先打开在线演示，让评审立即看到产品形态。
-- 再展示 PC V5 参考应用：`https://github.com/Timmy-zhu12/gdc-shanghai-project`；运行 `run_cardio_pc_v5.bat`，并说明 PC 可接入超声机器或工作站导出目录完成本地分析。若需要多次本地 GGUF 调用，可按 `docs/service_validation.md` 复用热启动 llama.cpp server。
+- 先打开在线演示，让评审立即看到产品形态和输出合同。
+- 再展示 PC V5：运行 `run_cardio_pc_v5.bat`，说明 PC 可接入超声机器或工作站导出目录完成本地分析。
+- 用“规则极速模式”证明不会卡住，再切换 `Gemma4 server 增强` 展示本地 Gemma4 4B 结构化报告推理。
+- 运行 `tools/function_calling_smoke.py`，展示原生函数调用合同。
+- 展示 `exports/agent_audit/`，说明 `gemma4_structured`、`gemma4_repaired` 和 `rule_template` 的区别。
 - 展示 `DATASETS.md` 和验证材料包，说明数据透明度。
 - 以严格安全边界收尾：仅用于医学教学参考，不是临床诊断或医疗器械输出。
