@@ -19,6 +19,7 @@ REQUIRED_PATHS = [
     "requirements.txt",
     "requirements-video-optional.txt",
     "install_deps.bat",
+    "run_cardio_pc_v6.bat",
     "run_ui.bat",
     "run_v5_original_ui.bat",
     "run_cardio_pc_v5.bat",
@@ -43,6 +44,7 @@ REQUIRED_PATHS = [
     "shared/feature_schema.json",
     "shared/disease_labels.json",
     "prompts/hierarchical_system_prompt.txt",
+    "docs/V6_UPGRADE_FROM_V5.md",
     "docs/public_manual_mapping.md",
     "docs/v5_reference/V5_TECHNICAL_STATUS.md",
     "submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md",
@@ -52,7 +54,9 @@ REQUIRED_PATHS = [
 
 TEXT_MARKERS = {
     "README.md": [
-        "V5 对齐",
+        "PC V6",
+        "V5",
+        "V6",
         "规则手册",
         "DICOM",
         "DCOM",

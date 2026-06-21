@@ -4,7 +4,9 @@
 
 官方页面：[Gemma 4 Hackathon 2026](https://hackathon.googdg.cn/?lang=en)
 
-本仓库采用 Windows PC V5 作为唯一稳定、可复现的离线参考实现。PC V5 被定义为可直接接入超声机器或超声工作站的本地分析终端，可通过 USB、局域网共享目录、DICOM 工作站导出目录或无线超声软件导出文件读取资料，并在本机完成边缘视觉特征提取、Gemma4 4B 结构化推理、函数调用、多智能体审计、规则防卡后备、技术报告和在线演示。
+本仓库采用 Windows PC V6 作为当前稳定、可复现的离线参考实现。PC V6 是 PC V5 参赛版的重大技术升级：它保留 V5 的本地 Gemma4 4B、边缘视觉特征提取、函数调用、多智能体审计、报告合同、技术报告和在线演示，同时新增临床规则手册、结构化测量值、病例级近临床验证、Gemma4 急停和大文件防卡策略。
+
+PC V6 被定义为可直接接入超声机器或超声工作站的本地分析终端，可通过 USB、局域网共享目录、DICOM 工作站导出目录或无线超声软件导出文件读取资料，并在本机完成边缘视觉特征提取、Gemma4 4B 结构化推理、函数调用、多智能体审计、规则防卡后备、技术报告和在线演示。V5 原版入口仍通过 `run_cardio_pc_v5.bat` 保留，用于历史对照；当前推荐入口为 `run_cardio_pc_v6.bat`。
 
 ## 项目生态位
 
@@ -12,7 +14,7 @@ CardioConsult 不是面向大型医院正式超声科工作站的替代系统，
 
 ## 核心技术叙事
 
-CardioConsult 的主线不是“规则系统外加一个模型润色器”，而是“本地 Gemma4 4B 作为医学教学报告推理和多智能体编排层，规则/特征工程作为它的可审计工具链与防卡后备路径”。
+CardioConsult 的主线不是“规则系统外加一个模型润色器”，而是“本地 Gemma4 4B 作为医学教学报告推理和多智能体编排层，V6 规则手册与 V5 特征工程作为它的可审计工具链与防卡后备路径”。
 
 实际链路如下：
 
@@ -27,7 +29,7 @@ CardioConsult 的主线不是“规则系统外加一个模型润色器”，而
   -> 审计 JSON 与中文教学参考诊断
 ```
 
-默认规则极速模式用于保证现场不卡。完整技术演示应重点展示 Gemma4 server 增强路径、函数调用 smoke、`gemma4_structured` 报告来源和本地审计链。
+默认规则极速模式用于保证现场不卡。完整技术演示应重点展示 Gemma4 server 增强路径、函数调用 smoke、`gemma4_structured` 报告来源、本地审计链，以及 V6 相对 V5 增加的临床规则手册和病例级近临床验证。
 
 ## 必交材料
 
@@ -47,7 +49,7 @@ CardioConsult 的主线不是“规则系统外加一个模型润色器”，而
 
 ## 仓库范围
 
-本仓库就是当前提交仓库。PC V5 是本次提交中唯一积极维护、可直接运行的版本；较早的平台原型只作为后续迁移方向，不作为评审复现当前结果的必要材料。
+本仓库就是当前提交仓库。PC V6 是本次提交中唯一积极维护、可直接运行的推荐版本；PC V5 原版入口作为历史参赛版对照保留，较早的平台原型只作为后续迁移方向，不作为评审复现当前结果的必要材料。
 
 ## 评审维度对应关系
 
@@ -55,7 +57,7 @@ CardioConsult 的主线不是“规则系统外加一个模型润色器”，而
 |---|---:|---|
 | 真实影响 | 30% | 便携式超声环境下的医学教学与基层心脏超声参考流程；PC 可部署在便携式超声旁直接读取导出资料；本地处理脱敏图像；README 和 UI 中的安全边界 |
 | 技术能力 | 25% | 本地 Gemma4 4B、原生函数调用、结构化 JSON 合同、多智能体审计、B-mode GLDM/纹理代理、Color Doppler HSV/向量代理、Doppler 瓣膜定位评分、动图/DICOM 支持、EchoNet-Dynamic EF 校准 |
-| 完整性 | 20% | 可运行 PC V5 仓库、在线规则演示、演示视频、技术报告、数据披露、启动脚本、规则自检、防卡 smoke、函数调用 smoke |
+| 完整性 | 20% | 可运行 PC V6 仓库、V5 兼容入口、在线规则演示、演示视频、技术报告、数据披露、启动脚本、规则自检、防卡 smoke、函数调用 smoke |
 | 创新性 | 15% | 把 Gemma4 4B 放在离线医学教学报告推理层，而不是云端聊天；用函数调用和本地审计把医学规则、视觉特征和安全边界连接起来 |
 | 展示质量 | 10% | APA 技术报告、DOCX/PDF/Markdown/LaTeX、多图表验证材料、README 部署说明、单文件在线演示和 5 分钟演示视频 |
 
@@ -64,8 +66,8 @@ CardioConsult 的主线不是“规则系统外加一个模型润色器”，而
 建议评审演示顺序：
 
 1. 打开在线演示链接，先看到产品输入输出合同。
-2. 克隆或打开本仓库，运行 `run_cardio_pc_v5.bat`。
-3. 展示 PC V5 从超声机器/工作站导出目录读取 PNG、DICOM、DCOM、cine/视频输入，以及一致的诊断输出字段。
+2. 克隆或打开本仓库，运行 `run_cardio_pc_v6.bat`。
+3. 展示 PC V6 如何继承 V5 输入输出合同，从超声机器/工作站导出目录读取 PNG、DICOM、DCOM、cine/视频输入，并输出一致的诊断字段。
 4. 先用“规则极速模式”证明真实演示不卡，再切换到 `Gemma4 server 增强` 展示离线模型推理链路。
 5. 运行 `python tools\function_calling_smoke.py`，展示 Gemma4 原生函数调用白名单和非法工具拒绝。
 6. 展示 `exports/agent_audit/` 中的审计 JSON，说明报告来源字段如何区分 `gemma4_structured`、`gemma4_repaired` 和 `rule_template`。
@@ -77,7 +79,7 @@ CardioConsult 的主线不是“规则系统外加一个模型润色器”，而
 - 边缘视觉工具链：B-mode、Color Doppler 和动图分支先在本地生成可审计低维特征，再交给 Gemma4 使用。
 - 函数调用可复现：`tools/function_calling_smoke.py` 可在无 GGUF、无网络条件下验证 `summarize_ultrasound_features`、`run_rule_diagnosis` 和 `safety_boundary_check` 三个内部工具。
 - 模型贡献可审计：多智能体审计会记录最终报告来自 `gemma4_structured`、`gemma4_preserved`、`gemma4_repaired`、`gemma4_guarded_template` 还是 `rule_template`。
-- 离线优先：PC V5 可放在超声检查室或基层医疗点内，图像资料不需要上传到云端。
+- 离线优先：PC V6 可放在超声检查室或基层医疗点内，图像资料不需要上传到云端。
 - 动态心超增强：EchoNet-Dynamic 校准层增强 EF / 左室收缩功能减低识别，同时保留可审计瓣膜反流规则。
 - 防卡设计：规则极速模式、文件解码超时、Gemma4 调用超时和整例预算保证真实大文件输入不会无限等待。
 - 层级医学输出：报告必须包含大方向、中方向、最小病症、分级、证据充分度和逻辑链。
@@ -95,7 +97,7 @@ Set-Location gdc-shanghai-project
 .\.venv\Scripts\python.exe tools\anti_hang_smoke.py
 .\.venv\Scripts\python.exe tools\function_calling_smoke.py
 .\.venv\Scripts\python.exe tools\submission_preflight.py
-.\run_cardio_pc_v5.bat
+.\run_cardio_pc_v6.bat
 ```
 
 ## 医学安全边界
