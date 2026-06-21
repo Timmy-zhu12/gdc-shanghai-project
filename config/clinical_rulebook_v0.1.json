@@ -318,8 +318,8 @@
     {
       "id": "combined_mitral_tricuspid_regurgitation_v5_proxy_v1",
       "label": "combined_mitral_tricuspid_regurgitation",
-      "zh": "???????????",
-      "category": "??????",
+      "zh": "二尖瓣反流合并三尖瓣反流",
+      "category": "瓣膜性心脏病",
       "score_bonus": 0.06,
       "clinical_thresholds": [],
       "proxy_thresholds": [
@@ -355,8 +355,8 @@
     {
       "id": "pulmonary_regurgitation_psax_proxy_v1",
       "label": "pulmonary_regurgitation",
-      "zh": "??????",
-      "category": "??????",
+      "zh": "肺动脉瓣反流",
+      "category": "瓣膜性心脏病",
       "clinical_thresholds": [],
       "proxy_thresholds": [
         {
@@ -394,8 +394,8 @@
     {
       "id": "regional_wall_motion_abnormality_proxy_v1",
       "label": "regional_wall_motion_abnormality",
-      "zh": "?????????",
-      "category": "????????",
+      "zh": "节段性室壁运动异常",
+      "category": "心肌与心功能异常",
       "clinical_thresholds": [],
       "proxy_thresholds": [
         {
@@ -413,10 +413,10 @@
         {
           "feature": "v4_temporal_diff",
           "direction": "higher_is_worse",
-          "mild": 0.18,
-          "moderate": 0.25,
-          "severe": 0.34,
-          "calibration": "Frame-difference motion proxy; not segment tracking"
+          "mild": 0.3,
+          "moderate": 0.4,
+          "severe": 0.52,
+          "calibration": "clinical-like tightened proxy; segment-level tracking required for clinical use"
         }
       ],
       "requirements": {
@@ -426,7 +426,8 @@
           "A4C",
           "A2C",
           "A3C"
-        ]
+        ],
+        "proxy_localization_required": true
       },
       "logic": "Frame-difference, texture and V4 RWMA flags can suggest abnormal wall motion, but true RWMA requires segment-level tracking and expert review.",
       "references": [
@@ -437,53 +438,53 @@
     {
       "id": "left_ventricular_hypertrophy_proxy_v1",
       "label": "left_ventricular_hypertrophy",
-      "zh": "??????",
-      "category": "???????????",
+      "zh": "左心室肥厚",
+      "category": "心肌与心功能异常",
       "clinical_thresholds": [
         {
           "measurement": "ivs_diastolic_thickness_mm",
           "severity": "mild",
           "op": "range_closed_open",
-          "low": 11,
-          "high": 13,
-          "unit": "mm"
-        },
-        {
-          "measurement": "ivs_diastolic_thickness_mm",
-          "severity": "moderate",
-          "op": "range_closed_open",
           "low": 13,
           "high": 15,
           "unit": "mm"
         },
         {
           "measurement": "ivs_diastolic_thickness_mm",
+          "severity": "moderate",
+          "op": "range_closed_open",
+          "low": 15,
+          "high": 17,
+          "unit": "mm"
+        },
+        {
+          "measurement": "ivs_diastolic_thickness_mm",
           "severity": "severe",
           "op": ">=",
-          "value": 15,
+          "value": 17,
           "unit": "mm"
         },
         {
           "measurement": "lvpw_diastolic_thickness_mm",
           "severity": "mild",
           "op": "range_closed_open",
-          "low": 11,
-          "high": 13,
-          "unit": "mm"
-        },
-        {
-          "measurement": "lvpw_diastolic_thickness_mm",
-          "severity": "moderate",
-          "op": "range_closed_open",
           "low": 13,
           "high": 15,
           "unit": "mm"
         },
         {
           "measurement": "lvpw_diastolic_thickness_mm",
+          "severity": "moderate",
+          "op": "range_closed_open",
+          "low": 15,
+          "high": 17,
+          "unit": "mm"
+        },
+        {
+          "measurement": "lvpw_diastolic_thickness_mm",
           "severity": "severe",
           "op": ">=",
-          "value": 15,
+          "value": 17,
           "unit": "mm"
         }
       ],
@@ -504,7 +505,7 @@
           "PSAX-PM"
         ]
       },
-      "logic": "Measured IVS/LVPW thickness dominates. Proxy-only LVH is a teaching tendency from PLAX/PSAX texture and geometry, not a formal mass index.",
+      "logic": "Measured IVS/LVPW thickness dominates. Thresholds are tightened for clinical-like validation to avoid calling mild wall-thickness variation as LVH; apical HCM still requires dedicated apical thickness measurement or expert review.",
       "references": [
         "ASE_EACVI_CHAMBER_2015",
         "ECHONET_LVH_DATASET"
@@ -513,8 +514,8 @@
     {
       "id": "left_atrial_enlargement_integrated_v1",
       "label": "left_atrial_enlargement",
-      "zh": "????",
-      "category": "???????????",
+      "zh": "左房增大",
+      "category": "心腔结构异常",
       "clinical_thresholds": [
         {
           "measurement": "la_volume_index_ml_m2",
@@ -832,10 +833,10 @@
         {
           "feature": "pericardial_echo_free_space_proxy",
           "direction": "higher_is_worse",
-          "mild": 0.05,
-          "moderate": 0.12,
-          "severe": 0.22,
-          "calibration": "draft_proxy_requires_1000case_recalibration"
+          "mild": 1.1,
+          "moderate": 1.2,
+          "severe": 1.3,
+          "calibration": "proxy disabled for clinical-like validation until echo-free-space segmentation is recalibrated; use measured effusion_mm"
         }
       ],
       "requirements": {
@@ -846,7 +847,7 @@
           "SUBCOSTAL"
         ]
       },
-      "logic": "Effusion size should be measured at the largest echo-free space. Proxy-only results are screening prompts.",
+      "logic": "Effusion size should be measured at the largest echo-free space. The former dark-rim proxy is disabled in clinical-like validation because it over-called effusion on real DICOM exports.",
       "references": [
         "ESC_PERICARDIAL_2015",
         "ASE_PERICARDIAL_MULTIMODALITY_2013"
@@ -884,18 +885,18 @@
         {
           "feature": "right_heart_size_proxy",
           "direction": "higher_is_worse",
-          "mild": 0.1,
-          "moderate": 0.18,
-          "severe": 0.28,
-          "calibration": "draft_proxy_requires_1000case_recalibration"
+          "mild": 0.45,
+          "moderate": 0.6,
+          "severe": 0.75,
+          "calibration": "clinical-like tightened proxy; prefer TRV and supporting echo signs"
         },
         {
           "feature": "septal_flattening_proxy",
           "direction": "higher_is_worse",
-          "mild": 0.08,
-          "moderate": 0.16,
-          "severe": 0.26,
-          "calibration": "draft_proxy_requires_1000case_recalibration"
+          "mild": 0.35,
+          "moderate": 0.48,
+          "severe": 0.62,
+          "calibration": "clinical-like tightened proxy; prefer TRV and supporting echo signs"
         }
       ],
       "requirements": {

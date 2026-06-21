@@ -223,6 +223,44 @@ validation\rulebook_accuracy_smoke\rulebook_accuracy_smoke_20260621.md
 
 注意：这是规则引擎集成 smoke，使用合成 patient-level feature payload 检查每条主要规则能否稳定触发，**不是临床泛化准确率**。
 
+### 病例级近临床验证
+
+为了更接近真实使用方式，本分支新增了病例级验证脚本：
+
+```powershell
+python tools\clinical_like_validation.py --case-limit 20 --max-files-per-case 12 --max-loaded-frames 48
+```
+
+该测试以一个患者检查 / 一个 DICOM zip 为分析单位，输入为真实本地 DICOM 文件，金标准标签来自同批报告表中的 `诊断结果` 与 `检查所见` 字段。脚本不把原始 DICOM、报告全文或患者信息写入仓库，只输出脱敏统计结果。
+
+| 模式 | 病例数 | OK | Macro F1 | 任一支持异常敏感性 | 平均耗时/例 | P95 耗时/例 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| image_only | 20 | 20 | 0.482 | 1.000 | 7.085s | 7.894s |
+| measurement_assisted | 20 | 20 | 0.542 | 1.000 | 7.085s | 7.894s |
+
+关键分项结果：
+
+| 标签 | image_only F1 | measurement_assisted F1 | 解释 |
+| --- | ---: | ---: | --- |
+| MR | 1.000 | 1.000 | 该批样本报告中二尖瓣反流高度集中，主要验证规则能否稳定识别反流大类 |
+| TR | 1.000 | 1.000 | 与 MR 类似，样本集中于轻度联合反流 |
+| low EF | 0.571 | 1.000 | 加入 EF 等结构化测量后，左室收缩功能减低识别明显改善 |
+| AR | 0.000 | 0.000 | 当前输入缺少可靠主动脉瓣反流定量证据，仍需补充 Doppler/测量规则 |
+| RWMA | 0.000 | 0.000 | 单帧/少量帧代理不足以稳定支持节段室壁运动异常 |
+| LA enlargement | 0.286 | 0.333 | 依赖 LA/LAVI 测量或更稳定分割后可继续提升 |
+
+这轮测试也暴露出旧代理特征在真实 DICOM 上容易过度触发心包积液、右心负荷和局部室壁运动异常，因此当前规则书已收紧这些代理阈值，优先使用医生/设备提供的结构化测量值作为高证据等级输入。
+
+输出文件：
+
+```text
+validation\clinical_like_20260621\clinical_like_validation_report.md
+validation\clinical_like_20260621\clinical_like_metrics.csv
+validation\clinical_like_20260621\clinical_like_summary.json
+```
+
+注意：该验证是回顾性、单中心、小样本、报告文本抽取标签的工程验证，用于接近临床流程地检查系统稳定性与规则方向；它仍不等同于多中心前瞻性专家盲审。
+
 ### 归档 EchoBench 60 例结果
 
 仓库同时保留了早期基于授权 DICOM/report mapping 的 EchoBench 归档结果，路径为：
@@ -250,7 +288,7 @@ archive\performance_runs\validation_speedopt\freeze_runs_full\echobench_20260604
 推荐提交前运行：
 
 ```powershell
-python -m py_compile app.py legacy_v5_app.py src\image_case_adapter.py src\clinical_rule_engine.py src\rulebook_ui.py cardio_pc\diagnosis.py cardio_pc\ui.py tools\rulebook_accuracy_smoke.py tools\submission_preflight.py
+python -m py_compile app.py legacy_v5_app.py src\image_case_adapter.py src\clinical_rule_engine.py src\rulebook_ui.py cardio_pc\diagnosis.py cardio_pc\ui.py tools\rulebook_accuracy_smoke.py tools\clinical_like_validation.py tools\submission_preflight.py
 run_self_test_rule_only.bat
 run_media_smoke_test.bat
 run_gemma_emergency_stop_smoke.bat

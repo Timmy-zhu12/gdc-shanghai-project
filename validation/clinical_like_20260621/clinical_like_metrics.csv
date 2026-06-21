@@ -1,0 +1,17 @@
+﻿mode,label,n,positive_gold,positive_pred,tp,tn,fp,fn,accuracy,sensitivity,specificity,precision,f1
+image_only,mr,20,20,20,20,0,0,0,1.0,1.0,0.0,1.0,1.0
+image_only,tr,20,20,20,20,0,0,0,1.0,1.0,0.0,1.0,1.0
+image_only,ar,20,11,0,0,9,0,11,0.45,0.0,1.0,0.0,0.0
+image_only,valve_any,20,20,20,20,0,0,0,1.0,1.0,0.0,1.0,1.0
+image_only,low_ef,20,3,4,2,15,2,1,0.85,0.6666666666666666,0.8823529411764706,0.5,0.5714285714285714
+image_only,rwma,20,2,0,0,18,0,2,0.9,0.0,1.0,0.0,0.0
+image_only,lvh_hcm,20,1,1,0,18,1,1,0.9,0.0,0.9473684210526315,0.0,0.0
+image_only,la_enlargement,20,4,3,1,14,2,3,0.75,0.25,0.875,0.3333333333333333,0.2857142857142857
+measurement_assisted,mr,20,20,20,20,0,0,0,1.0,1.0,0.0,1.0,1.0
+measurement_assisted,tr,20,20,20,20,0,0,0,1.0,1.0,0.0,1.0,1.0
+measurement_assisted,ar,20,11,0,0,9,0,11,0.45,0.0,1.0,0.0,0.0
+measurement_assisted,valve_any,20,20,20,20,0,0,0,1.0,1.0,0.0,1.0,1.0
+measurement_assisted,low_ef,20,3,3,3,17,0,0,1.0,1.0,1.0,1.0,1.0
+measurement_assisted,rwma,20,2,0,0,18,0,2,0.9,0.0,1.0,0.0,0.0
+measurement_assisted,lvh_hcm,20,1,1,0,18,1,1,0.9,0.0,0.9473684210526315,0.0,0.0
+measurement_assisted,la_enlargement,20,4,2,1,15,1,3,0.8,0.25,0.9375,0.5,0.3333333333333333

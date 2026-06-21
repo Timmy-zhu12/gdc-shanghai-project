@@ -154,7 +154,7 @@
       "expected_label": "combined_mitral_tricuspid_regurgitation",
       "predicted_label": "combined_mitral_tricuspid_regurgitation",
       "correct": true,
-      "minimum_disease": "轻度???????????",
+      "minimum_disease": "轻度二尖瓣反流合并三尖瓣反流",
       "logic_chain": "规则 combined_mitral_tricuspid_regurgitation_v5_proxy_v1 → 证据等级 C → 质量分 0.82 → 体位数 1.0 → 代理特征: combined_mr_tr_proxy=1.000 命中 mild; shared_ek_valve_score=0.220 命中 mild → 仅代理证据，需用 1000 例数据校准并由医生复核"
     },
     {
@@ -162,7 +162,7 @@
       "expected_label": "pulmonary_regurgitation",
       "predicted_label": "pulmonary_regurgitation",
       "correct": true,
-      "minimum_disease": "中度??????",
+      "minimum_disease": "中度肺动脉瓣反流",
       "logic_chain": "规则 pulmonary_regurgitation_psax_proxy_v1 → 证据等级 C → 质量分 0.82 → 体位数 1.0 → 代理特征: flow_active_ratio=0.130 命中 moderate; jet_width_proxy=0.250 命中 moderate → 仅代理证据，需用 1000 例数据校准并由医生复核"
     },
     {
@@ -210,23 +210,23 @@
       "expected_label": "regional_wall_motion_abnormality",
       "predicted_label": "regional_wall_motion_abnormality",
       "correct": true,
-      "minimum_disease": "轻度?????????",
-      "logic_chain": "规则 regional_wall_motion_abnormality_proxy_v1 → 证据等级 C → 质量分 0.82 → 体位数 1.0 → 代理特征: rwma_proxy=1.000 命中 mild; v4_temporal_diff=0.200 命中 mild → 仅代理证据，需用 1000 例数据校准并由医生复核"
+      "minimum_disease": "轻度节段性室壁运动异常",
+      "logic_chain": "规则 regional_wall_motion_abnormality_proxy_v1 → 证据等级 C → 质量分 0.82 → 体位数 1.0 → 代理特征: rwma_proxy=1.000 命中 mild → 仅代理证据，需用 1000 例数据校准并由医生复核"
     },
     {
       "case_id": "LVH_MODERATE",
       "expected_label": "left_ventricular_hypertrophy",
       "predicted_label": "left_ventricular_hypertrophy",
       "correct": true,
-      "minimum_disease": "中度??????",
-      "logic_chain": "规则 left_ventricular_hypertrophy_proxy_v1 → 证据等级 A → 质量分 0.82 → 体位数 1.0 → 临床量化: ivs_diastolic_thickness_mm=13.4mm 命中 moderate"
+      "minimum_disease": "轻度左心室肥厚",
+      "logic_chain": "规则 left_ventricular_hypertrophy_proxy_v1 → 证据等级 A → 质量分 0.82 → 体位数 1.0 → 临床量化: ivs_diastolic_thickness_mm=13.4mm 命中 mild"
     },
     {
       "case_id": "LAE_MODERATE",
       "expected_label": "left_atrial_enlargement",
       "predicted_label": "left_atrial_enlargement",
       "correct": true,
-      "minimum_disease": "中度????",
+      "minimum_disease": "中度左房增大",
       "logic_chain": "规则 left_atrial_enlargement_integrated_v1 → 证据等级 A → 质量分 0.82 → 体位数 1.0 → 临床量化: la_volume_index_ml_m2=45.0mL/m2 命中 moderate"
     },
     {
