@@ -1,19 +1,54 @@
-# CardioConsult 临床规则手册版（V5 对齐本地交付）
+# CardioConsult PC
 
-本目录是一个独立的本地交付版，位置为：
+CardioConsult PC 是一个面向便携式/基层心脏超声场景的离线医学教学与辅助判读工作站。它的目标不是替代心超医生，而是在只有便携式超声设备、缺少心超专科医生或需要教学质控的环境中，帮助使用者完成：
+
+- 标准心超图像/动图导入与安全解码。
+- B-mode、Color Doppler 和动态图代理特征提取。
+- 基于公开心超手册阈值的可审计规则判断。
+- 离线 Gemma4 4B 教学解释增强。
+- 输出结构化的“教学参考病症判断 / 最小病症 / 逻辑链”。
+
+本项目仅用于医学教学、质量控制、算法研发和基层辅助参考，不作为临床最终诊断、治疗建议或医嘱。
+
+## 适用场景
+
+CardioConsult 的生态位是：**基层或教学环境中已经有便携式超声硬件，但图像采集质量、报告表达和初步判读经验不足**。
+
+典型使用者包括：
+
+- 基层全科医生、急诊/ICU/床旁超声使用者。
+- 正在学习心脏超声的住培医生、医学生和规培带教团队。
+- 需要做病例复盘、图像质控和报告规范化训练的教学场景。
+- 需要离线部署、不能把敏感图像上传云端的本地工作站。
+
+## 当前推荐版本
+
+当前分支为：
 
 ```text
-D:\cardioconsult_rulebook_v5_aligned_20260620
+v6-rulebook-aligned-20260621
 ```
 
-它把新版“临床手册规则引擎”与 PC V5 的工程能力合并到一个目录中：新版负责按公开临床手册阈值输出可审计规则判断，V5 资产负责图像解码、B-mode/Color Doppler 特征提取、动图兼容、Gemma4 4B 可选增强、多智能体审计、样例数据、许可证和技术文档。旧目录没有被修改。
+这是一个 **V5 对齐**后的增强分支。相比早期 PC V5 版，本版本新增了临床规则手册层，并补齐 V5 经验特征：
 
-## 推荐启动方式
+- 左室收缩功能减低 / EF 相关规则。
+- 二尖瓣反流、三尖瓣反流、主动脉瓣反流、主动脉瓣狭窄。
+- 二尖瓣反流伴三尖瓣反流组合代理判断。
+- 肺动脉瓣反流代理判断。
+- 心包积液、右心负荷/肺高压提示。
+- 舒张功能异常或左室充盈压升高提示。
+- 节段性室壁运动异常代理判断。
+- 左室肥厚倾向、左房增大。
+- temporal diff、STI 代理、optical flow、shared-EK、coupled-EK、EchoNet-Dynamic 低 EF 校准。
+- Gemma4 急停、紧急切换纯规则模式、大文件防卡策略。
 
-第一次使用建议先运行：
+详细补齐记录见 `docs/v5_rule_completion_20260621.md`。
+
+## 快速开始
+
+在 Windows 上克隆仓库后，进入仓库根目录：
 
 ```powershell
-cd /d D:\cardioconsult_rulebook_v5_aligned_20260620
 install_deps.bat
 run_preflight.bat
 run_ui.bat
@@ -21,23 +56,41 @@ run_ui.bat
 
 常用入口：
 
-- `run_ui.bat`：新版临床规则手册 UI，推荐用于真实 DICOM/DCOM/PNG/视频输入；同一界面内支持规则极速模式、Gemma4 server 增强和 Gemma4 CLI 增强。
-- `run_v5_original_ui.bat`：V5 原版兼容 UI，保留“规则极速模式 / Gemma4 server 增强 / Gemma4 CLI 增强”和“一键规则匹配”。
-- `run_cardio_pc_v5.bat`：V5 命名兼容入口，等同于打开 `run_v5_original_ui.bat`。
-- `run_self_test_rule_only.bat`：不启动 UI、不等待 GGUF，只跑规则自检。
-- `run_media_smoke_test.bat`：用本目录自带样例图像跑一次媒体分析。
-- `run_gemma_emergency_stop_smoke.bat`：模拟慢 `llama-cli`，验证 Gemma4 急停能在数秒内杀掉进程。
-- `run_preflight.bat`：检查本地交付完整性，结果写入 `submission/preflight/current_preflight.md`。
+| 脚本 | 用途 |
+| --- | --- |
+| `run_ui.bat` | 推荐入口，新版临床规则手册 UI |
+| `run_v5_original_ui.bat` | V5 原版兼容 UI |
+| `run_self_test_rule_only.bat` | 规则路径自检，不等待 GGUF |
+| `run_media_smoke_test.bat` | 用仓库样例跑一次媒体分析 |
+| `run_gemma_emergency_stop_smoke.bat` | 验证 Gemma4 急停不会卡死 |
+| `run_preflight.bat` | 检查本地交付完整性 |
 
-## 输入与输出
+如果只是想看系统能不能跑，建议先执行：
 
-输入以一个病人或一次检查为单位，可以同时选择多个文件或一个文件夹。支持格式包括：
+```powershell
+run_self_test_rule_only.bat
+run_media_smoke_test.bat
+```
+
+## 输入格式
+
+一次输入应对应一个病人或一次检查，可以选择多个文件，也可以选择一个文件夹。
+
+支持格式：
 
 ```text
 .dcm .dicom .dcom .png .jpg .jpeg .gif .tif .tiff .mp4 .mov .avi
 ```
 
-输出保留项目的三个核心字段：
+建议输入：
+
+- 最理想：标准心脏超声多切面动态图或 DICOM 序列。
+- 可接受：PNG/JPG 截图、多帧 GIF、MP4/MOV/AVI 动图。
+- 最小输入：任意一个体位的收缩态与舒张态，系统会尝试自动区分相位。
+
+## 输出内容
+
+系统固定保留三个核心字段：
 
 ```text
 教学参考病症判断
@@ -45,102 +98,181 @@ run_ui.bat
 逻辑链
 ```
 
-同时输出规则命中表、证据等级、缺失证据、安全边界、代理特征、解码摘要，以及可选的医生填写/自动填充临床测量值。
+同时输出：
 
-## 与 V5 相比补齐的内容
+- 规则命中表。
+- 证据等级。
+- 缺失证据与补扫建议。
+- B-mode / Doppler / 动态代理特征。
+- 文件解码与采样摘要。
+- 医生填写或系统自动填充的临床测量值。
+- 安全边界与复核提示。
 
-本交付版已补齐 V5 的主要工程交付件：
+示例输出逻辑：
 
-- `cardio_pc/`：V5 图像处理、特征提取、诊断、UI、多智能体审计和函数调用模块。
-- `samples/`：V5 合成 B-mode、彩色 Doppler、GIF、MP4、TIFF 样例。
-- `tools/`：EchoBench、anti-hang smoke、函数调用 smoke、训练/验证脚本和 llama.cpp 本地运行器。
-- `shared/`：疾病标签、特征 schema、诊断契约和 Gemma4 report prompt。
-- `prompts/`：层级诊断系统提示词。
-- `calibration/`：低 EF 校准样例。
-- `models/`：模型放置说明和占位文件。
-- `docs/v5_reference/`：V5 技术状态、部署矩阵、运行契约、在线 demo 文档等参考材料。
-- `validation/`、`submission/technical_report/`：既有验证报告和技术报告材料。
-- `LICENSE`、`NOTICE`、`THIRD_PARTY_NOTICES.md`：Apache-2.0 许可证和第三方说明。
+```text
+教学参考病症判断：心肌与心功能异常 > 左室收缩功能减低 > 轻度左室收缩功能减低
+最小病症：轻度左室收缩功能减低
+逻辑链：规则 lv_systolic_function_reduced_v1 → 证据等级 A → EF=43% 命中 mild
+```
 
-## 新版规则手册能力
+## 使用模式
 
-新版规则手册 UI 在 V5 的图像处理基础上增加了更接近临床手册的规则层：
+### 规则极速模式
 
-- EF / 左室收缩功能下降。
-- 二尖瓣反流、三尖瓣反流、主动脉瓣反流。
-- 二尖瓣反流伴三尖瓣反流组合代理判断。
-- 肺动脉瓣反流代理判断。
-- 主动脉瓣狭窄。
-- 心包积液。
-- 右心负荷增加或肺高压提示。
-- 舒张功能异常或左室充盈压升高提示。
-- 节段性室壁运动异常代理判断。
-- 左室肥厚倾向。
-- 左房增大。
+默认推荐。系统不等待 GGUF，直接使用图像特征和临床规则生成报告，适合教学演示、大文件导入和基层质控。
 
-规则优先使用医生填写或 DICOM 可提取的临床测量值；如果缺少真实测量值，则使用 B-mode、Color Doppler 和动态图代理特征，并明确标注 `proxy_only` 或证据等级下降。
+### Gemma4 server 增强
 
-2026-06-21 已进一步补齐 V5 诊断经验：图像适配层重新接入 temporal diff、STI 代理、optical flow、shared-EK、coupled-EK、EchoNet-Dynamic 低 EF 校准，以及心包暗带、右心大小和室间隔压扁代理量。详细记录见 `docs/v5_rule_completion_20260621.md`。
+适合已经启动本地 llama-server 的离线演示。规则引擎先给出核心结论，Gemma4 只负责解释规则、补充教学语言和整理复核建议。
 
-## 临床测量值填写与自动填充
+### Gemma4 CLI 增强
 
-左侧“可选临床测量值”支持两种来源：
+适合没有常驻 server 的单次演示，但冷启动会慢于 server 模式。
 
-- 医生在分析前手动填写，系统不会覆盖。
-- 分析结束后，系统根据规则命中和严重度自动填充空白项，并标注来源，例如“自动估算-规则”或“自动估算-代理”。
+Gemma4 不能改写规则引擎给出的 `教学参考病症判断 / 最小病症 / 逻辑链`，只能围绕已命中的规则做解释。
 
-这些自动值只用于教学演示和规则审计，不等同于真实标尺、频谱或定量测量。
+## 离线 Gemma4 4B 配置
+
+模型文件建议放在：
+
+```text
+models\gemma-4-4b-it-Q4_K_M.gguf
+```
+
+如果你已经在早期版本下载过模型，也可以在 UI 中继续指向原路径，例如：
+
+```text
+D:\cardioconsult_PC_runbook\models\gemma-4-4b-it-Q4_K_M.gguf
+```
+
+启动本地 server：
+
+```powershell
+start_llama_server_v4.bat
+```
+
+停止本地 server：
+
+```powershell
+stop_llama_server.bat
+```
+
+如果 Gemma4 运行中卡住，UI 中可以点击：
+
+- `急停 Gemma`：中断当前 llama-cli 或尝试停止本地 llama-server。
+- `紧急规则模式`：放弃 Gemma4，立刻回到纯规则报告。
 
 ## 大文件防卡策略
 
-默认 UI 使用极速安全设置：
+默认 UI 使用安全设置：
 
 - 最大代表帧：48。
 - 单文件解码超时：6 秒。
 - 代表文件数：12。
 - 并行解码数：4。
 
-如果一次输入 22 个 DCOM 文件，系统会先做公平采样和并行解码，避免逐个 DICOM 完整阻塞。若需要全量解码，可把“代表文件数”改为 `0`，但耗时会明显增加。
+如果一次输入很多 DICOM/DCOM 文件，系统会先做公平采样和并行解码，避免完整逐帧解码导致 UI 长时间等待。若需要全量分析，可把“代表文件数”设为 `0`，但耗时会明显增加。
 
-## Gemma4 4B 离线增强
+## 临床测量值
 
-默认诊断不等待 GGUF，优先走可审计规则路径。若要启用离线 Gemma4 4B，请把模型放到：
+左侧“可选临床测量值”支持两种来源：
 
-```text
-models\gemma-4-4b-it-Q4_K_M.gguf
-```
+- 医生在分析前手动填写，系统不会覆盖。
+- 分析结束后，系统根据规则命中和严重度自动填充空白项，并标注来源。
 
-也可以继续使用最早版本的本地缓存路径：
+支持的常用字段包括：
 
-```text
-D:\cardioconsult_PC_runbook\models\gemma-4-4b-it-Q4_K_M.gguf
-```
+- EF。
+- MR VC / MR EROA。
+- TR VC / TRV。
+- AS Vmax / AS mean gradient / AVA。
+- AR VC / PHT。
+- 心包积液厚度。
+- E/e'、LAVI、LA diameter。
+- IVS / LVPW 厚度。
 
-启动 server：
+自动填充值只用于教学演示和规则审计，不等同于真实标尺、频谱或正式定量测量。
+
+## 精度与验证
+
+### 当前分支实跑 smoke accuracy
+
+本分支新增了可复现的规则书精度 smoke：
 
 ```powershell
-start_llama_server_v4.bat
+python tools\rulebook_accuracy_smoke.py
 ```
 
-停止 server：
+本次运行结果：
 
-```powershell
-stop_llama_server.bat
-```
+| 测试项 | 结果 |
+| --- | ---: |
+| 测试病例数 | 14 |
+| 覆盖规则 | 左室功能、MR、TR、MR+TR、PR、AS、AR、心包积液、肺高压/右心负荷、舒张功能、RWMA、LVH、LA enlargement、未见明确异常 |
+| Top label 命中数 | 14 / 14 |
+| Exact top-label accuracy | 1.000 |
+| Macro F1，不含 normal | 1.000 |
 
-随后打开 `run_ui.bat`，在左侧 `Gemma4 离线增强` 中选择 `Gemma4 server 增强` 或 `Gemma4 CLI 增强`。新版 UI 的运行顺序固定为：
+输出文件：
 
 ```text
-安全解码与公平采样 -> B-mode/Doppler 特征 -> 临床规则引擎 -> 可选 Gemma4 教学解释增强
+validation\rulebook_accuracy_smoke\rulebook_accuracy_smoke_20260621.json
+validation\rulebook_accuracy_smoke\rulebook_accuracy_smoke_20260621.md
 ```
 
-Gemma4 不能改写规则引擎给出的 `教学参考病症判断 / 最小病症 / 逻辑链`，只能围绕已命中的规则、证据等级、缺失项、补扫建议和安全边界做教学解释。`run_v5_original_ui.bat` 仍保留为 V5 原版兼容入口。
+注意：这是规则引擎集成 smoke，使用合成 patient-level feature payload 检查每条主要规则能否稳定触发，**不是临床泛化准确率**。
 
-新版规则手册 UI 和 V5 原版兼容 UI 均保留应急能力：
+### 归档 EchoBench 60 例结果
 
-- `急停 Gemma`：分析过程中如果 Gemma4 CLI 或本地 llama-server 卡住，立即发出取消信号，并终止活动的 `llama-cli` 进程；如果使用本地 server，会尝试停止 8088 端口上的 `llama-server`。
-- `紧急规则模式`：中断 Gemma4 后立刻切换为纯规则模式。如果 B-mode/Doppler 特征已经提取完成，会直接用已有特征生成规则报告；如果还没到特征阶段，会取消当前任务并以纯规则模式重新分析。
+仓库同时保留了早期基于授权 DICOM/report mapping 的 EchoBench 归档结果，路径为：
 
-## 安全边界
+```text
+archive\performance_runs\validation_speedopt\freeze_runs_full\echobench_20260604_180638
+```
 
-本项目仅用于医学教学、质量控制、算法研发和基层辅助参考，不作为临床最终诊断、治疗建议或医嘱。任何输出都应结合完整标准切面、DICOM 标尺、连续动态帧、病史、体征和有资质医师报告复核。
+该归档为 60 例、纯规则/V4 校准、不调用 GGUF 的结果：
+
+| 标签 | F1 | Sensitivity | Specificity |
+| --- | ---: | ---: | ---: |
+| valve_any | 1.000 | 1.000 | 0.000 |
+| MR | 0.964 | 0.964 | 0.600 |
+| TR | 1.000 | 1.000 | 0.000 |
+| AR | 0.700 | 0.724 | 0.677 |
+| low EF | 0.857 | 1.000 | 0.963 |
+| RWMA | 0.500 | 0.333 | 1.000 |
+| LA enlargement | 0.696 | 1.000 | 0.865 |
+
+平均每例耗时约 `1.418s`，P95 约 `2.499s`。这些指标用于工程验证和教学原型评估；若进入真实临床研究，需要多中心、前瞻性、专家盲审和正式统计方案。
+
+## 开发者验证
+
+推荐提交前运行：
+
+```powershell
+python -m py_compile app.py legacy_v5_app.py src\image_case_adapter.py src\clinical_rule_engine.py src\rulebook_ui.py cardio_pc\diagnosis.py cardio_pc\ui.py tools\rulebook_accuracy_smoke.py tools\submission_preflight.py
+run_self_test_rule_only.bat
+run_media_smoke_test.bat
+run_gemma_emergency_stop_smoke.bat
+run_preflight.bat
+```
+
+## 项目边界
+
+CardioConsult 当前是医学教学、算法演示和基层辅助参考系统。它强调：
+
+- 可审计规则优先于黑箱输出。
+- 医生手填量化指标优先于代理特征。
+- 图像质量不足时必须提示补扫或复核。
+- Gemma4 只做解释增强，不做不可追溯的最终诊断。
+
+正式诊断仍需结合完整标准切面、DICOM 标尺、连续动态帧、病史、体征和有资质医师报告。
+
+## 许可证
+
+本项目使用 Apache-2.0 License。第三方依赖、数据集和模型说明见：
+
+- `LICENSE`
+- `NOTICE`
+- `THIRD_PARTY_NOTICES.md`
+- `DATASETS.md`
