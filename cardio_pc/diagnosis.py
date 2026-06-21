@@ -3,10 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
+import os
 import re
 import subprocess
+import threading
+import time
 import urllib.error
+import urllib.parse
 import urllib.request
+from typing import Any
 
 from .calibration import estimate_low_contractility_from_bmode
 from .agents import OfflineMultiAgentOrchestrator
@@ -51,6 +56,110 @@ PROMPT_ARTIFACT_PATTERNS = (
     "我将",
     "格式说明",
 )
+
+_ACTIVE_LLM_LOCK = threading.Lock()
+_ACTIVE_LLM_PROCESSES: set[subprocess.Popen[str]] = set()
+
+
+class LLMCancelled(RuntimeError):
+    """Raised when the UI asks an active Gemma4 call to stop immediately."""
+
+
+def _is_cancelled(cancel_event: threading.Event | None) -> bool:
+    return bool(cancel_event and cancel_event.is_set())
+
+
+def _register_llm_process(process: subprocess.Popen[str]) -> None:
+    with _ACTIVE_LLM_LOCK:
+        _ACTIVE_LLM_PROCESSES.add(process)
+
+
+def _unregister_llm_process(process: subprocess.Popen[str]) -> None:
+    with _ACTIVE_LLM_LOCK:
+        _ACTIVE_LLM_PROCESSES.discard(process)
+
+
+def _terminate_process(process: subprocess.Popen[str], reason: str) -> str:
+    if process.poll() is not None:
+        return f"{reason}: process already exited"
+    try:
+        if os.name == "nt":
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=5,
+            )
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                pass
+            return f"{reason}: process tree killed"
+        process.terminate()
+        try:
+            process.wait(timeout=2)
+            return f"{reason}: process terminated"
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=3)
+            return f"{reason}: process killed"
+    except Exception as exc:  # noqa: BLE001
+        return f"{reason}: failed to stop process: {exc}"
+
+
+def request_stop_active_llm(server_url: str = "", kill_local_server: bool = True) -> str:
+    messages: list[str] = []
+    with _ACTIVE_LLM_LOCK:
+        processes = list(_ACTIVE_LLM_PROCESSES)
+    for process in processes:
+        messages.append(_terminate_process(process, "llama-cli emergency stop"))
+    if kill_local_server:
+        messages.append(stop_local_llama_server(server_url))
+    return "; ".join(message for message in messages if message) or "no active Gemma4 process found"
+
+
+def stop_local_llama_server(server_url: str = "") -> str:
+    parsed = urllib.parse.urlparse(server_url or "http://127.0.0.1:8088")
+    host = (parsed.hostname or "127.0.0.1").lower()
+    if host not in {"127.0.0.1", "localhost", "::1"}:
+        return f"server host {host} is not local; skipped process kill"
+    port = int(parsed.port or 8088)
+    script = rf"""
+$ErrorActionPreference = 'SilentlyContinue'
+$targets = @()
+$listeners = Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue
+foreach ($listener in $listeners) {{
+  $process = Get-Process -Id $listener.OwningProcess -ErrorAction SilentlyContinue
+  if ($process -and $process.ProcessName -like 'llama-server*') {{
+    $targets += $process
+  }}
+}}
+$targets = $targets | Sort-Object Id -Unique
+foreach ($process in $targets) {{
+  Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+  Write-Output ('stopped llama-server pid=' + $process.Id)
+}}
+if (-not $targets -or $targets.Count -eq 0) {{
+  Write-Output 'no local llama-server listener found'
+}}
+"""
+    try:
+        completed = subprocess.run(
+            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=8,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return f"failed to stop local llama-server on port {port}: {exc}"
+    detail = (completed.stdout or completed.stderr or "").strip()
+    return f"local llama-server port {port}: {detail or 'stop command finished'}"
 
 
 @dataclass
@@ -254,7 +363,11 @@ def classify_teaching_condition_v4(study: StudyAnalysis) -> HierarchicalDiagnosi
     return apply_v5_echonet_calibration(study, v4_decision, make_decision)
 
 
-def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
+def run_diagnosis(
+    study: StudyAnalysis,
+    config: ModelConfig,
+    cancel_event: threading.Event | None = None,
+) -> tuple[str, str]:
     orchestrator: OfflineMultiAgentOrchestrator | None = None
     agent_state = None
     if config.use_multi_agent:
@@ -298,12 +411,18 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
 
     prompt = build_gemma4_prompt(study, decision, structured_output=bool(config.structured_llm_output))
     mode = config.normalized_inference_mode
+    if _is_cancelled(cancel_event):
+        return finish(
+            heuristic_diagnosis(study, decision),
+            "Gemma4 interrupted before inference; local rule/template path used",
+            degrade_reason="用户在 Gemma4 推理前触发急停，已切换为本地层级规则后备。",
+        )
     if mode == "rule_only":
         return finish(heuristic_diagnosis(study, decision), config.status)
 
     server_error = ""
     if mode == "gemma4_server" and config.server_url:
-        text, error = run_llama_server(prompt, config)
+        text, error = run_llama_server(prompt, config, cancel_event=cancel_event)
         if text.strip():
             return finish(text.strip(), f"Gemma4 4B offline server: {config.server_url}", llm_output_received=True)
         server_error = error
@@ -314,7 +433,7 @@ def run_diagnosis(study: StudyAnalysis, config: ModelConfig) -> tuple[str, str]:
             degrade_reason=f"Gemma4 4B server 调用失败或超时，已使用本地层级规则后备：{error}",
         )
     if mode == "gemma4_cli" and config.model_ready:
-        text, error = run_llama_cli(prompt, config)
+        text, error = run_llama_cli(prompt, config, cancel_event=cancel_event)
         status = f"Gemma4 4B offline CLI: {Path(config.model_path).name}"
         if server_error:
             status += " (server unavailable; CLI fallback used)"
@@ -357,7 +476,11 @@ def prepare_llm_prompt(prompt: str, config: ModelConfig) -> str:
     return prompt
 
 
-def run_llama_server(prompt: str, config: ModelConfig) -> tuple[str, str]:
+def run_llama_server(
+    prompt: str,
+    config: ModelConfig,
+    cancel_event: threading.Event | None = None,
+) -> tuple[str, str]:
     prompt = prepare_llm_prompt(prompt, config)
     payload = {
         "prompt": prompt,
@@ -374,11 +497,35 @@ def run_llama_server(prompt: str, config: ModelConfig) -> tuple[str, str]:
         method="POST",
     )
     timeout = max(1, int(config.llm_timeout_seconds or config.server_timeout or 60))
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            data = json.loads(response.read().decode("utf-8", errors="replace"))
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
-        return "", str(exc)
+    if _is_cancelled(cancel_event):
+        return "", "Gemma4 server call cancelled before request"
+
+    result: dict[str, Any] = {"data": None, "error": ""}
+    done = threading.Event()
+
+    def request_worker() -> None:
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                result["data"] = json.loads(response.read().decode("utf-8", errors="replace"))
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+            result["error"] = str(exc)
+        finally:
+            done.set()
+
+    worker = threading.Thread(target=request_worker, daemon=True)
+    worker.start()
+    started = time.monotonic()
+    while not done.wait(0.2):
+        if _is_cancelled(cancel_event):
+            return "", "Gemma4 server call cancelled by user"
+        if time.monotonic() - started >= timeout:
+            return "", f"Gemma4 server call timed out after {timeout}s"
+
+    if result["error"]:
+        return "", str(result["error"])
+    data = result["data"]
+    if not isinstance(data, dict):
+        return "", "llama-server response was empty or invalid"
 
     text = extract_llama_server_text(data)
     if not text:
@@ -652,8 +799,14 @@ def append_runtime_degrade_note(report: str, reason: str) -> str:
     return f"{report.rstrip()}\n\n[防卡保护：{reason}]"
 
 
-def run_llama_cli(prompt: str, config: ModelConfig) -> tuple[str, str]:
+def run_llama_cli(
+    prompt: str,
+    config: ModelConfig,
+    cancel_event: threading.Event | None = None,
+) -> tuple[str, str]:
     prompt = prepare_llm_prompt(prompt, config)
+    if _is_cancelled(cancel_event):
+        return "", "llama-cli cancelled before process start"
     cmd = [
         config.llama_exe,
         "-m",
@@ -677,6 +830,8 @@ def run_llama_cli(prompt: str, config: ModelConfig) -> tuple[str, str]:
     if config.threads_batch > 0:
         cmd[5:5] = ["-tb", str(config.threads_batch)]
     timeout = max(1, int(config.llm_timeout_seconds or 60))
+    stdout = ""
+    stderr = ""
     try:
         process = subprocess.Popen(
             cmd,
@@ -687,15 +842,32 @@ def run_llama_cli(prompt: str, config: ModelConfig) -> tuple[str, str]:
             errors="replace",
             cwd=str(Path(config.llama_exe).parent),
         )
+        _register_llm_process(process)
+        started = time.monotonic()
         try:
-            stdout, stderr = process.communicate(timeout=timeout)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            try:
-                stdout, stderr = process.communicate(timeout=5)
-            except subprocess.TimeoutExpired:
-                stdout, stderr = "", "llama-cli did not terminate within 5s after kill."
-            return stdout.strip(), f"llama-cli timed out after {timeout}s; process was terminated. {stderr.strip()}"
+            while True:
+                if _is_cancelled(cancel_event):
+                    stop_detail = _terminate_process(process, "llama-cli user cancellation")
+                    try:
+                        stdout, stderr = process.communicate(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        stdout, stderr = stdout or "", stderr or "llama-cli did not terminate within 3s after cancellation."
+                    return stdout.strip(), f"llama-cli cancelled by user; {stop_detail}. {stderr.strip()}"
+                remaining = timeout - (time.monotonic() - started)
+                if remaining <= 0:
+                    stop_detail = _terminate_process(process, "llama-cli timeout")
+                    try:
+                        stdout, stderr = process.communicate(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        stdout, stderr = "", "llama-cli did not terminate within 3s after timeout."
+                    return stdout.strip(), f"llama-cli timed out after {timeout}s; {stop_detail}. {stderr.strip()}"
+                try:
+                    stdout, stderr = process.communicate(timeout=min(0.5, max(0.05, remaining)))
+                    break
+                except subprocess.TimeoutExpired:
+                    continue
+        finally:
+            _unregister_llm_process(process)
     except Exception as exc:
         return "", str(exc)
     if process.returncode != 0:

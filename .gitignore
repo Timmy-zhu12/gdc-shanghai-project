@@ -16,9 +16,11 @@ models/*
 tools/llama_cpp/*.zip
 
 # Generated reports and local test outputs.
+outputs/
 exports/*
 !exports/.gitkeep
 validation_speedopt/**/newtraining_cases.csv
+validation/clinical_like_*/clinical_like_cases.csv
 validation_speedopt/**/logs/
 submission/technical_report/rendered/
 submission/technical_report/figures/*.jpg

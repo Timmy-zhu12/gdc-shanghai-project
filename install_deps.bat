@@ -37,5 +37,5 @@ if errorlevel 1 (
 )
 
 echo.
-echo Dependencies are ready. You can now run run_cardio_pc_v5.bat.
+echo Dependencies are ready. You can now run run_preflight.bat or run_ui.bat.
 endlocal
