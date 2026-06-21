@@ -22,6 +22,11 @@ def self_test_rule_only() -> int:
 
 
 if __name__ == "__main__":
+    if "--self-test" in sys.argv:
+        from legacy_v5_app import self_test
+
+        self_test(rule_only=False)
+        raise SystemExit(0)
     if "--self-test-rule-only" in sys.argv:
         raise SystemExit(self_test_rule_only())
     from rulebook_ui import main

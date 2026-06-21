@@ -200,6 +200,15 @@ def check_function_calling_smoke() -> dict[str, object]:
     }
 
 
+def check_legacy_v5_multi_agent_smoke() -> dict[str, object]:
+    code, out, err = run([sys.executable, "legacy_v5_app.py", "--self-test-rule-only"], timeout=90)
+    return {
+        "id": "legacy_v5_multi_agent_smoke",
+        "ok": code == 0 and "多智能体审计链" in out and "agent_audit" in out,
+        "detail": out[-1200:] or err[-1200:],
+    }
+
+
 def check_local_default_root() -> dict[str, object]:
     code, out, err = run(
         [
@@ -224,6 +233,7 @@ def main() -> None:
     results.append(check_media_smoke())
     results.append(check_ui_import())
     results.append(check_function_calling_smoke())
+    results.append(check_legacy_v5_multi_agent_smoke())
     results.append(check_gemma_emergency_stop_smoke())
 
     ok = all(item["ok"] for item in results)
