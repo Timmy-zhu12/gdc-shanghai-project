@@ -9,11 +9,11 @@ PROJECT_DIR = Path(__file__).resolve().parents[1]
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from app import synthetic_echo  # noqa: E402
 from cardio_pc.diagnosis import classify_teaching_condition_v4, heuristic_diagnosis  # noqa: E402
 from cardio_pc.features import analyze_loaded_images  # noqa: E402
 from cardio_pc.function_calling import execute_tool_call, gemma4_tool_manifest  # noqa: E402
 from cardio_pc.imaging import LoadedImage  # noqa: E402
+from legacy_v5_app import synthetic_echo  # noqa: E402
 
 
 def main() -> None:

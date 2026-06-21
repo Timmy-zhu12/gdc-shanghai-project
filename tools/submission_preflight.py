@@ -39,6 +39,7 @@ REQUIRED_PATHS = [
     "cardio_pc/diagnosis.py",
     "cardio_pc/agents.py",
     "cardio_pc/function_calling.py",
+    "tools/function_calling_smoke.py",
     "tools/gemma_emergency_stop_smoke.py",
     "shared/diagnostic_contract.md",
     "shared/feature_schema.json",
@@ -190,6 +191,15 @@ def check_gemma_emergency_stop_smoke() -> dict[str, object]:
     }
 
 
+def check_function_calling_smoke() -> dict[str, object]:
+    code, out, err = run([sys.executable, "tools/function_calling_smoke.py"], timeout=60)
+    return {
+        "id": "function_calling_smoke",
+        "ok": code == 0 and "function_calling_smoke" in out,
+        "detail": out[-1200:] or err[-1200:],
+    }
+
+
 def check_local_default_root() -> dict[str, object]:
     code, out, err = run(
         [
@@ -213,6 +223,7 @@ def main() -> None:
     results.append(check_rule_smoke())
     results.append(check_media_smoke())
     results.append(check_ui_import())
+    results.append(check_function_calling_smoke())
     results.append(check_gemma_emergency_stop_smoke())
 
     ok = all(item["ok"] for item in results)
