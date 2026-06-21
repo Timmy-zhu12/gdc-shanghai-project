@@ -1,0 +1,23 @@
+{
+  "case_id": "DEMO_CLINICAL_001",
+  "patient_id": "PATIENT_HASH_DEMO",
+  "views": ["PLAX", "A4C", "A2C", "PSAX-AV"],
+  "measurements": {
+    "ef_percent": 43,
+    "mr_vena_contracta_cm": 0.28,
+    "tr_peak_velocity_m_s": 2.9,
+    "ph_supporting_echo_sign_count": 2,
+    "pericardial_effusion_mm": 6
+  },
+  "proxies": {
+    "view_count": 4,
+    "input_count": 18,
+    "systole_count": 2,
+    "diastole_count": 2,
+    "quality_score": 0.82,
+    "flow_active_ratio": 0.08,
+    "jet_width_proxy": 0.13,
+    "contractility_fraction_proxy": 0.48
+  },
+  "diagnosis_text": "示例：轻度左室收缩功能减低，轻度二尖瓣反流，轻度心包积液。"
+}

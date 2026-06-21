@@ -1,0 +1,1034 @@
+{
+  "version": "clinical-rulebook-test-v0.2-v5-aligned-20260621",
+  "scope": "Patient-level adult transthoracic echocardiography teaching and quality-control rule engine.",
+  "intended_use": "Medical education, quality control and offline assistant research. Not a clinical final diagnosis.",
+  "minimum_dataset": {
+    "standard_views": [
+      "PLAX",
+      "PSAX-AV",
+      "PSAX-MV",
+      "PSAX-PM",
+      "A4C",
+      "A2C",
+      "A3C",
+      "A5C",
+      "SUBCOSTAL",
+      "IVC",
+      "SUPRASTERNAL"
+    ],
+    "modalities": [
+      "2D B-mode",
+      "M-mode when applicable",
+      "Color Doppler",
+      "Pulsed-wave Doppler",
+      "Continuous-wave Doppler",
+      "Tissue Doppler when diastolic function is assessed"
+    ],
+    "quality_requirements": [
+      "Record view coverage and image quality before diagnosis.",
+      "Do not give narrow valve localization without spatial/view evidence.",
+      "Do not grade stenosis or pulmonary pressure without spectral Doppler unless marked as proxy-only.",
+      "Do not turn a proxy feature into a clinical measurement."
+    ]
+  },
+  "feature_mapping": {
+    "current_cardioconsult_csv": {
+      "view_count": "feat_study_view_count",
+      "input_count": "feat_study_input_count",
+      "systole_count": "feat_study_systole_count",
+      "diastole_count": "feat_study_diastole_count",
+      "contractility_proxy": "feat_study_contractility_proxy",
+      "contractility_fraction_proxy": "feat_study_contractility_fraction_proxy",
+      "quality_score": "feat_study_quality_score",
+      "flow_active_ratio": "feat_flow_04",
+      "flow_turbulence_proxy": "feat_flow_05",
+      "flow_vorticity_proxy": "feat_flow_08",
+      "flow_largest_component_ratio": "feat_flow_10",
+      "jet_width_proxy": "feat_flow_11",
+      "directional_coherence": "feat_flow_13",
+      "bmode_edge_density": "feat_bmode_05",
+      "bmode_texture_entropy": "feat_bmode_06",
+      "bmode_chamber_area_proxy": "feat_bmode_09",
+      "bmode_speckle_residual": "feat_bmode_10",
+      "pericardial_echo_free_space_proxy": "feat_proxy_pericardial_echo_free_space_proxy",
+      "right_heart_size_proxy": "feat_proxy_right_heart_size_proxy",
+      "septal_flattening_proxy": "feat_proxy_septal_flattening_proxy",
+      "lvh_wall_thickening_proxy": "feat_proxy_lvh_wall_thickening_proxy",
+      "v4_temporal_diff": "feat_proxy_v4_temporal_diff",
+      "sti_strain_proxy": "feat_proxy_sti_strain_proxy",
+      "optical_flow_proxy": "feat_proxy_optical_flow_proxy",
+      "shared_ek_valve_score": "feat_proxy_shared_ek_valve_score",
+      "coupled_ek_structure_score": "feat_proxy_coupled_ek_structure_score",
+      "v4_mr_flag": "feat_proxy_v4_mr_flag",
+      "v4_tr_flag": "feat_proxy_v4_tr_flag",
+      "v4_ar_flag": "feat_proxy_v4_ar_flag",
+      "v4_low_ef_flag": "feat_proxy_v4_low_ef_flag",
+      "v4_rwma_flag": "feat_proxy_v4_rwma_flag",
+      "v4_la_enlargement_flag": "feat_proxy_v4_la_enlargement_flag",
+      "combined_mr_tr_proxy": "feat_proxy_combined_mr_tr_proxy",
+      "rwma_proxy": "feat_proxy_rwma_proxy",
+      "la_enlargement_proxy": "feat_proxy_la_enlargement_proxy",
+      "v5_low_ef_available": "feat_proxy_v5_low_ef_available",
+      "v5_low_ef_probability": "feat_proxy_v5_low_ef_probability",
+      "v5_ef_pred_percent": "feat_proxy_v5_ef_pred_percent",
+      "v5_low_ef_positive": "feat_proxy_v5_low_ef_positive"
+    }
+  },
+  "rules": [
+    {
+      "id": "lv_systolic_function_reduced_v1",
+      "label": "reduced_lv_systolic_function",
+      "zh": "左室收缩功能减低",
+      "category": "心肌与心功能异常",
+      "clinical_thresholds": [
+        {
+          "measurement": "ef_percent",
+          "severity": "severe",
+          "op": "<",
+          "value": 30,
+          "unit": "%"
+        },
+        {
+          "measurement": "ef_percent",
+          "severity": "moderate",
+          "op": "range_closed_open",
+          "low": 30,
+          "high": 41,
+          "unit": "%"
+        },
+        {
+          "measurement": "ef_percent",
+          "severity": "mild",
+          "op": "range_closed_open",
+          "low": 41,
+          "high": 50,
+          "unit": "%"
+        }
+      ],
+      "proxy_thresholds": [
+        {
+          "feature": "contractility_fraction_proxy",
+          "direction": "lower_is_worse",
+          "mild": 0.55,
+          "moderate": 0.42,
+          "severe": 0.3,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        },
+        {
+          "feature": "contractility_proxy",
+          "direction": "lower_is_worse",
+          "mild": 0.35,
+          "moderate": 0.25,
+          "severe": 0.18,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        },
+        {
+          "feature": "v5_low_ef_probability",
+          "direction": "higher_is_worse",
+          "mild": 0.5,
+          "moderate": 0.7,
+          "severe": 0.88,
+          "calibration": "EchoNet-Dynamic lightweight MLP; proxy-only unless EF is measured"
+        },
+        {
+          "feature": "coupled_ek_structure_score",
+          "direction": "higher_is_worse",
+          "mild": 0.42,
+          "moderate": 0.58,
+          "severe": 0.74,
+          "calibration": "V4 coupled-EK structure proxy; requires 1000-case recalibration"
+        },
+        {
+          "feature": "v4_low_ef_flag",
+          "direction": "higher_is_worse",
+          "mild": 0.5,
+          "calibration": "V4 local DICOM evidence flag"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "dynamic_pair_required": true,
+        "preferred_views": [
+          "A4C",
+          "A2C"
+        ]
+      },
+      "logic": "EF is used if measured. Otherwise ED/ES or cine-derived contractility proxies are used with lower evidence level.",
+      "references": [
+        "ASE_EACVI_CHAMBER_2015",
+        "ASE_COMPREHENSIVE_TTE_2018",
+        "ECHONET_DYNAMIC_2020",
+        "V4_LOCAL_AUTHORIZED_DATA"
+      ]
+    },
+    {
+      "id": "mitral_regurgitation_integrated_v1",
+      "label": "mitral_regurgitation",
+      "zh": "二尖瓣反流",
+      "category": "瓣膜性心脏病",
+      "clinical_thresholds": [
+        {
+          "measurement": "mr_vena_contracta_cm",
+          "severity": "mild",
+          "op": "range_open_open",
+          "low": 0,
+          "high": 0.3,
+          "unit": "cm"
+        },
+        {
+          "measurement": "mr_vena_contracta_cm",
+          "severity": "severe",
+          "op": ">=",
+          "value": 0.7,
+          "unit": "cm"
+        },
+        {
+          "measurement": "mr_eroa_cm2",
+          "severity": "mild",
+          "op": "range_open_open",
+          "low": 0,
+          "high": 0.2,
+          "unit": "cm2"
+        },
+        {
+          "measurement": "mr_eroa_cm2",
+          "severity": "severe",
+          "op": ">=",
+          "value": 0.4,
+          "unit": "cm2"
+        },
+        {
+          "measurement": "mr_regurgitant_volume_ml",
+          "severity": "mild",
+          "op": "range_open_open",
+          "low": 0,
+          "high": 30,
+          "unit": "mL"
+        },
+        {
+          "measurement": "mr_regurgitant_volume_ml",
+          "severity": "severe",
+          "op": ">=",
+          "value": 60,
+          "unit": "mL"
+        }
+      ],
+      "proxy_thresholds": [
+        {
+          "feature": "flow_active_ratio",
+          "direction": "higher_is_worse",
+          "mild": 0.04,
+          "moderate": 0.12,
+          "severe": 0.24,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        },
+        {
+          "feature": "jet_width_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.1,
+          "moderate": 0.24,
+          "severe": 0.42,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        },
+        {
+          "feature": "flow_turbulence_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.015,
+          "moderate": 0.035,
+          "severe": 0.07,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "color_doppler_required": true,
+        "proxy_localization_required": true,
+        "preferred_views": [
+          "PLAX",
+          "A4C",
+          "A2C"
+        ]
+      },
+      "logic": "Clinical regurgitation measures dominate. Proxy-only MR requires Doppler activity plus valve localization evidence; otherwise output valve abnormality pending localization.",
+      "references": [
+        "ASE_VALVULAR_REGURGITATION_2017"
+      ]
+    },
+    {
+      "id": "tricuspid_regurgitation_integrated_v1",
+      "label": "tricuspid_regurgitation",
+      "zh": "三尖瓣反流",
+      "category": "瓣膜性心脏病",
+      "clinical_thresholds": [
+        {
+          "measurement": "tr_vena_contracta_cm",
+          "severity": "severe",
+          "op": ">=",
+          "value": 0.7,
+          "unit": "cm"
+        },
+        {
+          "measurement": "tr_eroa_cm2",
+          "severity": "severe",
+          "op": ">=",
+          "value": 0.4,
+          "unit": "cm2"
+        },
+        {
+          "measurement": "tr_regurgitant_volume_ml",
+          "severity": "severe",
+          "op": ">=",
+          "value": 45,
+          "unit": "mL"
+        }
+      ],
+      "proxy_thresholds": [
+        {
+          "feature": "flow_active_ratio",
+          "direction": "higher_is_worse",
+          "mild": 0.04,
+          "moderate": 0.12,
+          "severe": 0.24,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        },
+        {
+          "feature": "jet_width_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.1,
+          "moderate": 0.24,
+          "severe": 0.42,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "color_doppler_required": true,
+        "proxy_localization_required": true,
+        "preferred_views": [
+          "A4C",
+          "RV-focused A4C"
+        ]
+      },
+      "logic": "TR localization requires right-heart or A4C evidence; spectral TR velocity is separated into pulmonary-pressure probability rules.",
+      "references": [
+        "ASE_VALVULAR_REGURGITATION_2017",
+        "ASE_RIGHT_HEART_PH_2025"
+      ]
+    },
+    {
+      "id": "combined_mitral_tricuspid_regurgitation_v5_proxy_v1",
+      "label": "combined_mitral_tricuspid_regurgitation",
+      "zh": "???????????",
+      "category": "??????",
+      "score_bonus": 0.06,
+      "clinical_thresholds": [],
+      "proxy_thresholds": [
+        {
+          "feature": "combined_mr_tr_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.5,
+          "calibration": "V5 local authorized DICOM MR+TR proxy; teaching-only"
+        },
+        {
+          "feature": "shared_ek_valve_score",
+          "direction": "higher_is_worse",
+          "mild": 0.16,
+          "moderate": 0.32,
+          "severe": 0.52,
+          "calibration": "V4 shared-EK valve score, not a clinical measurement"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "color_doppler_required": true,
+        "preferred_views": [
+          "PLAX",
+          "A4C"
+        ]
+      },
+      "logic": "When multi-frame DICOM has stable low-turbulence valve-flow evidence but limited filename/view localization, V5 preserves the local teaching experience of mild MR with mild TR as a combined proxy label.",
+      "references": [
+        "ASE_VALVULAR_REGURGITATION_2017",
+        "V4_LOCAL_AUTHORIZED_DATA"
+      ]
+    },
+    {
+      "id": "pulmonary_regurgitation_psax_proxy_v1",
+      "label": "pulmonary_regurgitation",
+      "zh": "??????",
+      "category": "??????",
+      "clinical_thresholds": [],
+      "proxy_thresholds": [
+        {
+          "feature": "flow_active_ratio",
+          "direction": "higher_is_worse",
+          "mild": 0.04,
+          "moderate": 0.12,
+          "severe": 0.24,
+          "calibration": "Color Doppler proxy; requires RVOT/PSAX localization"
+        },
+        {
+          "feature": "jet_width_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.1,
+          "moderate": 0.24,
+          "severe": 0.42,
+          "calibration": "Color Doppler proxy; requires RVOT/PSAX localization"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "color_doppler_required": true,
+        "proxy_localization_required": true,
+        "preferred_views": [
+          "PSAX-AV",
+          "PSAX-MV",
+          "PSAX-PM"
+        ]
+      },
+      "logic": "Pulmonary regurgitation is only considered when the available view supports the pulmonary valve/RVOT region. Without spectral Doppler it remains a low-evidence teaching prompt.",
+      "references": [
+        "ASE_VALVULAR_REGURGITATION_2017"
+      ]
+    },
+    {
+      "id": "regional_wall_motion_abnormality_proxy_v1",
+      "label": "regional_wall_motion_abnormality",
+      "zh": "?????????",
+      "category": "????????",
+      "clinical_thresholds": [],
+      "proxy_thresholds": [
+        {
+          "feature": "rwma_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.5,
+          "calibration": "V4 HMC-QU/RWMA proxy flag"
+        },
+        {
+          "feature": "v4_rwma_flag",
+          "direction": "higher_is_worse",
+          "mild": 0.5,
+          "calibration": "V4 local DICOM RWMA flag"
+        },
+        {
+          "feature": "v4_temporal_diff",
+          "direction": "higher_is_worse",
+          "mild": 0.18,
+          "moderate": 0.25,
+          "severe": 0.34,
+          "calibration": "Frame-difference motion proxy; not segment tracking"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "dynamic_pair_required": true,
+        "preferred_views": [
+          "A4C",
+          "A2C",
+          "A3C"
+        ]
+      },
+      "logic": "Frame-difference, texture and V4 RWMA flags can suggest abnormal wall motion, but true RWMA requires segment-level tracking and expert review.",
+      "references": [
+        "HMC_QU_DATASET",
+        "CAMUS_DATASET"
+      ]
+    },
+    {
+      "id": "left_ventricular_hypertrophy_proxy_v1",
+      "label": "left_ventricular_hypertrophy",
+      "zh": "??????",
+      "category": "???????????",
+      "clinical_thresholds": [
+        {
+          "measurement": "ivs_diastolic_thickness_mm",
+          "severity": "mild",
+          "op": "range_closed_open",
+          "low": 11,
+          "high": 13,
+          "unit": "mm"
+        },
+        {
+          "measurement": "ivs_diastolic_thickness_mm",
+          "severity": "moderate",
+          "op": "range_closed_open",
+          "low": 13,
+          "high": 15,
+          "unit": "mm"
+        },
+        {
+          "measurement": "ivs_diastolic_thickness_mm",
+          "severity": "severe",
+          "op": ">=",
+          "value": 15,
+          "unit": "mm"
+        },
+        {
+          "measurement": "lvpw_diastolic_thickness_mm",
+          "severity": "mild",
+          "op": "range_closed_open",
+          "low": 11,
+          "high": 13,
+          "unit": "mm"
+        },
+        {
+          "measurement": "lvpw_diastolic_thickness_mm",
+          "severity": "moderate",
+          "op": "range_closed_open",
+          "low": 13,
+          "high": 15,
+          "unit": "mm"
+        },
+        {
+          "measurement": "lvpw_diastolic_thickness_mm",
+          "severity": "severe",
+          "op": ">=",
+          "value": 15,
+          "unit": "mm"
+        }
+      ],
+      "proxy_thresholds": [
+        {
+          "feature": "lvh_wall_thickening_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.22,
+          "moderate": 0.34,
+          "severe": 0.48,
+          "calibration": "B-mode wall-thickening tendency proxy"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "preferred_views": [
+          "PLAX",
+          "PSAX-PM"
+        ]
+      },
+      "logic": "Measured IVS/LVPW thickness dominates. Proxy-only LVH is a teaching tendency from PLAX/PSAX texture and geometry, not a formal mass index.",
+      "references": [
+        "ASE_EACVI_CHAMBER_2015",
+        "ECHONET_LVH_DATASET"
+      ]
+    },
+    {
+      "id": "left_atrial_enlargement_integrated_v1",
+      "label": "left_atrial_enlargement",
+      "zh": "????",
+      "category": "???????????",
+      "clinical_thresholds": [
+        {
+          "measurement": "la_volume_index_ml_m2",
+          "severity": "mild",
+          "op": "range_closed_open",
+          "low": 34,
+          "high": 42,
+          "unit": "mL/m2"
+        },
+        {
+          "measurement": "la_volume_index_ml_m2",
+          "severity": "moderate",
+          "op": "range_closed_open",
+          "low": 42,
+          "high": 48,
+          "unit": "mL/m2"
+        },
+        {
+          "measurement": "la_volume_index_ml_m2",
+          "severity": "severe",
+          "op": ">=",
+          "value": 48,
+          "unit": "mL/m2"
+        },
+        {
+          "measurement": "la_diameter_mm",
+          "severity": "mild",
+          "op": "range_closed_open",
+          "low": 40,
+          "high": 45,
+          "unit": "mm"
+        },
+        {
+          "measurement": "la_diameter_mm",
+          "severity": "moderate",
+          "op": "range_closed_open",
+          "low": 45,
+          "high": 50,
+          "unit": "mm"
+        },
+        {
+          "measurement": "la_diameter_mm",
+          "severity": "severe",
+          "op": ">=",
+          "value": 50,
+          "unit": "mm"
+        }
+      ],
+      "proxy_thresholds": [
+        {
+          "feature": "la_enlargement_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.5,
+          "calibration": "V4 local DICOM LA-enlargement proxy flag"
+        },
+        {
+          "feature": "v4_la_enlargement_flag",
+          "direction": "higher_is_worse",
+          "mild": 0.5,
+          "calibration": "V4 local DICOM LA-enlargement flag"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "preferred_views": [
+          "PLAX",
+          "A4C",
+          "A2C"
+        ]
+      },
+      "logic": "LAVI is preferred. LA diameter and V4 proxy flags are lower-evidence teaching prompts when full biplane volume is unavailable.",
+      "references": [
+        "ASE_EACVI_CHAMBER_2015",
+        "V4_LOCAL_AUTHORIZED_DATA"
+      ]
+    },
+    {
+      "id": "valvular_regurgitation_unlocalized_proxy_v1",
+      "label": "valvular_regurgitation_unlocalized",
+      "zh": "瓣膜反流待定位",
+      "category": "瓣膜性心脏病",
+      "clinical_thresholds": [],
+      "proxy_thresholds": [
+        {
+          "feature": "flow_active_ratio",
+          "direction": "higher_is_worse",
+          "mild": 0.04,
+          "moderate": 0.12,
+          "severe": 0.24,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        },
+        {
+          "feature": "jet_width_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.1,
+          "moderate": 0.24,
+          "severe": 0.42,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        },
+        {
+          "feature": "flow_turbulence_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.015,
+          "moderate": 0.035,
+          "severe": 0.07,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "color_doppler_required": true,
+        "preferred_views": [
+          "PLAX",
+          "A4C",
+          "A2C",
+          "A5C"
+        ]
+      },
+      "logic": "Use this fallback when color Doppler suggests regurgitant flow but valve localization is absent or insufficient.",
+      "references": [
+        "ASE_VALVULAR_REGURGITATION_2017",
+        "BSE_MINIMUM_DATASET_TTE_2015"
+      ]
+    },
+    {
+      "id": "aortic_stenosis_quantitative_v1",
+      "label": "aortic_stenosis",
+      "zh": "主动脉瓣狭窄",
+      "category": "瓣膜性心脏病",
+      "clinical_thresholds": [
+        {
+          "measurement": "aortic_vmax_m_s",
+          "severity": "mild",
+          "op": "range_closed_open",
+          "low": 2.0,
+          "high": 3.0,
+          "unit": "m/s"
+        },
+        {
+          "measurement": "aortic_vmax_m_s",
+          "severity": "moderate",
+          "op": "range_closed_open",
+          "low": 3.0,
+          "high": 4.0,
+          "unit": "m/s"
+        },
+        {
+          "measurement": "aortic_vmax_m_s",
+          "severity": "severe",
+          "op": ">=",
+          "value": 4.0,
+          "unit": "m/s"
+        },
+        {
+          "measurement": "aortic_mean_gradient_mmhg",
+          "severity": "moderate",
+          "op": "range_closed_open",
+          "low": 20,
+          "high": 40,
+          "unit": "mmHg"
+        },
+        {
+          "measurement": "aortic_mean_gradient_mmhg",
+          "severity": "severe",
+          "op": ">=",
+          "value": 40,
+          "unit": "mmHg"
+        },
+        {
+          "measurement": "aortic_valve_area_cm2",
+          "severity": "severe",
+          "op": "<=",
+          "value": 1.0,
+          "unit": "cm2"
+        }
+      ],
+      "proxy_thresholds": [
+        {
+          "feature": "flow_turbulence_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.03,
+          "moderate": 0.06,
+          "severe": 0.1,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "spectral_doppler_required_for_grading": true,
+        "preferred_views": [
+          "PLAX",
+          "PSAX-AV",
+          "A5C"
+        ]
+      },
+      "logic": "AS grading must use Vmax/mean gradient/AVA when available. Color/proxy-only results are screening prompts, not definitive grading.",
+      "references": [
+        "ASE_EACVI_VALVE_STENOSIS_2017"
+      ]
+    },
+    {
+      "id": "aortic_regurgitation_integrated_v1",
+      "label": "aortic_regurgitation",
+      "zh": "主动脉瓣反流",
+      "category": "瓣膜性心脏病",
+      "clinical_thresholds": [
+        {
+          "measurement": "ar_vena_contracta_cm",
+          "severity": "mild",
+          "op": "range_open_open",
+          "low": 0,
+          "high": 0.3,
+          "unit": "cm"
+        },
+        {
+          "measurement": "ar_vena_contracta_cm",
+          "severity": "severe",
+          "op": ">",
+          "value": 0.6,
+          "unit": "cm"
+        },
+        {
+          "measurement": "ar_eroa_cm2",
+          "severity": "mild",
+          "op": "range_open_open",
+          "low": 0,
+          "high": 0.1,
+          "unit": "cm2"
+        },
+        {
+          "measurement": "ar_eroa_cm2",
+          "severity": "severe",
+          "op": ">=",
+          "value": 0.3,
+          "unit": "cm2"
+        },
+        {
+          "measurement": "ar_regurgitant_volume_ml",
+          "severity": "severe",
+          "op": ">=",
+          "value": 60,
+          "unit": "mL"
+        },
+        {
+          "measurement": "ar_pressure_half_time_ms",
+          "severity": "severe",
+          "op": "<",
+          "value": 200,
+          "unit": "ms"
+        }
+      ],
+      "proxy_thresholds": [
+        {
+          "feature": "flow_active_ratio",
+          "direction": "higher_is_worse",
+          "mild": 0.04,
+          "moderate": 0.12,
+          "severe": 0.24,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        },
+        {
+          "feature": "jet_width_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.1,
+          "moderate": 0.24,
+          "severe": 0.42,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "color_doppler_required": true,
+        "proxy_localization_required": true,
+        "preferred_views": [
+          "PLAX",
+          "A5C"
+        ]
+      },
+      "logic": "AR requires aortic valve spatial evidence; PHT and VC/EROA dominate if available.",
+      "references": [
+        "ASE_VALVULAR_REGURGITATION_2017"
+      ]
+    },
+    {
+      "id": "pericardial_effusion_size_v1",
+      "label": "pericardial_effusion",
+      "zh": "心包积液",
+      "category": "心包疾病",
+      "clinical_thresholds": [
+        {
+          "measurement": "pericardial_effusion_mm",
+          "severity": "mild",
+          "op": "range_open_open",
+          "low": 0,
+          "high": 10,
+          "unit": "mm"
+        },
+        {
+          "measurement": "pericardial_effusion_mm",
+          "severity": "moderate",
+          "op": "range_closed",
+          "low": 10,
+          "high": 20,
+          "unit": "mm"
+        },
+        {
+          "measurement": "pericardial_effusion_mm",
+          "severity": "severe",
+          "op": ">",
+          "value": 20,
+          "unit": "mm"
+        }
+      ],
+      "proxy_thresholds": [
+        {
+          "feature": "pericardial_echo_free_space_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.05,
+          "moderate": 0.12,
+          "severe": 0.22,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "preferred_views": [
+          "PLAX",
+          "A4C",
+          "SUBCOSTAL"
+        ]
+      },
+      "logic": "Effusion size should be measured at the largest echo-free space. Proxy-only results are screening prompts.",
+      "references": [
+        "ESC_PERICARDIAL_2015",
+        "ASE_PERICARDIAL_MULTIMODALITY_2013"
+      ]
+    },
+    {
+      "id": "pulmonary_hypertension_probability_v1",
+      "label": "right_heart_load_or_pulmonary_hypertension",
+      "zh": "右心负荷增加或肺高压提示",
+      "category": "右心与肺循环",
+      "clinical_thresholds": [
+        {
+          "measurement": "tr_peak_velocity_m_s",
+          "severity": "suggestive",
+          "op": ">=",
+          "value": 2.8,
+          "unit": "m/s"
+        },
+        {
+          "measurement": "tr_peak_velocity_m_s",
+          "severity": "high_probability_component",
+          "op": ">",
+          "value": 3.4,
+          "unit": "m/s"
+        },
+        {
+          "measurement": "ph_supporting_echo_sign_count",
+          "severity": "supportive",
+          "op": ">=",
+          "value": 2,
+          "unit": "count"
+        }
+      ],
+      "proxy_thresholds": [
+        {
+          "feature": "right_heart_size_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.1,
+          "moderate": 0.18,
+          "severe": 0.28,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        },
+        {
+          "feature": "septal_flattening_proxy",
+          "direction": "higher_is_worse",
+          "mild": 0.08,
+          "moderate": 0.16,
+          "severe": 0.26,
+          "calibration": "draft_proxy_requires_1000case_recalibration"
+        }
+      ],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "preferred_views": [
+          "A4C",
+          "RV-focused A4C",
+          "IVC",
+          "PSAX"
+        ]
+      },
+      "logic": "Echo estimates PH probability; it does not confirm pulmonary hypertension without clinical context and right-heart catheterization when indicated.",
+      "references": [
+        "BSE_PH_2018",
+        "ASE_RIGHT_HEART_PH_2025"
+      ]
+    },
+    {
+      "id": "diastolic_function_screen_v1",
+      "label": "diastolic_dysfunction_or_elevated_lv_filling_pressure",
+      "zh": "舒张功能异常或左室充盈压升高提示",
+      "category": "心功能异常",
+      "clinical_thresholds": [
+        {
+          "measurement": "average_e_over_e_prime",
+          "severity": "abnormal_component",
+          "op": ">",
+          "value": 14,
+          "unit": "ratio"
+        },
+        {
+          "measurement": "septal_e_prime_cm_s",
+          "severity": "abnormal_component",
+          "op": "<",
+          "value": 7,
+          "unit": "cm/s"
+        },
+        {
+          "measurement": "lateral_e_prime_cm_s",
+          "severity": "abnormal_component",
+          "op": "<",
+          "value": 10,
+          "unit": "cm/s"
+        },
+        {
+          "measurement": "la_volume_index_ml_m2",
+          "severity": "abnormal_component",
+          "op": ">",
+          "value": 34,
+          "unit": "mL/m2"
+        },
+        {
+          "measurement": "tr_peak_velocity_m_s",
+          "severity": "abnormal_component",
+          "op": ">",
+          "value": 2.8,
+          "unit": "m/s"
+        }
+      ],
+      "proxy_thresholds": [],
+      "requirements": {
+        "quality_score_gte": 0.45,
+        "tissue_doppler_required": true,
+        "preferred_views": [
+          "A4C"
+        ]
+      },
+      "logic": "Use only when tissue Doppler and LA/TR measurements exist; otherwise output not assessable.",
+      "references": [
+        "ASE_EACVI_DIASTOLIC_2016"
+      ]
+    }
+  ],
+  "references": {
+    "ASE_COMPREHENSIVE_TTE_2018": {
+      "title": "Guidelines for Performing a Comprehensive Transthoracic Echocardiographic Examination in Adults",
+      "url": "https://www.onlinejase.com/article/S0894-7317(18)30318-3/fulltext"
+    },
+    "BSE_MINIMUM_DATASET_TTE_2015": {
+      "title": "A minimum dataset for a standard adult transthoracic echocardiogram",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4676441/"
+    },
+    "ASE_EACVI_CHAMBER_2015": {
+      "title": "Recommendations for Cardiac Chamber Quantification by Echocardiography in Adults",
+      "url": "https://www.asecho.org/wp-content/uploads/2016/02/2015_ChamberQuantificationREV.pdf"
+    },
+    "ASE_VALVULAR_REGURGITATION_2017": {
+      "title": "Recommendations for Noninvasive Evaluation of Native Valvular Regurgitation",
+      "url": "https://www.asecho.org/wp-content/uploads/2017/04/2017VavularRegurgitationGuideline.pdf"
+    },
+    "ASE_EACVI_VALVE_STENOSIS_2017": {
+      "title": "Recommendations on the Echocardiographic Assessment of Aortic Valve Stenosis",
+      "url": "https://www.asecho.org/wp-content/uploads/2017/04/2017ValveStenosisGuideline.pdf"
+    },
+    "ASE_EACVI_DIASTOLIC_2016": {
+      "title": "Recommendations for the Evaluation of Left Ventricular Diastolic Function by Echocardiography",
+      "url": "https://asecho.org/wp-content/uploads/2016/03/2016_LVDiastolicFunction.pdf"
+    },
+    "BSE_PH_2018": {
+      "title": "Echocardiographic assessment of pulmonary hypertension",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6055509/"
+    },
+    "ASE_RIGHT_HEART_PH_2025": {
+      "title": "Guidelines for the Echocardiographic Assessment of the Right Heart in Adults and Special Considerations in Pulmonary Hypertension",
+      "url": "https://www.asecho.org/guideline/right-heart-in-adults-pulmonary-hypertension/"
+    },
+    "ESC_PERICARDIAL_2015": {
+      "title": "2015 ESC Guidelines for the diagnosis and management of pericardial diseases",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7539677/"
+    },
+    "ASE_PERICARDIAL_MULTIMODALITY_2013": {
+      "title": "Multimodality Cardiovascular Imaging of Patients with Pericardial Disease",
+      "url": "https://www.asecho.org/wp-content/uploads/2025/04/2013_Multimodality-CV-Imaging-for-Pericardial-Disease.pdf"
+    },
+    "ECHONET_DYNAMIC_2020": {
+      "title": "Video-based AI for beat-to-beat assessment of cardiac function / EchoNet-Dynamic",
+      "url": "https://echonet.github.io/dynamic/"
+    },
+    "V4_LOCAL_AUTHORIZED_DATA": {
+      "title": "Local authorized de-identified CardioConsult teaching dataset and V4 calibration notes",
+      "url": "local://cardioconsult/newtraining-dataset"
+    },
+    "HMC_QU_DATASET": {
+      "title": "HMC-QU echocardiography dataset for myocardial infarction and regional wall motion analysis",
+      "url": "https://www.kaggle.com/datasets/aysendegerli/hmcqu-dataset"
+    },
+    "CAMUS_DATASET": {
+      "title": "CAMUS: Cardiac Acquisitions for Multi-structure Ultrasound Segmentation",
+      "url": "https://www.creatis.insa-lyon.fr/Challenge/camus/"
+    },
+    "ECHONET_LVH_DATASET": {
+      "title": "EchoNet-LVH dataset and left ventricular hypertrophy echocardiography labels",
+      "url": "https://echonet.github.io/lvh/"
+    }
+  }
+}

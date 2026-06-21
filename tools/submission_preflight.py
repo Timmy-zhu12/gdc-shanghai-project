@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import subprocess
@@ -14,64 +13,67 @@ OUT_DIR = ROOT / "submission" / "preflight"
 
 REQUIRED_PATHS = [
     "README.md",
-    "SUBMISSION.md",
     "LICENSE",
     "NOTICE",
-    "config.example.json",
+    "THIRD_PARTY_NOTICES.md",
+    "requirements.txt",
+    "requirements-video-optional.txt",
+    "install_deps.bat",
+    "run_ui.bat",
+    "run_v5_original_ui.bat",
     "run_cardio_pc_v5.bat",
+    "run_smoke_test.bat",
+    "run_media_smoke_test.bat",
+    "run_gemma_emergency_stop_smoke.bat",
+    "start_llama_server_v4.ps1",
     "stop_llama_server.bat",
-    "tools/anti_hang_smoke.py",
-    "tools/function_calling_smoke.py",
-    "docs/index.html",
-    "docs/gemma4_runtime_contract.md",
-    "docs/gemma4_function_calling_contract.md",
-    "docs/service_validation.md",
+    "config.example.json",
+    "config/clinical_rulebook_v0.1.json",
+    "src/clinical_rule_engine.py",
+    "src/image_case_adapter.py",
+    "src/analyze_media_cli.py",
+    "src/rulebook_ui.py",
+    "cardio_pc/features.py",
+    "cardio_pc/imaging.py",
+    "cardio_pc/diagnosis.py",
+    "cardio_pc/agents.py",
+    "cardio_pc/function_calling.py",
+    "tools/gemma_emergency_stop_smoke.py",
+    "shared/diagnostic_contract.md",
+    "shared/feature_schema.json",
+    "shared/disease_labels.json",
+    "prompts/hierarchical_system_prompt.txt",
+    "docs/public_manual_mapping.md",
+    "docs/v5_reference/V5_TECHNICAL_STATUS.md",
     "submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.md",
-    "submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.docx",
-    "submission/technical_report/CardioConsult_TrackC_APA_Technical_Report.pdf",
-    "submission/demo_video/demo.mp4",
-    "DATASETS.md",
+    "samples/A4C_ED_synthetic.png",
+    "samples/A4C_ES_synthetic.png",
 ]
 
-REQUIRED_TEXT_MARKERS = {
+TEXT_MARKERS = {
     "README.md": [
-        "structured_llm_output=true",
-        "gemma4_structured",
-        "Doppler 瓣膜定位评分",
-        "原生函数调用",
-        "医学安全边界",
+        "V5 对齐",
+        "规则手册",
+        "DICOM",
+        "DCOM",
+        "自动填充",
+        "Gemma4",
     ],
-    "SUBMISSION.md": [
-        "在线演示链接",
-        "技术报告",
-        "原生函数调用",
-        "Apache License 2.0",
+    "docs/public_manual_mapping.md": [
+        "ASE",
+        "BSE",
+        "ESC",
     ],
-    "docs/gemma4_runtime_contract.md": [
-        "JSON object",
-        "report_guard_structured",
-        "gemma4_structured",
+    "config.example.json": [
+        '"inference_mode": "rule_only"',
+        '"case_timeout_seconds"',
+        '"llm_timeout_seconds"',
     ],
-    "docs/gemma4_function_calling_contract.md": [
-        "function_call",
-        "summarize_ultrasound_features",
-        "run_rule_diagnosis",
-        "safety_boundary_check",
-    ],
-}
-
-FORBIDDEN_TRACKED_SUFFIXES = (".gguf", ".pt", ".pth", ".onnx")
-FORBIDDEN_TRACKED_NAMES = {"config.json"}
-FORBIDDEN_TEXT_TOKENS = ("gemma3", "Gemma 3", "llama3", "llama-gemma3")
-MOJIBAKE_TOKENS = ("涓", "绗", "鏁", "锛", "銆")
-PRECHECK_OUTPUTS = {
-    "submission/preflight/current_preflight.json",
-    "submission/preflight/current_preflight.md",
 }
 
 
 def run(cmd: list[str], timeout: int = 120) -> tuple[int, str, str]:
-    env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
     proc = subprocess.run(
         cmd,
         cwd=ROOT,
@@ -86,12 +88,8 @@ def run(cmd: list[str], timeout: int = 120) -> tuple[int, str, str]:
     return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
 
 
-def git(args: list[str]) -> tuple[int, str, str]:
-    return run(["git", *args], timeout=60)
-
-
 def check_required_paths() -> list[dict[str, object]]:
-    results = []
+    results: list[dict[str, object]] = []
     for rel in REQUIRED_PATHS:
         path = ROOT / rel
         results.append(
@@ -105,8 +103,8 @@ def check_required_paths() -> list[dict[str, object]]:
 
 
 def check_text_markers() -> list[dict[str, object]]:
-    results = []
-    for rel, markers in REQUIRED_TEXT_MARKERS.items():
+    results: list[dict[str, object]] = []
+    for rel, markers in TEXT_MARKERS.items():
         path = ROOT / rel
         text = path.read_text(encoding="utf-8", errors="replace") if path.exists() else ""
         for marker in markers:
@@ -120,198 +118,128 @@ def check_text_markers() -> list[dict[str, object]]:
     return results
 
 
-def check_git_hygiene() -> list[dict[str, object]]:
-    results: list[dict[str, object]] = []
-    code, tracked, err = git(["ls-files"])
-    if code != 0:
-        return [{"id": "git_ls_files", "ok": False, "detail": err or tracked}]
-    files = [line.strip() for line in tracked.splitlines() if line.strip()]
-    bad_large = [
-        path
-        for path in files
-        if path.lower().endswith(FORBIDDEN_TRACKED_SUFFIXES) or Path(path).name in FORBIDDEN_TRACKED_NAMES
-    ]
-    results.append(
-        {
-            "id": "forbidden_large_or_local_files",
-            "ok": not bad_large,
-            "detail": ", ".join(bad_large) if bad_large else "none tracked",
-        }
+def check_compile() -> dict[str, object]:
+    code, out, err = run([sys.executable, "-m", "compileall", "app.py", "src", "cardio_pc", "tools"], timeout=180)
+    return {"id": "compileall", "ok": code == 0, "detail": out[-1200:] or err[-1200:]}
+
+
+def check_rule_smoke() -> dict[str, object]:
+    code, out, err = run(
+        [
+            sys.executable,
+            "src/clinical_rule_engine.py",
+            "--input-json",
+            "examples/sample_patient_clinical.json",
+            "--out",
+            "outputs/preflight_rule_result.json",
+        ],
+        timeout=120,
     )
+    ok = code == 0 and (ROOT / "outputs/preflight_rule_result.json").exists()
+    return {"id": "rule_smoke", "ok": ok, "detail": out[-1200:] or err[-1200:]}
 
-    code, status, err = git(["status", "--short"])
-    dirty_lines = []
-    for line in status.splitlines():
-        rel = line[3:].replace("\\", "/") if len(line) > 3 else line
-        if rel not in PRECHECK_OUTPUTS:
-            dirty_lines.append(line)
-    results.append(
-        {
-            "id": "git_worktree_clean",
-            "ok": code == 0 and not dirty_lines,
-            "detail": "\n".join(dirty_lines) or err or "clean",
-        }
+
+def check_media_smoke() -> dict[str, object]:
+    code, out, err = run(
+        [
+            sys.executable,
+            "src/analyze_media_cli.py",
+            "--input",
+            "samples/A4C_ED_synthetic.png",
+            "--input",
+            "samples/A4C_ES_synthetic.png",
+            "--max-loaded-frames",
+            "48",
+            "--decode-timeout",
+            "6",
+            "--max-input-files",
+            "12",
+            "--decode-workers",
+            "4",
+            "--out",
+            "outputs/preflight_media_result.json",
+        ],
+        timeout=120,
     )
+    ok = code == 0 and (ROOT / "outputs/preflight_media_result.json").exists()
+    return {"id": "media_smoke", "ok": ok, "detail": out[-1200:] or err[-1200:]}
 
-    code, remote, err = git(["remote", "-v"])
-    results.append(
-        {
-            "id": "git_remote_pc_repo",
-            "ok": "github.com/Timmy-zhu12/gdc-shanghai-project" in remote,
-            "detail": remote or err,
-        }
+
+def check_ui_import() -> dict[str, object]:
+    code, out, err = run(
+        [
+            sys.executable,
+            "-c",
+            "import sys; sys.path.insert(0, 'src'); import rulebook_ui; print('ui import ok')",
+        ],
+        timeout=30,
     )
-    return results
+    return {"id": "ui_import", "ok": code == 0 and "ui import ok" in out, "detail": out or err}
 
 
-def check_forbidden_text() -> list[dict[str, object]]:
-    code, tracked, err = git(["ls-files"])
-    if code != 0:
-        return [{"id": "text_scan", "ok": False, "detail": err or tracked}]
-    findings: list[str] = []
-    mojibake_findings: list[str] = []
-    for rel in tracked.splitlines():
-        if rel.replace("\\", "/") == "tools/submission_preflight.py":
-            continue
-        if not rel.lower().endswith((".py", ".md", ".txt", ".json", ".html", ".tex", ".bat", ".ps1")):
-            continue
-        path = ROOT / rel
-        try:
-            text = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue
-        lowered = text.lower()
-        for token in FORBIDDEN_TEXT_TOKENS:
-            if token.lower() in lowered:
-                findings.append(f"{rel}:{token}")
-        for token in MOJIBAKE_TOKENS:
-            if token in text:
-                mojibake_findings.append(f"{rel}:{token}")
-                break
-    return [
-        {
-            "id": "old_model_terms_absent",
-            "ok": not findings,
-            "detail": ", ".join(findings) if findings else "none",
-        },
-        {
-            "id": "common_mojibake_markers_absent",
-            "ok": not mojibake_findings,
-            "detail": ", ".join(mojibake_findings[:12]) if mojibake_findings else "none",
-        },
-    ]
-
-
-def run_rule_self_test(enabled: bool) -> dict[str, object]:
-    if not enabled:
-        return {"id": "self_test_rule_only", "ok": True, "detail": "skipped by flag"}
-    code, out, err = run([sys.executable, "app.py", "--self-test-rule-only"], timeout=120)
-    required = all(marker in out for marker in ("SELF TEST OK", "教学参考病症判断：", "最小病症：", "逻辑链："))
+def check_gemma_emergency_stop_smoke() -> dict[str, object]:
+    code, out, err = run([sys.executable, "tools/gemma_emergency_stop_smoke.py"], timeout=30)
     return {
-        "id": "self_test_rule_only",
-        "ok": code == 0 and required,
-        "detail": (out or err)[-1200:],
+        "id": "gemma_emergency_stop_smoke",
+        "ok": code == 0 and "GEMMA EMERGENCY STOP SMOKE OK" in out,
+        "detail": out[-1200:] or err[-1200:],
     }
 
 
-def run_anti_hang_smoke(enabled: bool) -> dict[str, object]:
-    if not enabled:
-        return {"id": "anti_hang_smoke", "ok": True, "detail": "skipped by flag"}
-    code, out, err = run([sys.executable, "tools/anti_hang_smoke.py"], timeout=45)
-    ok = code == 0 and '"anti_hang_smoke": "ok"' in out
-    return {
-        "id": "anti_hang_smoke",
-        "ok": ok,
-        "detail": (out or err)[-1200:],
-    }
+def check_local_default_root() -> dict[str, object]:
+    code, out, err = run(
+        [
+            sys.executable,
+            "-c",
+            "import sys; sys.path.insert(0, 'src'); import image_case_adapter as i; print(i.DEFAULT_PROJECT_ROOT)",
+        ],
+        timeout=30,
+    )
+    ok = code == 0 and str(ROOT) in out
+    return {"id": "local_default_project_root", "ok": ok, "detail": out or err}
 
 
-def run_function_calling_smoke(enabled: bool) -> dict[str, object]:
-    if not enabled:
-        return {"id": "function_calling_smoke", "ok": True, "detail": "skipped by flag"}
-    code, out, err = run([sys.executable, "tools/function_calling_smoke.py"], timeout=45)
-    ok = code == 0 and '"function_calling_smoke": "ok"' in out
-    return {
-        "id": "function_calling_smoke",
-        "ok": ok,
-        "detail": (out or err)[-1200:],
-    }
-
-
-def check_launcher_anti_hang() -> list[dict[str, object]]:
-    run_bat = (ROOT / "run_cardio_pc_v5.bat").read_text(encoding="utf-8", errors="replace").lower()
-    install_bat = (ROOT / "install_deps.bat").read_text(encoding="utf-8", errors="replace").lower()
-    return [
-        {
-            "id": "launcher_no_silent_pip_install",
-            "ok": "pip install" not in run_bat and "checking installed dependencies" in run_bat,
-            "detail": "run launcher checks deps without silent pip install",
-        },
-        {
-            "id": "install_deps_bounded_pip_waits",
-            "ok": "--timeout 60" in install_bat and "--retries 2" in install_bat,
-            "detail": "install_deps.bat uses bounded pip network waits",
-        },
-    ]
-
-
-def render_markdown(results: list[dict[str, object]], generated_at: str) -> str:
-    ok_count = sum(1 for item in results if item["ok"])
-    total = len(results)
-    lines = [
-        "# CardioConsult 提交前程序预检",
-        "",
-        f"生成时间：{generated_at}",
-        "",
-        f"结论：{ok_count}/{total} 项通过。",
-        "",
-        "| 检查项 | 状态 | 说明 |",
-        "|---|---:|---|",
-    ]
-    for item in results:
-        status = "通过" if item["ok"] else "需要处理"
-        detail = str(item["detail"]).replace("\n", "<br>")
-        lines.append(f"| `{item['id']}` | {status} | {detail} |")
-    lines.append("")
-    lines.append("说明：本预检不训练模型，也不要求 GGUF 存在；它只检查评审复现相关的代码、文档、报告、仓库卫生和规则自检。")
-    return "\n".join(lines) + "\n"
-
-
-def main() -> int:
-    for stream in (sys.stdout, sys.stderr):
-        try:
-            stream.reconfigure(encoding="utf-8", errors="replace")
-        except Exception:
-            pass
-
-    parser = argparse.ArgumentParser(description="Run a lightweight submission preflight for CardioConsult PC V5.")
-    parser.add_argument("--skip-self-test", action="store_true", help="Skip app.py --self-test-rule-only.")
-    parser.add_argument("--skip-anti-hang", action="store_true", help="Skip tools/anti_hang_smoke.py.")
-    parser.add_argument("--skip-function-calling", action="store_true", help="Skip tools/function_calling_smoke.py.")
-    parser.add_argument("--out-dir", default=str(OUT_DIR), help="Directory for JSON/Markdown preflight reports.")
-    args = parser.parse_args()
-
-    generated_at = datetime.now().isoformat(timespec="seconds")
+def main() -> None:
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     results: list[dict[str, object]] = []
     results.extend(check_required_paths())
     results.extend(check_text_markers())
-    results.extend(check_git_hygiene())
-    results.extend(check_forbidden_text())
-    results.extend(check_launcher_anti_hang())
-    results.append(run_rule_self_test(enabled=not args.skip_self_test))
-    results.append(run_anti_hang_smoke(enabled=not args.skip_anti_hang))
-    results.append(run_function_calling_smoke(enabled=not args.skip_function_calling))
+    results.append(check_local_default_root())
+    results.append(check_compile())
+    results.append(check_rule_smoke())
+    results.append(check_media_smoke())
+    results.append(check_ui_import())
+    results.append(check_gemma_emergency_stop_smoke())
 
-    out_dir = Path(args.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    payload = {"generated_at": generated_at, "root": str(ROOT), "results": results}
-    (out_dir / "current_preflight.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    (out_dir / "current_preflight.md").write_text(render_markdown(results, generated_at), encoding="utf-8")
-
-    failed = [item for item in results if not item["ok"]]
-    print(render_markdown(results, generated_at))
-    return 1 if failed else 0
+    ok = all(item["ok"] for item in results)
+    payload = {
+        "ok": ok,
+        "checked_at": datetime.now().isoformat(timespec="seconds"),
+        "root": str(ROOT),
+        "results": results,
+    }
+    json_path = OUT_DIR / "current_preflight.json"
+    md_path = OUT_DIR / "current_preflight.md"
+    json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    lines = [
+        "# CardioConsult 本地 V5 对齐预检",
+        "",
+        f"- 检查时间：{payload['checked_at']}",
+        f"- 根目录：`{ROOT}`",
+        f"- 总体结果：{'通过' if ok else '未通过'}",
+        "",
+        "| 检查项 | 结果 | 说明 |",
+        "|---|---:|---|",
+    ]
+    for item in results:
+        detail = str(item["detail"]).replace("\n", "<br>")
+        lines.append(f"| `{item['id']}` | {'OK' if item['ok'] else 'FAIL'} | {detail} |")
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Preflight {'OK' if ok else 'FAILED'}")
+    print(f"Wrote {json_path}")
+    print(f"Wrote {md_path}")
+    raise SystemExit(0 if ok else 1)
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

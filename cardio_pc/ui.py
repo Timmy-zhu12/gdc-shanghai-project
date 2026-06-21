@@ -9,7 +9,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from PIL import Image, ImageTk
 
-from .diagnosis import ModelConfig, load_config, run_diagnosis, save_config
+from .diagnosis import ModelConfig, load_config, request_stop_active_llm, run_diagnosis, save_config
 from .features import StudyAnalysis, analyze_loaded_images
 from .guidance import build_primary_care_guidance
 from .imaging import AnalysisCancelled, SUPPORTED_EXTENSIONS, LoadedImage, load_files
@@ -40,6 +40,8 @@ class CardioConsultPCApp(tk.Tk):
         self.analysis_token = 0
         self.analysis_running = False
         self.decode_warnings: list[str] = []
+        self.emergency_loaded_images: list[LoadedImage] = []
+        self.emergency_study: StudyAnalysis | None = None
 
         self._build_ui()
         self._refresh_model_status()
@@ -109,6 +111,10 @@ class CardioConsultPCApp(tk.Tk):
         self.run_button.pack(side=tk.LEFT)
         self.cancel_button = ttk.Button(run_row, text="取消分析", command=self.cancel_analysis, state=tk.DISABLED)
         self.cancel_button.pack(side=tk.LEFT, padx=(8, 0))
+        self.stop_gemma_button = ttk.Button(run_row, text="急停 Gemma", command=self.stop_gemma_now, state=tk.DISABLED)
+        self.stop_gemma_button.pack(side=tk.LEFT, padx=(8, 0))
+        self.emergency_rule_button = ttk.Button(run_row, text="紧急规则模式", command=self.emergency_switch_to_rule_only)
+        self.emergency_rule_button.pack(side=tk.LEFT, padx=(8, 0))
         ttk.Button(run_row, text="保存诊断文本", command=self.save_report).pack(side=tk.LEFT, padx=(8, 0))
         self.progress = ttk.Progressbar(run_row, mode="indeterminate")
         self.progress.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(16, 0))
@@ -198,11 +204,13 @@ class CardioConsultPCApp(tk.Tk):
         if self.analysis_running:
             if self.cancel_event:
                 self.cancel_event.set()
+            request_stop_active_llm(self.config_model.server_url, kill_local_server=True)
             self.analysis_token += 1
             self.progress.stop()
             self.analysis_running = False
             self.run_button.configure(state=tk.NORMAL)
             self.cancel_button.configure(state=tk.DISABLED)
+            self.stop_gemma_button.configure(state=tk.DISABLED)
 
         self.mode_var.set(INFERENCE_MODE_NAMES["rule_only"])
         self.config_model.inference_mode = "rule_only"
@@ -210,6 +218,55 @@ class CardioConsultPCApp(tk.Tk):
         save_config(self.config_model)
         self._refresh_model_status()
         self.summary_var.set("已切换到规则极速模式。教学演示将跳过 Gemma4，使用本地层级规则直接生成诊断字段。")
+
+    def stop_gemma_now(self) -> None:
+        if self.cancel_event:
+            self.cancel_event.set()
+        detail = request_stop_active_llm(self.config_model.server_url, kill_local_server=True)
+        self.stop_gemma_button.configure(state=tk.DISABLED)
+        self.summary_var.set(f"已急停 Gemma4 推理。{detail}。如果需要立即出报告，请点击“紧急规则模式”。")
+
+    def emergency_switch_to_rule_only(self) -> None:
+        if self.cancel_event:
+            self.cancel_event.set()
+        detail = request_stop_active_llm(self.config_model.server_url, kill_local_server=True)
+        self.mode_var.set(INFERENCE_MODE_NAMES["rule_only"])
+        self.config_model.inference_mode = "rule_only"
+        self.config_model.use_server = False
+        save_config(self.config_model)
+        self._refresh_model_status()
+
+        loaded = list(self.emergency_loaded_images)
+        study = self.emergency_study
+        if study and loaded:
+            self.analysis_token += 1
+            runtime_config = replace(self.config_model)
+            runtime_config.inference_mode = "rule_only"
+            runtime_config.use_server = False
+            report, model_status = run_diagnosis(study, runtime_config)
+            report = (
+                f"{report.rstrip()}\n\n"
+                f"[紧急规则模式：用户中断 Gemma4 CLI/server 后，系统使用已提取的 B-mode/Doppler 特征生成本地规则报告。"
+                f"急停记录：{detail}]"
+            )
+            if self.decode_warnings:
+                report = self._append_decode_warnings(report)
+            self._show_result(loaded, study, report, model_status)
+            return
+
+        was_running = self.analysis_running
+        if was_running:
+            self.analysis_token += 1
+            self.analysis_running = False
+            self.progress.stop()
+            self.run_button.configure(state=tk.NORMAL)
+            self.cancel_button.configure(state=tk.DISABLED)
+            self.stop_gemma_button.configure(state=tk.DISABLED)
+        if self.file_paths:
+            self.summary_var.set(f"已切换为纯规则模式并重新开始分析。急停记录：{detail}")
+            self.start_analysis()
+        else:
+            self.summary_var.set(f"已切换为纯规则模式。急停记录：{detail}")
 
     def start_analysis(self) -> None:
         if not self.file_paths:
@@ -222,9 +279,14 @@ class CardioConsultPCApp(tk.Tk):
         token = self.analysis_token
         self.cancel_event = threading.Event()
         self.decode_warnings = []
+        self.emergency_loaded_images = []
+        self.emergency_study = None
         self.analysis_running = True
         self.run_button.configure(state=tk.DISABLED)
         self.cancel_button.configure(state=tk.NORMAL)
+        self.stop_gemma_button.configure(
+            state=tk.NORMAL if self.config_model.normalized_inference_mode != "rule_only" else tk.DISABLED
+        )
         self.progress.start(12)
         self.summary_var.set("阶段 1/4：正在本地读取文件...")
         worker = threading.Thread(target=self._analysis_worker, args=(token, self.cancel_event), daemon=True)
@@ -256,6 +318,8 @@ class CardioConsultPCApp(tk.Tk):
             self._raise_if_cancelled(cancel_event)
             self._post_stage(token, f"阶段 2/4：正在提取 {len(loaded)} 个代表帧的 B-mode / Doppler 特征...")
             study = analyze_loaded_images(loaded)
+            self.emergency_loaded_images = list(loaded)
+            self.emergency_study = study
             self._raise_if_cancelled(cancel_event)
             runtime_config = replace(self.config_model)
             remaining = int(deadline - time.monotonic())
@@ -270,7 +334,13 @@ class CardioConsultPCApp(tk.Tk):
                 runtime_config.llm_timeout_seconds = max(1, min(int(runtime_config.llm_timeout_seconds or 60), remaining))
             mode_text = "规则诊断" if runtime_config.normalized_inference_mode == "rule_only" else "可选 Gemma4 增强诊断"
             self._post_stage(token, f"阶段 3/4：正在运行{mode_text}...")
-            report, model_status = run_diagnosis(study, runtime_config)
+            self.after(
+                0,
+                lambda: self.stop_gemma_button.configure(
+                    state=tk.NORMAL if runtime_config.normalized_inference_mode != "rule_only" else tk.DISABLED
+                ),
+            )
+            report, model_status = run_diagnosis(study, runtime_config, cancel_event=cancel_event)
             if case_timeout_note:
                 report = f"{report.rstrip()}\n\n[防卡保护：{case_timeout_note}]"
             if self.decode_warnings:
@@ -338,6 +408,7 @@ class CardioConsultPCApp(tk.Tk):
         self.analysis_running = False
         self.run_button.configure(state=tk.NORMAL)
         self.cancel_button.configure(state=tk.DISABLED)
+        self.stop_gemma_button.configure(state=tk.DISABLED)
         self.summary_var.set("已取消本次分析。")
 
     def _show_result(self, loaded: list[LoadedImage], study: StudyAnalysis, report: str, model_status: str) -> None:
@@ -345,6 +416,7 @@ class CardioConsultPCApp(tk.Tk):
         self.analysis_running = False
         self.run_button.configure(state=tk.NORMAL)
         self.cancel_button.configure(state=tk.DISABLED)
+        self.stop_gemma_button.configure(state=tk.DISABLED)
         self.loaded_images = loaded
         self.study = study
         self.last_report = report
@@ -370,6 +442,7 @@ class CardioConsultPCApp(tk.Tk):
         self.analysis_running = False
         self.run_button.configure(state=tk.NORMAL)
         self.cancel_button.configure(state=tk.DISABLED)
+        self.stop_gemma_button.configure(state=tk.DISABLED)
         self.summary_var.set("分析失败。")
         messagebox.showerror("分析失败", message)
 

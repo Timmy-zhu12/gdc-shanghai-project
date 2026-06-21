@@ -1,0 +1,18 @@
+{
+  "case_id": "DEMO_PROXY_001",
+  "patient_id": "PATIENT_HASH_PROXY",
+  "views": [],
+  "measurements": {},
+  "proxies": {
+    "view_count": 1,
+    "input_count": 12,
+    "systole_count": 1,
+    "diastole_count": 1,
+    "quality_score": 0.74,
+    "flow_active_ratio": 0.19,
+    "flow_turbulence_proxy": 0.041,
+    "jet_width_proxy": 0.31,
+    "contractility_fraction_proxy": 0.38
+  },
+  "diagnosis_text": "示例：仅有代理特征，体位定位不足。"
+}
